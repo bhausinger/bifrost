@@ -8,6 +8,8 @@ interface DiscoverySearchFormProps {
     genre?: string;
     source?: string;
     limit?: number;
+    anchorArtist?: string;
+    searchType?: string;
   }) => void;
   isLoading: boolean;
 }

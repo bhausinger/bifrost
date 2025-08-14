@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuthStore } from '@/stores/authStore';
+import { useRegister } from '@/hooks/api/useAuth';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 
 interface RegisterFormProps {
@@ -17,12 +17,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   });
   const [localError, setLocalError] = useState('');
 
-  const { register, isLoading, error, clearError } = useAuthStore();
+  const registerMutation = useRegister();
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
     setLocalError('');
-    clearError();
   };
 
   const validateForm = () => {
@@ -50,7 +49,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     if (!validateForm()) return;
 
     try {
-      await register({
+      await registerMutation.mutateAsync({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -58,11 +57,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       });
       onSuccess?.();
     } catch (err) {
-      // Error is handled by the store
+      setLocalError(err instanceof Error ? err.message : 'Registration failed');
     }
   };
 
-  const displayError = error || localError;
+  const displayError = registerMutation.error?.message || localError;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -77,7 +76,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               value={formData.firstName}
               onChange={handleChange('firstName')}
               placeholder="John"
-              disabled={isLoading}
+              disabled={registerMutation.isPending}
               required
             />
             
@@ -86,7 +85,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               value={formData.lastName}
               onChange={handleChange('lastName')}
               placeholder="Doe"
-              disabled={isLoading}
+              disabled={registerMutation.isPending}
               required
             />
           </div>
@@ -97,7 +96,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             value={formData.email}
             onChange={handleChange('email')}
             placeholder="john@example.com"
-            disabled={isLoading}
+            disabled={registerMutation.isPending}
             required
           />
           
@@ -107,7 +106,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             value={formData.password}
             onChange={handleChange('password')}
             placeholder="Enter your password"
-            disabled={isLoading}
+            disabled={registerMutation.isPending}
             required
           />
           
@@ -117,7 +116,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             value={formData.confirmPassword}
             onChange={handleChange('confirmPassword')}
             placeholder="Confirm your password"
-            disabled={isLoading}
+            disabled={registerMutation.isPending}
             required
           />
 
@@ -129,7 +128,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
           <Button
             type="submit"
-            loading={isLoading}
+            loading={registerMutation.isPending}
             className="w-full"
           >
             Create Account
@@ -141,7 +140,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 type="button"
                 onClick={onSwitchToLogin}
                 className="text-sm text-primary-600 hover:text-primary-500"
-                disabled={isLoading}
+                disabled={registerMutation.isPending}
               >
                 Already have an account? Sign in
               </button>

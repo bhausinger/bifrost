@@ -3,7 +3,7 @@ import { AppError } from '@/middleware/errorHandler';
 import { logger } from '@/utils/logger';
 
 export class AnalyticsController {
-  async getDashboardStats(req: Request, res: Response, next: NextFunction) {
+  async getDashboardStats(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get dashboard stats endpoint - not implemented yet', data: {} });
     } catch (error) {
@@ -32,7 +32,7 @@ export class AnalyticsController {
     }
   }
 
-  async getOutreachStats(req: Request, res: Response, next: NextFunction) {
+  async getOutreachStats(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get outreach stats endpoint - not implemented yet', data: {} });
     } catch (error) {
@@ -41,7 +41,7 @@ export class AnalyticsController {
     }
   }
 
-  async getRevenueOverview(req: Request, res: Response, next: NextFunction) {
+  async getRevenueOverview(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get revenue overview endpoint - not implemented yet', data: {} });
     } catch (error) {

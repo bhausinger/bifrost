@@ -137,7 +137,7 @@ Return only the JSON array - no other text.`;
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { response: string };
       const aiResponse = data.response;
 
       logger.info('AI generated response based on web search');
@@ -186,7 +186,7 @@ Return only the JSON array - no other text.`;
     return [];
   }
 
-  private getFallbackSuggestions(prompt: string, count: number): AIArtistSuggestion[] {
+  private getFallbackSuggestions(_prompt: string, count: number): AIArtistSuggestion[] {
     const fallbackArtists = [
       {
         name: "ODESZA",

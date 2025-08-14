@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseEntitySchema, StatusSchema } from './common';
+import { BaseEntitySchema } from './common';
 
 // Email template type
 export const TemplateTypeSchema = z.enum([

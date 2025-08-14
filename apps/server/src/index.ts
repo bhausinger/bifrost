@@ -13,6 +13,9 @@ import { artistRoutes } from '@/routes/artists';
 import { outreachRoutes } from '@/routes/outreach';
 import { analyticsRoutes } from '@/routes/analytics';
 import { financeRoutes } from '@/routes/finance';
+import { gmailRoutes } from '@/routes/gmail';
+import { swaggerSpec, swaggerUi } from '@/config/swagger';
+import { connectRedis } from '@/config/redis';
 
 const app = express();
 
@@ -32,8 +35,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
+// API Documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Campaign Manager API Documentation',
+}));
+
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -44,18 +54,22 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/outreach', outreachRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/gmail', gmailRoutes);
 
 // Error handling
 app.use(errorHandler);
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (_req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
 const port = config.port || 5000;
 
-app.listen(port, () => {
+app.listen(port, async () => {
   logger.info(`Server running on port ${port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
+  
+  // Initialize Redis connection
+  await connectRedis();
 });

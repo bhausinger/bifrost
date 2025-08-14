@@ -3,14 +3,14 @@ import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Auth } from '@/pages/Auth';
 import { Dashboard } from '@/pages/Dashboard';
-import { Campaigns } from '@/pages/campaigns/Campaigns';
-import { CampaignDetail } from '@/pages/campaigns/CampaignDetail';
-import { Artists } from '@/pages/artists/Artists';
-import { ArtistDetail } from '@/pages/artists/ArtistDetail';
-import { Outreach } from '@/pages/outreach/Outreach';
-import { Analytics } from '@/pages/analytics/Analytics';
-import { Finance } from '@/pages/finance/Finance';
-import { Settings } from '@/pages/settings/Settings';
+import { Campaigns } from '@/pages/Campaigns/Campaigns';
+import { CampaignDetail } from '@/pages/Campaigns/CampaignDetail';
+import { Artists } from '@/pages/Artists/Artists';
+import { ArtistDetail } from '@/pages/Artists/ArtistDetail';
+import { Outreach } from '@/pages/Outreach/Outreach';
+import { Analytics } from '@/pages/Analytics/Analytics';
+import { Finance } from '@/pages/Finance/Finance';
+import { Settings } from '@/pages/Settings/Settings';
 
 function App() {
   return (

@@ -222,4 +222,285 @@ export class CampaignController {
       next(new AppError('Failed to delete campaign', 500));
     }
   }
+
+  async getCampaignArtists(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return next(new AppError('User ID required', 400));
+      }
+
+      // First verify the campaign belongs to the user
+      const { data: _campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('id', id)
+        .eq('owner_id', userId)
+        .single();
+
+      if (campaignError) {
+        if (campaignError.code === 'PGRST116') {
+          return next(new AppError('Campaign not found', 404));
+        }
+        logger.error('Database error checking campaign:', campaignError);
+        return next(new AppError('Failed to access campaign', 500));
+      }
+
+      // Get campaign artists with artist details
+      const { data: campaignArtists, error } = await supabase
+        .from('campaign_artists')
+        .select(`
+          id,
+          status,
+          added_at,
+          artists (
+            id,
+            name,
+            display_name,
+            bio,
+            genres,
+            location,
+            profile_image_url,
+            contact_info,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('campaign_id', id);
+
+      if (error) {
+        logger.error('Database error fetching campaign artists:', error);
+        return next(new AppError('Failed to fetch campaign artists', 500));
+      }
+
+      res.status(200).json({
+        message: 'Campaign artists retrieved successfully',
+        data: campaignArtists || []
+      });
+    } catch (error) {
+      logger.error('Get campaign artists error:', error);
+      next(new AppError('Failed to get campaign artists', 500));
+    }
+  }
+
+  async addArtistToCampaign(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params; // campaign id
+      const { artistId } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return next(new AppError('User ID required', 400));
+      }
+
+      if (!artistId) {
+        return next(new AppError('Artist ID is required', 400));
+      }
+
+      // First verify the campaign belongs to the user
+      const { data: _campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('id', id)
+        .eq('owner_id', userId)
+        .single();
+
+      if (campaignError) {
+        if (campaignError.code === 'PGRST116') {
+          return next(new AppError('Campaign not found', 404));
+        }
+        logger.error('Database error checking campaign:', campaignError);
+        return next(new AppError('Failed to access campaign', 500));
+      }
+
+      // Verify the artist exists
+      const { data: _artist, error: artistError } = await supabase
+        .from('artists')
+        .select('id')
+        .eq('id', artistId)
+        .single();
+
+      if (artistError) {
+        if (artistError.code === 'PGRST116') {
+          return next(new AppError('Artist not found', 404));
+        }
+        logger.error('Database error checking artist:', artistError);
+        return next(new AppError('Failed to verify artist', 500));
+      }
+
+      // Check if association already exists
+      const { data: existing, error: _existingError } = await supabase
+        .from('campaign_artists')
+        .select('id')
+        .eq('campaign_id', id)
+        .eq('artist_id', artistId)
+        .single();
+
+      if (existing) {
+        return next(new AppError('Artist is already associated with this campaign', 400));
+      }
+
+      // Create the association
+      const { data: campaignArtist, error } = await supabase
+        .from('campaign_artists')
+        .insert({
+          campaign_id: id,
+          artist_id: artistId,
+          status: 'active'
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        logger.error('Database error adding artist to campaign:', error);
+        return next(new AppError('Failed to add artist to campaign', 500));
+      }
+
+      res.status(201).json({
+        message: 'Artist added to campaign successfully',
+        data: campaignArtist
+      });
+    } catch (error) {
+      logger.error('Add artist to campaign error:', error);
+      next(new AppError('Failed to add artist to campaign', 500));
+    }
+  }
+
+  async removeArtistFromCampaign(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id, artistId } = req.params; // campaign id and artist id
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return next(new AppError('User ID required', 400));
+      }
+
+      // First verify the campaign belongs to the user
+      const { data: _campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('id', id)
+        .eq('owner_id', userId)
+        .single();
+
+      if (campaignError) {
+        if (campaignError.code === 'PGRST116') {
+          return next(new AppError('Campaign not found', 404));
+        }
+        logger.error('Database error checking campaign:', campaignError);
+        return next(new AppError('Failed to access campaign', 500));
+      }
+
+      // Remove the association
+      const { error } = await supabase
+        .from('campaign_artists')
+        .delete()
+        .eq('campaign_id', id)
+        .eq('artist_id', artistId);
+
+      if (error) {
+        logger.error('Database error removing artist from campaign:', error);
+        return next(new AppError('Failed to remove artist from campaign', 500));
+      }
+
+      res.status(200).json({
+        message: 'Artist removed from campaign successfully'
+      });
+    } catch (error) {
+      logger.error('Remove artist from campaign error:', error);
+      next(new AppError('Failed to remove artist from campaign', 500));
+    }
+  }
+
+  async addMultipleArtistsToCampaign(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params; // campaign id
+      const { artistIds } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return next(new AppError('User ID required', 400));
+      }
+
+      if (!artistIds || !Array.isArray(artistIds) || artistIds.length === 0) {
+        return next(new AppError('Artist IDs array is required', 400));
+      }
+
+      // First verify the campaign belongs to the user
+      const { data: _campaign, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('id', id)
+        .eq('owner_id', userId)
+        .single();
+
+      if (campaignError) {
+        if (campaignError.code === 'PGRST116') {
+          return next(new AppError('Campaign not found', 404));
+        }
+        logger.error('Database error checking campaign:', campaignError);
+        return next(new AppError('Failed to access campaign', 500));
+      }
+
+      // Verify all artists exist
+      const { data: artists, error: artistsError } = await supabase
+        .from('artists')
+        .select('id')
+        .in('id', artistIds);
+
+      if (artistsError) {
+        logger.error('Database error checking artists:', artistsError);
+        return next(new AppError('Failed to verify artists', 500));
+      }
+
+      const foundArtistIds = artists.map(artist => artist.id);
+      const notFoundArtists = artistIds.filter(id => !foundArtistIds.includes(id));
+
+      if (notFoundArtists.length > 0) {
+        return next(new AppError(`Artists not found: ${notFoundArtists.join(', ')}`, 404));
+      }
+
+      // Check for existing associations
+      const { data: existing, error: _existingError } = await supabase
+        .from('campaign_artists')
+        .select('artist_id')
+        .eq('campaign_id', id)
+        .in('artist_id', artistIds);
+
+      const existingArtistIds = existing?.map(ca => ca.artist_id) || [];
+      const newArtistIds = artistIds.filter(id => !existingArtistIds.includes(id));
+
+      if (newArtistIds.length === 0) {
+        return next(new AppError('All artists are already associated with this campaign', 400));
+      }
+
+      // Create the associations
+      const associations = newArtistIds.map(artistId => ({
+        campaign_id: id,
+        artist_id: artistId,
+        status: 'active'
+      }));
+
+      const { data: campaignArtists, error } = await supabase
+        .from('campaign_artists')
+        .insert(associations)
+        .select('*');
+
+      if (error) {
+        logger.error('Database error adding artists to campaign:', error);
+        return next(new AppError('Failed to add artists to campaign', 500));
+      }
+
+      res.status(201).json({
+        message: `${newArtistIds.length} artists added to campaign successfully`,
+        data: campaignArtists,
+        skipped: existingArtistIds.length > 0 ? `${existingArtistIds.length} artists were already associated` : null
+      });
+    } catch (error) {
+      logger.error('Add multiple artists to campaign error:', error);
+      next(new AppError('Failed to add artists to campaign', 500));
+    }
+  }
 }

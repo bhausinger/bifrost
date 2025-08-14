@@ -57,3 +57,17 @@ export const FileUploadSchema = z.object({
   url: z.string().url(),
 });
 export type FileUpload = z.infer<typeof FileUploadSchema>;
+
+// Platform enum
+export const PlatformSchema = z.enum([
+  'soundcloud',
+  'spotify',
+  'youtube',
+  'instagram',
+  'tiktok',
+  'twitter',
+  'facebook',
+  'bandcamp',
+  'other'
+]);
+export type Platform = z.infer<typeof PlatformSchema>;

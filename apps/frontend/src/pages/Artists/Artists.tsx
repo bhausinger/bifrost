@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArtistDiscovery } from '@/components/artists/Discovery';
 import { SavedArtists } from './SavedArtists';
 

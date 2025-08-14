@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { FinanceController } from '@/controllers/FinanceController';
 import { authMiddleware } from '@/middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 const financeController = new FinanceController();
 
 // Apply auth middleware to all finance routes

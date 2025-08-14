@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { AnalyticsController } from '@/controllers/AnalyticsController';
 import { authMiddleware } from '@/middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 const analyticsController = new AnalyticsController();
 
 // Apply auth middleware to all analytics routes

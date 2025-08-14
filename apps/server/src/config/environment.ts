@@ -78,6 +78,12 @@ export const config = {
     allowedTypes: env.ALLOWED_FILE_TYPES.split(','),
   },
   
+  frontend: {
+    url: env.NODE_ENV === 'production' 
+      ? 'https://yourapp.com' // Add your production domain
+      : 'http://localhost:3002',
+  },
+  
   cors: {
     origin: env.NODE_ENV === 'production' 
       ? ['https://yourapp.com'] // Add your production domain

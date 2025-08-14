@@ -23,7 +23,7 @@ export const errorHandler = (
   error: ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const { statusCode = 500, message, stack } = error;
 

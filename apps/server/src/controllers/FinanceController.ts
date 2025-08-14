@@ -3,7 +3,7 @@ import { AppError } from '@/middleware/errorHandler';
 import { logger } from '@/utils/logger';
 
 export class FinanceController {
-  async getTransactions(req: Request, res: Response, next: NextFunction) {
+  async getTransactions(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get transactions endpoint - not implemented yet', data: [] });
     } catch (error) {
@@ -51,7 +51,7 @@ export class FinanceController {
     }
   }
 
-  async getPnLReport(req: Request, res: Response, next: NextFunction) {
+  async getPnLReport(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get P&L report endpoint - not implemented yet', data: {} });
     } catch (error) {
@@ -60,7 +60,7 @@ export class FinanceController {
     }
   }
 
-  async getRevenueReport(req: Request, res: Response, next: NextFunction) {
+  async getRevenueReport(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get revenue report endpoint - not implemented yet', data: {} });
     } catch (error) {
@@ -69,7 +69,7 @@ export class FinanceController {
     }
   }
 
-  async getExpenseReport(req: Request, res: Response, next: NextFunction) {
+  async getExpenseReport(_req: Request, res: Response, next: NextFunction) {
     try {
       res.status(200).json({ message: 'Get expense report endpoint - not implemented yet', data: {} });
     } catch (error) {

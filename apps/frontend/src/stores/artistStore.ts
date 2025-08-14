@@ -92,7 +92,7 @@ const getAuthHeaders = () => {
   };
 };
 
-export const useArtistStore = create<ArtistStore>((set, get) => ({
+export const useArtistStore = create<ArtistStore>((set) => ({
   // Initial state
   artists: [],
   discoveredArtists: [],

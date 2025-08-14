@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useCampaignStore } from '@/stores/campaignStore';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { CampaignForm } from '../CampaignForm/CampaignForm';
+import { CampaignArtists } from '../CampaignArtists';
 
 interface CampaignDetailProps {
   onBack?: () => void;
@@ -215,6 +216,11 @@ export function CampaignDetail({ onBack }: CampaignDetailProps) {
             </div>
           </Card>
         </div>
+      </div>
+
+      {/* Campaign Artists Section */}
+      <div className="space-y-6">
+        <CampaignArtists campaignId={selectedCampaign.id} />
       </div>
 
       {/* Edit Campaign Modal */}

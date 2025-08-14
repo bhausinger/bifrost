@@ -158,7 +158,7 @@ export const getTimeDifference = (startDate: string | Date, endDate: string | Da
 /**
  * Check if a date is within business hours
  */
-export const isBusinessHours = (date: Date, timezone: string = 'UTC'): boolean => {
+export const isBusinessHours = (date: Date, _timezone: string = 'UTC'): boolean => {
   const hour = date.getHours();
   return hour >= 9 && hour <= 17; // 9 AM to 5 PM
 };

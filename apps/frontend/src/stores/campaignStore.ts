@@ -8,6 +8,7 @@ interface Campaign {
   type: string;
   status: string;
   start_date: string;
+  end_date?: string;
   budget?: number;
   owner_id: string;
   created_at: string;
@@ -60,7 +61,7 @@ const getAuthHeaders = () => {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const useCampaignStore = create<CampaignState>((set, get) => ({
+export const useCampaignStore = create<CampaignState>((set) => ({
   campaigns: [],
   selectedCampaign: null,
   isLoading: false,

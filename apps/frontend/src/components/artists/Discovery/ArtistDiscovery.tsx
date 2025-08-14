@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -140,7 +140,7 @@ export function ArtistDiscovery() {
         throw new Error('Failed to save artists');
       }
 
-      const data = await response.json();
+      await response.json();
       
       // Remove saved artists from current list
       setProcessedArtists(prev => 
@@ -289,7 +289,7 @@ Or: "San Holo, ODESZA, Flume" etc...`}
                           <span className="text-red-600 text-xs">✗ No Email</span>
                         )}
                         {artist.emailStatus === 'checking' && (
-                          <LoadingSpinner size="xs" />
+                          <LoadingSpinner size="sm" />
                         )}
                       </div>
                       {artist.contactInfo?.email && (

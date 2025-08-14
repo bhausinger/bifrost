@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-export function authenticateToken(req: Request, res: Response, next: NextFunction) {
+export function authenticateToken(req: Request, _res: Response, next: NextFunction) {
   // Check for admin bypass header or development mode
   const adminBypass = req.headers['x-admin-bypass'];
   const isDevelopment = process.env.NODE_ENV === 'development';

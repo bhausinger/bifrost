@@ -3,6 +3,7 @@ import { AppError } from '@/middleware/errorHandler';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/config/supabase';
 import { ConversationalAIService } from '@/services/ConversationalAIService';
+import { cacheService } from '@/config/redis';
 
 export class ArtistController {
   private aiService: ConversationalAIService;
@@ -23,6 +24,19 @@ export class ArtistController {
         return next(new AppError('User ID required', 400));
       }
 
+      // Check cache first
+      const cacheKey = `artists:${userId}`;
+      const cachedArtists = await cacheService.getJSON(cacheKey);
+      
+      if (cachedArtists) {
+        logger.info(`✅ Returning ${Array.isArray(cachedArtists) ? cachedArtists.length : 0} cached artists for user ${userId}`);
+        return res.status(200).json({ 
+          message: 'Artists fetched successfully (cached)', 
+          data: cachedArtists || [],
+          count: Array.isArray(cachedArtists) ? cachedArtists.length : 0
+        });
+      }
+
       logger.info('📊 Attempting to fetch artists from database...');
       
       // Query only columns that exist in the current database
@@ -41,6 +55,9 @@ export class ArtistController {
           hint: error.hint || 'No additional information'
         });
       }
+
+      // Cache the results for 5 minutes
+      await cacheService.setJSON(cacheKey, artists || [], 300);
 
       logger.info(`✅ Successfully fetched ${artists?.length || 0} artists for user ${userId}`);
       
@@ -344,7 +361,6 @@ export class ArtistController {
       const response = await this.aiService.startConversation(sessionId, prompt, exclusionContext);
 
       res.status(200).json({
-        message: 'AI conversation started successfully',
         sessionId,
         exclusionContext,
         ...response
@@ -377,7 +393,6 @@ export class ArtistController {
       const response = await this.aiService.continueConversation(sessionId, message);
 
       res.status(200).json({
-        message: 'AI conversation continued successfully',
         sessionId,
         ...response
       });
@@ -569,14 +584,4 @@ export class ArtistController {
     }
   }
 
-  private parseFollowerCount(followerString: string): number {
-    if (!followerString) return 0;
-    
-    if (followerString.includes('500K+')) return 500000;
-    if (followerString.includes('100K-500K')) return 300000;
-    if (followerString.includes('50K-100K')) return 75000;
-    if (followerString.includes('10K-50K')) return 30000;
-    
-    return 0;
-  }
 }

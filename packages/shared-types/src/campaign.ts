@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseEntitySchema, StatusSchema } from './common';
+import { BaseEntitySchema, PlatformSchema } from './common';
 
 // Campaign status
 export const CampaignStatusSchema = z.enum([
@@ -20,16 +20,7 @@ export const CampaignTypeSchema = z.enum([
 ]);
 export type CampaignType = z.infer<typeof CampaignTypeSchema>;
 
-// Platform enum
-export const PlatformSchema = z.enum([
-  'soundcloud',
-  'spotify',
-  'youtube',
-  'instagram',
-  'tiktok',
-  'twitter'
-]);
-export type Platform = z.infer<typeof PlatformSchema>;
+// Import Platform type from common (not re-exported)
 
 // Campaign metrics
 export const CampaignMetricsSchema = z.object({

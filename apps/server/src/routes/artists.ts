@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ArtistController } from '@/controllers/ArtistController';
 import { authenticateToken } from '@/middleware/authenticateToken';
 
-const router = Router();
+const router: Router = Router();
 const artistController = new ArtistController();
 
 // Apply auth middleware to all artist routes
