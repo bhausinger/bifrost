@@ -54,6 +54,7 @@ model Campaign {
   owner           User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   campaignArtists CampaignArtist[]
   transactions    Transaction[]
+  analytics       CampaignAnalytics?
 
   @@map("campaigns")
 }
@@ -82,6 +83,7 @@ model Artist {
   campaignArtists CampaignArtist[]
   emailRecords    EmailRecord[]
   transactions    Transaction[]
+  streamMetrics   StreamMetric[]
 
   @@map("artists")
 }
@@ -113,6 +115,7 @@ model CampaignArtist {
   // Relationships
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   artist   Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  streamMetrics StreamMetric[]
 
   @@unique([campaignId, artistId])
   @@map("campaign_artists")
@@ -212,6 +215,51 @@ model Transaction {
   artist   Artist?   @relation(fields: [artistId], references: [id])
 
   @@map("transactions")
+}
+
+model StreamMetric {
+  id               String   @id @default(cuid())
+  artistId         String   @map("artist_id")
+  campaignArtistId String?  @map("campaign_artist_id")
+  platform         Platform @default(SOUNDCLOUD)
+  trackUrl         String?  @map("track_url")
+  trackTitle       String?  @map("track_title")
+  streamCount      Int      @default(0) @map("stream_count")
+  followerCount    Int      @default(0) @map("follower_count")
+  likeCount        Int      @default(0) @map("like_count")
+  commentCount     Int      @default(0) @map("comment_count")
+  repostCount      Int      @default(0) @map("repost_count")
+  metadata         Json?    // Additional platform-specific metrics
+  recordedAt       DateTime @default(now()) @map("recorded_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  artist         Artist          @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  campaignArtist CampaignArtist? @relation(fields: [campaignArtistId], references: [id], onDelete: SetNull)
+
+  @@map("stream_metrics")
+}
+
+model CampaignAnalytics {
+  id                    String   @id @default(cuid())
+  campaignId            String   @unique @map("campaign_id")
+  totalStreams          Int      @default(0) @map("total_streams")
+  totalStreamGrowth     Int      @default(0) @map("total_stream_growth")
+  totalFollowers        Int      @default(0) @map("total_followers")
+  totalFollowerGrowth   Int      @default(0) @map("total_follower_growth")
+  engagementRate        Float    @default(0) @map("engagement_rate")
+  avgStreamsPerArtist   Float    @default(0) @map("avg_streams_per_artist")
+  topPerformingArtist   String?  @map("top_performing_artist")
+  roi                   Float?   // Return on Investment percentage
+  costPerStream         Float?   @map("cost_per_stream")
+  conversionRate        Float?   @map("conversion_rate")
+  lastUpdated           DateTime @default(now()) @map("last_updated")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_analytics")
 }
 
 model UserSetting {

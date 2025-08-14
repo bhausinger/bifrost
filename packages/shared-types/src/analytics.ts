@@ -202,3 +202,137 @@ export type CreateDashboardRequest = z.infer<typeof CreateDashboardRequestSchema
 
 export const UpdateDashboardRequestSchema = CreateDashboardRequestSchema.partial();
 export type UpdateDashboardRequest = z.infer<typeof UpdateDashboardRequestSchema>;
+
+// Stream metric schema
+export const StreamMetricSchema = z.object({
+  id: z.string(),
+  artistId: z.string(),
+  campaignArtistId: z.string().optional(),
+  platform: z.enum(['SOUNDCLOUD', 'SPOTIFY', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'TWITTER', 'FACEBOOK']),
+  trackUrl: z.string().optional(),
+  trackTitle: z.string().optional(),
+  streamCount: z.number().default(0),
+  followerCount: z.number().default(0),
+  likeCount: z.number().default(0),
+  commentCount: z.number().default(0),
+  repostCount: z.number().default(0),
+  metadata: z.record(z.any()).optional(),
+  recordedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+});
+export type StreamMetric = z.infer<typeof StreamMetricSchema>;
+
+export const CreateStreamMetricSchema = z.object({
+  artistId: z.string(),
+  campaignArtistId: z.string().optional(),
+  platform: z.enum(['SOUNDCLOUD', 'SPOTIFY', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'TWITTER', 'FACEBOOK']).default('SOUNDCLOUD'),
+  trackUrl: z.string().optional(),
+  trackTitle: z.string().optional(),
+  streamCount: z.number(),
+  followerCount: z.number().default(0),
+  likeCount: z.number().default(0),
+  commentCount: z.number().default(0),
+  repostCount: z.number().default(0),
+  metadata: z.record(z.any()).optional(),
+  recordedAt: z.string().datetime().optional(),
+});
+export type CreateStreamMetric = z.infer<typeof CreateStreamMetricSchema>;
+
+// Enhanced campaign analytics for stream tracking
+export const StreamCampaignAnalyticsSchema = z.object({
+  id: z.string(),
+  campaignId: z.string(),
+  totalStreams: z.number().default(0),
+  totalStreamGrowth: z.number().default(0),
+  totalFollowers: z.number().default(0),
+  totalFollowerGrowth: z.number().default(0),
+  engagementRate: z.number().default(0),
+  avgStreamsPerArtist: z.number().default(0),
+  topPerformingArtist: z.string().optional(),
+  roi: z.number().optional(),
+  costPerStream: z.number().optional(),
+  conversionRate: z.number().optional(),
+  lastUpdated: z.string().datetime(),
+  createdAt: z.string().datetime(),
+});
+export type StreamCampaignAnalytics = z.infer<typeof StreamCampaignAnalyticsSchema>;
+
+// Analytics dashboard data
+export const AnalyticsDashboardSchema = z.object({
+  totalCampaigns: z.number(),
+  activeCampaigns: z.number(),
+  totalArtists: z.number(),
+  totalStreams: z.number(),
+  streamGrowth: z.number(),
+  topCampaigns: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    totalStreams: z.number(),
+    streamGrowth: z.number(),
+    roi: z.number().optional(),
+  })),
+  topArtists: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    totalStreams: z.number(),
+    followerCount: z.number(),
+    engagementRate: z.number(),
+  })),
+  recentMetrics: z.array(StreamMetricSchema),
+});
+export type AnalyticsDashboard = z.infer<typeof AnalyticsDashboardSchema>;
+
+// Performance metrics over time
+export const PerformanceMetricsSchema = z.object({
+  period: z.enum(['day', 'week', 'month', 'quarter', 'year']),
+  data: z.array(z.object({
+    date: z.string(),
+    streams: z.number(),
+    followers: z.number(),
+    engagement: z.number(),
+  })),
+});
+export type PerformanceMetrics = z.infer<typeof PerformanceMetricsSchema>;
+
+// Metric comparison
+export const MetricComparisonSchema = z.object({
+  campaigns: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    metrics: z.object({
+      streams: z.number(),
+      followers: z.number(),
+      engagement: z.number(),
+      roi: z.number().optional(),
+      costPerStream: z.number().optional(),
+    }),
+  })),
+  artists: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    metrics: z.object({
+      totalStreams: z.number(),
+      avgStreamsPerTrack: z.number(),
+      followerGrowth: z.number(),
+      engagementRate: z.number(),
+    }),
+  })),
+});
+export type MetricComparison = z.infer<typeof MetricComparisonSchema>;
+
+// ROI calculation
+export const ROICalculationSchema = z.object({
+  campaignId: z.string(),
+  totalCost: z.number(),
+  totalStreams: z.number(),
+  estimatedRevenue: z.number(),
+  roi: z.number(),
+  costPerStream: z.number(),
+  conversionRate: z.number(),
+  breakdownByCategory: z.array(z.object({
+    category: z.string(),
+    cost: z.number(),
+    percentage: z.number(),
+  })),
+});
+export type ROICalculation = z.infer<typeof ROICalculationSchema>;
