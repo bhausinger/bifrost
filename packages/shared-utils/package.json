@@ -1,0 +1,22 @@
+{
+  "name": "@campaign-manager/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.2",
+    "@types/node": "^20.11.30"
+  },
+  "dependencies": {
+    "@campaign-manager/shared-types": "workspace:*",
+    "date-fns": "^3.6.0",
+    "zod": "^3.22.4"
+  }
+}

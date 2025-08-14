@@ -1,0 +1,340 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  passwordHash      String   @map("password_hash")
+  firstName         String   @map("first_name")
+  lastName          String   @map("last_name")
+  role              UserRole @default(USER)
+  avatar            String?
+  isEmailVerified   Boolean  @default(false) @map("is_email_verified")
+  lastLoginAt       DateTime? @map("last_login_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  campaigns         Campaign[]
+  outreachCampaigns OutreachCampaign[]
+  emailTemplates    EmailTemplate[]
+  transactions      Transaction[]
+  settings          UserSetting[]
+
+  @@map("users")
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?
+  type            CampaignType
+  status          CampaignStatus @default(DRAFT)
+  startDate       DateTime       @map("start_date")
+  endDate         DateTime?      @map("end_date")
+  budget          Float?
+  targetCriteria  Json           @map("target_criteria") // JSON field for complex criteria
+  metrics         Json           @default("{}") // JSON field for metrics
+  tags            String[]       @default([])
+  ownerId         String         @map("owner_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relationships
+  owner           User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  campaignArtists CampaignArtist[]
+  transactions    Transaction[]
+
+  @@map("campaigns")
+}
+
+model Artist {
+  id                 String             @id @default(cuid())
+  name               String
+  displayName        String?            @map("display_name")
+  bio                String?
+  genres             String[]           @default([])
+  location           String?
+  profileImageUrl    String?            @map("profile_image_url")
+  bannerImageUrl     String?            @map("banner_image_url")
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  contactInfo        Json?              @map("contact_info") // JSON for contact details
+  metrics            Json               @default("{}") // JSON for metrics
+  tags               String[]           @default([])
+  isActive           Boolean            @default(true) @map("is_active")
+  discoveredAt       DateTime           @default(now()) @map("discovered_at")
+  lastContactedAt    DateTime?          @map("last_contacted_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  // Relationships
+  socialProfiles  SocialProfile[]
+  campaignArtists CampaignArtist[]
+  emailRecords    EmailRecord[]
+  transactions    Transaction[]
+
+  @@map("artists")
+}
+
+model SocialProfile {
+  id             String   @id @default(cuid())
+  platform       Platform
+  username       String
+  url            String
+  followersCount Int      @default(0) @map("followers_count")
+  isVerified     Boolean  @default(false) @map("is_verified")
+  lastUpdated    DateTime @default(now()) @map("last_updated")
+  artistId       String   @map("artist_id")
+
+  // Relationships
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, platform])
+  @@map("social_profiles")
+}
+
+model CampaignArtist {
+  id         String   @id @default(cuid())
+  campaignId String   @map("campaign_id")
+  artistId   String   @map("artist_id")
+  addedAt    DateTime @default(now()) @map("added_at")
+  status     String   @default("active")
+
+  // Relationships
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  artist   Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, artistId])
+  @@map("campaign_artists")
+}
+
+model OutreachCampaign {
+  id                 String                @id @default(cuid())
+  name               String
+  description        String?
+  status             OutreachCampaignStatus @default(DRAFT)
+  templateId         String                @map("template_id")
+  targetArtistIds    String[]              @map("target_artist_ids")
+  scheduledStartDate DateTime?             @map("scheduled_start_date")
+  scheduledEndDate   DateTime?             @map("scheduled_end_date")
+  sendingSchedule    Json                  @map("sending_schedule") // JSON for schedule config
+  tags               String[]              @default([])
+  ownerId            String                @map("owner_id")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  // Relationships
+  owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  template  EmailTemplate @relation(fields: [templateId], references: [id])
+  emails    EmailRecord[]
+
+  @@map("outreach_campaigns")
+}
+
+model EmailTemplate {
+  id        String       @id @default(cuid())
+  name      String
+  subject   String
+  body      String
+  type      TemplateType
+  variables String[]     @default([])
+  isDefault Boolean      @default(false) @map("is_default")
+  ownerId   String       @map("owner_id")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  owner             User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  outreachCampaigns OutreachCampaign[]
+
+  @@map("email_templates")
+}
+
+model EmailRecord {
+  id                 String      @id @default(cuid())
+  outreachCampaignId String      @map("outreach_campaign_id")
+  artistId           String      @map("artist_id")
+  templateId         String      @map("template_id")
+  recipientEmail     String      @map("recipient_email")
+  recipientName      String      @map("recipient_name")
+  subject            String
+  body               String
+  status             EmailStatus @default(DRAFT)
+  tracking           Json        @default("{}") // JSON for tracking data
+  scheduledFor       DateTime?   @map("scheduled_for")
+  sentBy             String      @map("sent_by")
+  replyContent       String?     @map("reply_content")
+  notes              String?
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  // Relationships
+  outreachCampaign OutreachCampaign @relation(fields: [outreachCampaignId], references: [id], onDelete: Cascade)
+  artist           Artist           @relation(fields: [artistId], references: [id])
+
+  @@map("email_records")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  type            TransactionType
+  category        TransactionCategory
+  amount          Float
+  currency        String            @default("USD")
+  description     String
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   PaymentMethod
+  transactionDate DateTime          @map("transaction_date")
+  dueDate         DateTime?         @map("due_date")
+  invoiceNumber   String?           @map("invoice_number")
+  referenceId     String?           @map("reference_id")
+  campaignId      String?           @map("campaign_id")
+  artistId        String?           @map("artist_id")
+  tags            String[]          @default([])
+  metadata        Json?
+  ownerId         String            @map("owner_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relationships
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  campaign Campaign? @relation(fields: [campaignId], references: [id])
+  artist   Artist?   @relation(fields: [artistId], references: [id])
+
+  @@map("transactions")
+}
+
+model UserSetting {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  key       String
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("user_settings")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum CampaignType {
+  PROMOTION
+  DISCOVERY
+  OUTREACH
+  COLLABORATION
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum Platform {
+  SOUNDCLOUD
+  SPOTIFY
+  YOUTUBE
+  INSTAGRAM
+  TIKTOK
+  TWITTER
+  FACEBOOK
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum OutreachCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum TemplateType {
+  INITIAL_OUTREACH
+  FOLLOW_UP
+  COLLABORATION_PROPOSAL
+  THANK_YOU
+  REJECTION_RESPONSE
+}
+
+enum EmailStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  REPLIED
+  BOUNCED
+  FAILED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionCategory {
+  CAMPAIGN_REVENUE
+  ARTIST_PAYMENT
+  SUBSCRIPTION_FEE
+  SERVICE_FEE
+  COMMISSION
+  OTHER_INCOME
+  MARKETING
+  ADVERTISING
+  SOFTWARE_TOOLS
+  PLATFORM_FEES
+  ARTIST_PAYMENT_OUT
+  OPERATIONAL_COSTS
+  EQUIPMENT
+  TRAVEL
+  OTHER_EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+  STRIPE
+  CRYPTO
+  CASH
+  CHECK
+  OTHER
+}

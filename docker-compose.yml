@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: ./infrastructure/docker/frontend/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5000
+      - VITE_SCRAPER_URL=http://localhost:8000
+      - VITE_PORT=3002
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages:/app/packages
+      - /app/node_modules
+    depends_on:
+      - server
+    networks:
+      - campaign-network
+
+  # Backend Server
+  server:
+    build:
+      context: .
+      dockerfile: ./infrastructure/docker/server/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/campaign_manager
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./apps/server:/app/apps/server
+      - ./packages:/app/packages
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - campaign-network
+
+  # Python Scraper Service
+  scraper:
+    build:
+      context: .
+      dockerfile: ./infrastructure/docker/scraper/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=true
+      - PORT=8000
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/scraper_db
+      - REDIS_URL=redis://redis:6379/1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./apps/scraper:/app/apps/scraper
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - campaign-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=campaign_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - campaign-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - campaign-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - frontend
+      - server
+      - scraper
+    networks:
+      - campaign-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  campaign-network:
+    driver: bridge
