@@ -208,7 +208,7 @@ importers:
         specifier: ^5.11.0
         version: 5.22.0(prisma@5.22.0)
       '@supabase/supabase-js':
-        specifier: ^2.39.7
+        specifier: ^2.55.0
         version: 2.55.0
       axios:
         specifier: ^1.6.8
