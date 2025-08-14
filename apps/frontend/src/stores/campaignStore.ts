@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useAuthStore } from './authStore';
 
 interface Campaign {
   id: string;
@@ -6,12 +7,19 @@ interface Campaign {
   description?: string;
   type: string;
   status: string;
-  startDate: string;
-  endDate?: string;
+  start_date: string;
   budget?: number;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+  target_criteria?: any;
+  metrics?: any;
+  tags?: string[];
+  // New fields
+  genre?: string;
+  artist_name?: string;
+  track_link?: string;
+  campaign_size?: number; // play count goal
 }
 
 interface CampaignState {
@@ -30,13 +38,25 @@ interface CampaignState {
 }
 
 interface CreateCampaignData {
-  name: string;
+  name?: string;
   description?: string;
   type: string;
   startDate: string;
-  endDate?: string;
   budget?: number;
+  genre?: string;
+  artistName?: string;
+  trackLink?: string;
+  campaignSize?: number;
 }
+
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = useAuthStore.getState().token;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+};
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -50,7 +70,9 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      const response = await fetch(`${API_BASE_URL}/campaigns`);
+      const response = await fetch(`${API_BASE_URL}/campaigns`, {
+        headers: getAuthHeaders(),
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch campaigns');
@@ -72,9 +94,7 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
     try {
       const response = await fetch(`${API_BASE_URL}/campaigns`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data),
       });
 
@@ -103,9 +123,7 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
     try {
       const response = await fetch(`${API_BASE_URL}/campaigns/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data),
       });
 
@@ -135,6 +153,7 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
     try {
       const response = await fetch(`${API_BASE_URL}/campaigns/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

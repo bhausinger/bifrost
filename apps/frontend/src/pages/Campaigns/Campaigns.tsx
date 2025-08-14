@@ -1,18 +1,28 @@
+import React, { useState } from 'react';
+import { useCampaignStore } from '@/stores/campaignStore';
+import { CampaignList } from '@/components/campaigns/CampaignList';
+import { CampaignDetail } from '@/components/campaigns/CampaignDetail';
+
 export function Campaigns() {
+  const { selectedCampaign } = useCampaignStore();
+  const [showDetail, setShowDetail] = useState(false);
+
+  // Show detail view if a campaign is selected
+  React.useEffect(() => {
+    setShowDetail(!!selectedCampaign);
+  }, [selectedCampaign]);
+
+  const handleBackToList = () => {
+    setShowDetail(false);
+  };
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          Campaigns
-        </h1>
-        <p className="mt-2 text-sm text-gray-700">
-          Manage your music promotion campaigns
-        </p>
-      </div>
-      
-      <div className="card">
-        <p className="text-gray-500">No campaigns yet. Create your first campaign to get started.</p>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      {showDetail && selectedCampaign ? (
+        <CampaignDetail onBack={handleBackToList} />
+      ) : (
+        <CampaignList />
+      )}
     </div>
   );
 }

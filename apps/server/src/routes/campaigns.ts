@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { CampaignController } from '@/controllers/CampaignController';
-import { authMiddleware } from '@/middleware/auth';
+import { authenticateToken } from '@/middleware/authenticateToken';
 
 const router = Router();
 const campaignController = new CampaignController();
 
 // Apply auth middleware to all campaign routes
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 router.get('/', campaignController.getCampaigns);
 router.post('/', campaignController.createCampaign);
