@@ -1,3 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+
 export function Dashboard() {
   return (
     <div>
@@ -11,20 +13,32 @@ export function Dashboard() {
       </div>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900">Active Campaigns</h3>
-          <p className="mt-2 text-3xl font-bold text-blue-600">0</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Campaigns</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-blue-600">0</p>
+          </CardContent>
+        </Card>
         
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900">Total Artists</h3>
-          <p className="mt-2 text-3xl font-bold text-green-600">0</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Artists</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">0</p>
+          </CardContent>
+        </Card>
         
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900">Outreach Sent</h3>
-          <p className="mt-2 text-3xl font-bold text-purple-600">0</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Outreach Sent</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-purple-600">0</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

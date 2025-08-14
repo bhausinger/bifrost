@@ -1,6 +1,17 @@
-import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { BellIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { useAuthStore } from '@/stores/authStore';
+import { Button } from '@/components/ui';
 
 export function Header() {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+  };
+
   return (
     <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
       <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
@@ -22,7 +33,8 @@ export function Header() {
           <div className="relative">
             <button
               type="button"
-              className="-m-1.5 flex items-center p-1.5"
+              className="-m-1.5 flex items-center p-1.5 hover:bg-gray-50 rounded-md"
+              onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <span className="sr-only">Open user menu</span>
               <UserCircleIcon className="h-8 w-8 text-gray-400" />
@@ -31,10 +43,31 @@ export function Header() {
                   className="ml-4 text-sm font-semibold leading-6 text-gray-900"
                   aria-hidden="true"
                 >
-                  User
+                  {user ? `${user.firstName} ${user.lastName}` : 'User'}
                 </span>
               </span>
             </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <div className="py-1">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-sm text-gray-500">{user?.email}</p>
+                  </div>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
