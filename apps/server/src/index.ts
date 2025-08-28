@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
 import { config } from '@/config/environment';
 import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';
@@ -14,8 +15,10 @@ import { outreachRoutes } from '@/routes/outreach';
 import { analyticsRoutes } from '@/routes/analytics';
 import { financeRoutes } from '@/routes/finance';
 import { gmailRoutes } from '@/routes/gmail';
+import { dataRoutes } from '@/routes/data';
 import { swaggerSpec, swaggerUi } from '@/config/swagger';
 import { connectRedis } from '@/config/redis';
+import { webSocketService } from '@/services/WebSocketService';
 
 const app = express();
 
@@ -55,6 +58,7 @@ app.use('/api/outreach', outreachRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/gmail', gmailRoutes);
+app.use('/api/data', dataRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -64,11 +68,18 @@ app.use('*', (_req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const port = config.port || 5000;
+const port = config.port || 4444;
 
-app.listen(port, async () => {
+// Create HTTP server
+const server = createServer(app);
+
+// Initialize WebSocket service
+webSocketService.initialize(server);
+
+server.listen(port, async () => {
   logger.info(`Server running on port ${port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
+  logger.info(`WebSocket enabled for real-time progress tracking`);
   
   // Initialize Redis connection
   await connectRedis();

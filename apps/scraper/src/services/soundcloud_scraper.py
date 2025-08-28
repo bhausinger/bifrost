@@ -7,9 +7,9 @@ from urllib.parse import urljoin, urlparse
 import re
 import json
 
-from ..config.settings import settings
-from ..models.schemas import ArtistProfile, TrackInfo
-from ..core.logging import get_logger
+from config.settings import settings
+from models.schemas import ArtistProfile, TrackInfo
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

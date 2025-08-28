@@ -15,7 +15,8 @@
     "setup": "pnpm install && pnpm run build",
     "start": "docker-compose up",
     "stop": "docker-compose down",
-    "reset": "docker-compose down -v && pnpm run setup"
+    "reset": "docker-compose down -v && pnpm run setup",
+    "restart:force": "./scripts/restart-force.sh"
   },
   "devDependencies": {
     "@turbo/gen": "^1.12.4",

@@ -5,8 +5,8 @@ from sqlalchemy import String, Integer, DateTime, Boolean, Text, Float
 from datetime import datetime
 from typing import Optional
 
-from ..config.settings import settings
-from .logging import get_logger
+from config.settings import settings
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 

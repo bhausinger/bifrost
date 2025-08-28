@@ -23,7 +23,7 @@ export function authenticateToken(req: Request, _res: Response, next: NextFuncti
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   // Allow bypass for development testing
-  if (isDevelopment && (adminBypass === 'benjamin.hausinger@gmail.com' || !req.headers['authorization'])) {
+  if (isDevelopment && (adminBypass === 'benjamin.hausinger@gmail.com' || adminBypass === 'benjamin.hausinger+test@gmail.com' || !req.headers['authorization'])) {
     req.user = {
       userId: 'admin-user-id',
       email: 'benjamin.hausinger@gmail.com',
@@ -44,9 +44,9 @@ export function authenticateToken(req: Request, _res: Response, next: NextFuncti
     const decoded = jwt.verify(token, config.jwt.secret) as UserPayload;
     
     // Admin bypass for benjamin.hausinger@gmail.com
-    if (decoded.email === 'benjamin.hausinger@gmail.com') {
+    if (decoded.email === 'benjamin.hausinger@gmail.com' || decoded.email === 'benjamin.hausinger+test@gmail.com') {
       decoded.isAdmin = true;
-      console.log('Admin access granted for benjamin.hausinger@gmail.com');
+      console.log('Admin access granted for', decoded.email);
     }
     
     req.user = decoded;

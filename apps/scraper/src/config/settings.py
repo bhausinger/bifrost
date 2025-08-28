@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     # App settings
     APP_NAME: str = "Campaign Manager Scraper"
     DEBUG: bool = False
-    PORT: int = 8000
+    PORT: int = 9999
     
     # Database
     DATABASE_URL: str = "postgresql://user:password@localhost/scraper_db"
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://localhost:5000"]
+    ALLOWED_HOSTS: List[str] = ["http://localhost:3333", "http://localhost:4444"]
     
     # SoundCloud scraping settings
     SOUNDCLOUD_BASE_URL: str = "https://soundcloud.com"

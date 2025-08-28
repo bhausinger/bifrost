@@ -9,9 +9,9 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginData) => apiClient.login(data),
     onSuccess: (response) => {
-      const { user, token } = response.data;
+      const { user, accessToken } = response;
       setUser(user);
-      setToken(token);
+      setToken(accessToken);
       
       // Invalidate and refetch user-related queries
       queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -28,7 +28,7 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: (data: RegisterData) => apiClient.register(data),
     onSuccess: (response) => {
-      const { user, token } = response.data;
+      const { user, token } = response;
       setUser(user);
       setToken(token);
       
@@ -64,7 +64,7 @@ export const useRefreshToken = () => {
   return useMutation({
     mutationFn: (refreshToken: string) => apiClient.refreshToken(refreshToken),
     onSuccess: (response) => {
-      const { user, accessToken } = response.data;
+      const { user, accessToken } = response;
       setUser(user);
       setToken(accessToken);
     },

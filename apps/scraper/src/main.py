@@ -1,19 +1,32 @@
+import sys
+import os
+from pathlib import Path
+
+# Add the project root to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 
-from .config.settings import settings
-from .api.routes import soundcloud, discovery, health
-from .core.logging import setup_logging
-from .core.database import init_db
+from config.settings import settings
+from api.routes import soundcloud, discovery, health
+from core.logging import setup_logging
+try:
+    from core.database import init_db
+    database_available = True
+except ImportError:
+    database_available = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     setup_logging()
-    await init_db()
+    if database_available:
+        await init_db()
     yield
     # Shutdown
     pass

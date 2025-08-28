@@ -5,7 +5,7 @@ dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number).default('5000'),
+  PORT: z.string().transform(Number).default('4444'),
   
   // Database
   DATABASE_URL: z.string().url(),
@@ -81,13 +81,13 @@ export const config = {
   frontend: {
     url: env.NODE_ENV === 'production' 
       ? 'https://yourapp.com' // Add your production domain
-      : 'http://localhost:3002',
+      : 'http://localhost:3333',
   },
   
   cors: {
     origin: env.NODE_ENV === 'production' 
       ? ['https://yourapp.com'] // Add your production domain
-      : ['http://localhost:3003', 'http://localhost:3002', 'http://127.0.0.1:3002', 'http://localhost:3000', 'http://127.0.0.1:3000'],
+      : ['http://localhost:3333', 'http://127.0.0.1:3333', 'http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
   },
 };

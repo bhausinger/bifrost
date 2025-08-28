@@ -4,6 +4,7 @@ import { logger } from '@/utils/logger';
 import { supabase } from '@/config/supabase';
 import { ConversationalAIService } from '@/services/ConversationalAIService';
 import { cacheService } from '@/config/redis';
+import { webSocketService } from '@/services/WebSocketService';
 
 export class ArtistController {
   private aiService: ConversationalAIService;
@@ -405,7 +406,7 @@ export class ArtistController {
   async scrapeArtistEmails(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.userId;
-      const { artistNames } = req.body;
+      const { artistNames, mode = 'auto', useWebSocket = true } = req.body;
 
       if (!userId) {
         return next(new AppError('User ID required', 400));
@@ -420,22 +421,162 @@ export class ArtistController {
         return next(new AppError('Too many artists requested (max 200)', 400));
       }
 
-      logger.info(`Scraping emails for ${artistNames.length} artists for user ${userId}`);
+      const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      logger.info(`Smart scraping ${artistNames.length} artists for user ${userId} (mode: ${mode}, task: ${taskId})`);
 
-      // Scrape emails
-      const results = await this.aiService.scrapeArtistEmails(artistNames);
+      // Start WebSocket progress tracking
+      if (useWebSocket) {
+        webSocketService.startScrapingProgress(taskId, userId, artistNames);
+      }
 
-      res.status(200).json({
-        message: 'Email scraping completed',
-        results,
-        summary: {
-          total: results.length,
-          withEmails: results.filter(r => r.hasEmail).length,
-          withoutEmails: results.filter(r => !r.hasEmail).length
+      try {
+        // For large batches, use streaming approach
+        if (artistNames.length > 5 && useWebSocket) {
+          // Process in smaller batches with progress updates
+          const results: any[] = [];
+          const batchSize = 3;
+          
+          for (let i = 0; i < artistNames.length; i += batchSize) {
+            const batch = artistNames.slice(i, i + batchSize);
+            const currentArtist = batch[0];
+            
+            // Update progress before processing batch
+            webSocketService.updateScrapingProgress(
+              taskId, 
+              i, 
+              currentArtist
+            );
+
+            // Process batch
+            const scraperResponse = await fetch('http://localhost:9999/api/soundcloud/smart/scrape', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                artist_names: batch,
+                mode: mode,
+                max_concurrent: Math.min(3, batch.length)
+              })
+            });
+
+            if (!scraperResponse.ok) {
+              throw new Error(`Scraper service error: ${scraperResponse.statusText}`);
+            }
+
+            const batchData = await scraperResponse.json();
+            
+            // Transform and add batch results
+            const transformedResults = batchData.results.map((result: any) => ({
+              artistName: result.artist_name,
+              hasEmail: result.emails.length > 0,
+              emails: result.emails,
+              phoneNumbers: result.phone_numbers,
+              socialHandles: result.social_handles,
+              managementContacts: result.management_contacts,
+              bookingContacts: result.booking_contacts,
+              websites: result.websites,
+              confidenceScore: result.confidence_score,
+              platformsUsed: result.platforms_used,
+              playwrightUsed: result.playwright_used,
+              scrapingTime: result.scraping_time,
+              success: result.success,
+              error: result.error_message
+            }));
+
+            results.push(...transformedResults);
+
+            // Update progress after batch completion
+            webSocketService.updateScrapingProgress(
+              taskId, 
+              i + batch.length, 
+              batch[batch.length - 1],
+              transformedResults[transformedResults.length - 1]
+            );
+          }
+
+          // Complete progress tracking
+          webSocketService.completeScrapingProgress(taskId, results);
+
+          const successfulCount = results.filter(r => r.success).length;
+          
+          res.status(200).json({
+            message: 'Smart email scraping completed',
+            taskId,
+            mode: mode,
+            results,
+            summary: {
+              total_artists: artistNames.length,
+              successful: successfulCount,
+              withEmails: successfulCount,
+              withoutEmails: artistNames.length - successfulCount,
+              total_emails: results.reduce((sum, r) => sum + (r.emails?.length || 0), 0),
+              total_phones: results.reduce((sum, r) => sum + (r.phoneNumbers?.length || 0), 0),
+              playwright_triggered: results.filter(r => r.playwrightUsed).length
+            }
+          });
+        } else {
+          // Small batch - process all at once
+          const scraperResponse = await fetch('http://localhost:9999/api/soundcloud/smart/scrape', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              artist_names: artistNames,
+              mode: mode,
+              max_concurrent: Math.min(3, artistNames.length)
+            })
+          });
+
+          if (!scraperResponse.ok) {
+            throw new Error(`Scraper service error: ${scraperResponse.statusText}`);
+          }
+
+          const scraperData = await scraperResponse.json();
+
+          // Transform results for frontend compatibility
+          const results = scraperData.results.map((result: any) => ({
+            artistName: result.artist_name,
+            hasEmail: result.emails.length > 0,
+            emails: result.emails,
+            phoneNumbers: result.phone_numbers,
+            socialHandles: result.social_handles,
+            managementContacts: result.management_contacts,
+            bookingContacts: result.booking_contacts,
+            websites: result.websites,
+            confidenceScore: result.confidence_score,
+            platformsUsed: result.platforms_used,
+            playwrightUsed: result.playwright_used,
+            scrapingTime: result.scraping_time,
+            success: result.success,
+            error: result.error_message
+          }));
+
+          if (useWebSocket) {
+            webSocketService.completeScrapingProgress(taskId, results);
+          }
+
+          res.status(200).json({
+            message: 'Smart email scraping completed',
+            taskId,
+            mode: scraperData.mode,
+            results,
+            summary: {
+              ...scraperData.summary,
+              withEmails: scraperData.summary.successful,
+              withoutEmails: scraperData.summary.total_artists - scraperData.summary.successful
+            }
+          });
         }
-      });
+      } catch (scraperError) {
+        if (useWebSocket) {
+          webSocketService.errorScrapingProgress(taskId, String(scraperError));
+        }
+        throw scraperError;
+      }
     } catch (error) {
-      logger.error('Scrape artist emails error:', error);
+      logger.error('Smart scrape artist emails error:', error);
       next(new AppError('Failed to scrape artist emails', 500));
     }
   }

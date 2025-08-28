@@ -35,11 +35,17 @@ redis==5.0.3
 openai==1.12.0
 
 # File handling
-# aiofiles==23.2.0  # Commented out - used yanked version
+aiofiles==24.1.0  # Updated to non-yanked version
 pillow==11.3.0  # Updated to working version
 
-# Browser automation (commented out - build issues)
-# playwright==1.42.0
+# DNS resolution
+dnspython==2.7.0
+
+# Browser automation
+playwright==1.54.0
+playwright-stealth==2.0.0
+pyee==13.0.0
+greenlet==3.2.4
 
 # Testing
 pytest==8.1.1

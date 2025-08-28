@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LiveProgressBar } from '@/components/ui/ProgressBar';
+import useWebSocket from '@/hooks/useWebSocket';
 
 interface AIArtist {
   name: string;
@@ -27,6 +29,11 @@ export function ArtistDiscovery() {
   const [isScrapingEmails, setIsScrapingEmails] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scrapingProgress, setScrapingProgress] = useState<{current: number, total: number} | null>(null);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [scrapingMode, setScrapingMode] = useState<'auto' | 'quick' | 'deep'>('auto');
+  
+  // WebSocket connection for real-time progress
+  const { isConnected, progress, joinScrapingRoom, leaveScrapingRoom } = useWebSocket();
 
   const getAuthHeaders = () => {
     return {
@@ -75,6 +82,52 @@ export function ArtistDiscovery() {
     setError(null);
   };
 
+  // Clean up WebSocket connection when task completes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (currentTaskId) {
+        leaveScrapingRoom(currentTaskId);
+      }
+    };
+  }, [currentTaskId, leaveScrapingRoom]);
+
+  // Handle progress updates from WebSocket
+  useEffect(() => {
+    if (progress) {
+      setScrapingProgress({ 
+        current: progress.completedArtists, 
+        total: progress.totalArtists 
+      });
+      
+      // Update individual artist statuses based on results
+      if (progress.results && progress.results.length > 0) {
+        setProcessedArtists(prev => prev.map(artist => {
+          const result = progress.results.find(r => r.artistName === artist.name);
+          if (result) {
+            return {
+              ...artist,
+              hasEmail: result.hasEmail,
+              emailStatus: result.success ? (result.hasEmail ? 'found' : 'not_found') : 'error',
+              contactInfo: {
+                email: result.emails?.join(', ') || undefined,
+                socialLinks: Object.values(result.socialHandles || {})
+              }
+            };
+          }
+          return artist;
+        }));
+      }
+      
+      if (progress.status === 'completed' || progress.status === 'error') {
+        setIsScrapingEmails(false);
+        if (currentTaskId) {
+          leaveScrapingRoom(currentTaskId);
+        }
+        setCurrentTaskId(null);
+      }
+    }
+  }, [progress, currentTaskId, leaveScrapingRoom]);
+
   const scrapeAllEmails = async () => {
     if (processedArtists.length === 0) return;
     
@@ -88,7 +141,11 @@ export function ArtistDiscovery() {
       const response = await fetch('/api/artists/ai/scrape-emails', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ artistNames }),
+        body: JSON.stringify({ 
+          artistNames,
+          mode: scrapingMode,
+          useWebSocket: true 
+        }),
       });
 
       if (!response.ok) {
@@ -96,6 +153,13 @@ export function ArtistDiscovery() {
       }
 
       const data = await response.json();
+      
+      // Join WebSocket room for real-time progress
+      if (data.taskId && isConnected) {
+        setCurrentTaskId(data.taskId);
+        const userId = 'current-user'; // You might want to get this from auth store
+        joinScrapingRoom(data.taskId, userId);
+      }
       
       // Update artists with email information
       setProcessedArtists(prev => 
@@ -232,6 +296,17 @@ Or: "San Holo, ODESZA, Flume" etc...`}
               </h3>
               {processedArtists.length > 0 && (
                 <div className="flex space-x-2">
+                  {/* Scraping Mode Selector */}
+                  <select 
+                    value={scrapingMode}
+                    onChange={(e) => setScrapingMode(e.target.value as 'auto' | 'quick' | 'deep')}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                    disabled={isScrapingEmails}
+                  >
+                    <option value="quick">Quick (Emails only)</option>
+                    <option value="auto">Auto (Smart Playwright)</option>
+                    <option value="deep">Deep (Maximum info)</option>
+                  </select>
                   <Button
                     size="sm"
                     variant="secondary"
@@ -252,11 +327,25 @@ Or: "San Holo, ODESZA, Flume" etc...`}
               )}
             </div>
             
-            {/* Progress Bar */}
-            {scrapingProgress && (
+            {/* Live Progress Bar with WebSocket Updates */}
+            {progress && isScrapingEmails && (
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <LiveProgressBar
+                  totalArtists={progress.totalArtists}
+                  completedArtists={progress.completedArtists}
+                  currentArtist={progress.currentArtist}
+                  estimatedTimeRemaining={progress.estimatedTimeRemaining}
+                  status={progress.status}
+                  error={progress.error}
+                />
+              </div>
+            )}
+            
+            {/* Fallback Progress Bar for non-WebSocket mode */}
+            {scrapingProgress && !progress && (
               <div className="px-4 py-2 border-b border-gray-200">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Scraping emails...</span>
+                  <span>Scraping emails... (Mode: {scrapingMode})</span>
                   <span>{scrapingProgress.current}/{scrapingProgress.total}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -265,6 +354,20 @@ Or: "San Holo, ODESZA, Flume" etc...`}
                     style={{ width: `${(scrapingProgress.current / scrapingProgress.total) * 100}%` }}
                   />
                 </div>
+              </div>
+            )}
+            
+            {/* WebSocket Connection Status */}
+            {isScrapingEmails && (
+              <div className="px-4 py-1 text-xs text-gray-500 border-b border-gray-100">
+                WebSocket: {isConnected ? (
+                  <span className="text-green-600">✓ Connected</span>
+                ) : (
+                  <span className="text-orange-600">⚠ Disconnected</span>
+                )}
+                {scrapingMode === 'auto' && <span className="ml-2">• Auto Playwright enabled</span>}
+                {scrapingMode === 'deep' && <span className="ml-2">• Deep mode (maximum info)</span>}
+                {scrapingMode === 'quick' && <span className="ml-2">• Quick mode (emails only)</span>}
               </div>
             )}
             

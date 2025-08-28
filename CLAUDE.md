@@ -19,9 +19,9 @@ A comprehensive music promotion campaign management platform designed to scale t
 ## Architecture
 
 **Monorepo Structure**: Turborepo + PNPM workspaces
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS (Port 3002)
-- **Backend**: Node.js + Express + TypeScript + Prisma + Supabase (Port 5000)
-- **Scraper**: Python + FastAPI + BeautifulSoup (Port 8000)
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS (Port 3333)
+- **Backend**: Node.js + Express + TypeScript + Prisma + Supabase (Port 4444)
+- **Scraper**: Python + FastAPI + BeautifulSoup (Port 9999)
 - **Database**: PostgreSQL + Redis
 - **Infrastructure**: Docker + Nginx
 
@@ -71,9 +71,9 @@ A comprehensive music promotion campaign management platform designed to scale t
 - Git
 
 ### Port Configuration
-- **Frontend**: http://localhost:3002
-- **Backend**: http://localhost:5000
-- **Scraper**: http://localhost:8000
+- **Frontend**: http://localhost:3333
+- **Backend**: http://localhost:4444
+- **Scraper**: http://localhost:9999
 - **Nginx**: http://localhost:80
 - **Database**: localhost:5432
 - **Redis**: localhost:6379
@@ -82,8 +82,8 @@ A comprehensive music promotion campaign management platform designed to scale t
 
 #### Frontend (`.env`)
 ```bash
-VITE_API_URL=http://localhost:5000
-VITE_SCRAPER_URL=http://localhost:8000
+VITE_API_URL=http://localhost:4444
+VITE_SCRAPER_URL=http://localhost:9999
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
@@ -91,7 +91,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 #### Backend (`.env`)
 ```bash
 NODE_ENV=development
-PORT=5000
+PORT=4444
 DATABASE_URL=postgresql://user:password@localhost:5432/campaign_manager
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -106,7 +106,7 @@ GMAIL_CLIENT_SECRET=your_gmail_client_secret
 #### Scraper (`.env`)
 ```bash
 DEBUG=true
-PORT=8000
+PORT=9999
 REDIS_URL=redis://localhost:6379/1
 OPENAI_API_KEY=your_openai_api_key
 ```

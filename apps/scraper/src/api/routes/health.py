@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from datetime import datetime
 import asyncio
 import redis.asyncio as redis
-from ...config.settings import settings
+from config.settings import settings
 
 router = APIRouter()
 

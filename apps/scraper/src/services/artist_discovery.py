@@ -1,10 +1,10 @@
 import asyncio
 from typing import List, Optional, Dict, Any
 import openai
-from ..config.settings import settings
-from ..models.schemas import ArtistProfile, SimilarArtist
-from ..core.logging import get_logger
-from .soundcloud_scraper import SoundCloudScraper
+from config.settings import settings
+from models.schemas import ArtistProfile, SimilarArtist
+from core.logging import get_logger
+from services.soundcloud_scraper import SoundCloudScraper
 
 logger = get_logger(__name__)
 

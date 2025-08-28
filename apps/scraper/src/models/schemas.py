@@ -101,3 +101,38 @@ class SearchFilter(BaseModel):
     min_track_count: Optional[int] = None
     created_after: Optional[datetime] = None
     sort_by: str = "relevance"  # relevance, followers, recent, popular
+
+
+class ContactInfo(BaseModel):
+    artist_name: str
+    emails: set = set()
+    phone_numbers: set = set()
+    social_handles: Dict[str, str] = {}  # platform -> url
+    websites: set = set()
+    management_contacts: Dict[str, str] = {}  # type -> email
+    booking_contacts: Dict[str, str] = {}  # type -> email
+    confidence_score: float = 0.0
+    source_platforms: List[str] = []
+    last_updated: Optional[datetime] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class EmailClassification(BaseModel):
+    email: str
+    classification: str  # personal, management, booking, press, general
+    confidence: float
+    context: Optional[str] = None
+    is_valid: bool = True
+    deliverability_score: float = 0.0
+
+
+class ScrapingResult(BaseModel):
+    artist_name: str
+    contact_info: ContactInfo
+    email_classifications: List[EmailClassification] = []
+    scraping_duration: float
+    platforms_scraped: List[str]
+    success: bool
+    error_message: Optional[str] = None

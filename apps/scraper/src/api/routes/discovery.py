@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-from ...services.artist_discovery import ArtistDiscoveryService
-from ...models.schemas import ArtistProfile, SimilarArtist
+from services.artist_discovery import ArtistDiscoveryService
+from models.schemas import ArtistProfile, SimilarArtist
 
 router = APIRouter()
 
