@@ -538,16 +538,6 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                                 SC
                               </a>
                             )}
-                            {artist.spotify_url && (
-                              <a
-                                href={artist.spotify_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-green-500 hover:underline"
-                              >
-                                SP
-                              </a>
-                            )}
                             {artist.instagram_handle && (
                               <span className="text-xs text-pink-500">
                                 IG

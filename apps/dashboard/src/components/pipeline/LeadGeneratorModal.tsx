@@ -1082,17 +1082,6 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                                 IG
                               </a>
                             )}
-                            {artist.spotify_url && (
-                              <a
-                                href={artist.spotify_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex h-6 w-6 items-center justify-center rounded-md bg-green-50 text-[10px] font-bold text-green-600 transition-colors hover:bg-green-500 hover:text-white"
-                                title="Spotify"
-                              >
-                                SP
-                              </a>
-                            )}
                           </div>
                         </td>
                       </tr>

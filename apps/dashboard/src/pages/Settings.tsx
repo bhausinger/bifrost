@@ -85,23 +85,6 @@ export function Settings() {
               </span>
             </div>
 
-            {/* Spotify */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-                  <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 11-.277-1.214c3.808-.87 7.076-.496 9.712 1.114a.623.623 0 01.207.857zm1.224-2.719a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.517.781.781 0 01.517-.972c3.632-1.102 8.147-.569 11.236 1.327a.78.78 0 01.257 1.071zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.936.936 0 11-.543-1.791c3.532-1.072 9.404-.865 13.115 1.338a.936.936 0 01-.954 1.613z"/>
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Spotify API</div>
-                  <div className="text-xs text-gray-500">Auto-track stream counts</div>
-                </div>
-              </div>
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                Setup Required
-              </span>
-            </div>
           </div>
         </div>
 
