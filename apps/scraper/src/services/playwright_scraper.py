@@ -2,7 +2,7 @@ import asyncio
 import re
 from typing import List, Dict, Any, Optional, Set
 from playwright.async_api import async_playwright, Browser, Page
-from playwright_stealth import stealth
+# from playwright_stealth import stealth_async  # Temporarily disabled due to import issues
 import random
 import time
 from urllib.parse import urljoin, urlparse
@@ -59,7 +59,7 @@ class PlaywrightScraper:
     async def _create_stealth_page(self) -> Page:
         """Create a new page with stealth configuration."""
         page = await self.context.new_page()
-        await stealth(page)
+        # await stealth_async(page)  # Temporarily disabled due to import issues
         
         # Set realistic timeouts
         page.set_default_timeout(self.page_timeout)

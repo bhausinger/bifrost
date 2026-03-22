@@ -53,6 +53,10 @@ app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(soundcloud.router, prefix="/api/soundcloud", tags=["soundcloud"])
 app.include_router(discovery.router, prefix="/api/discovery", tags=["discovery"])
 
+# Compatibility route for ScraperModal (calls /scrape/soundcloud)
+from api.routes.soundcloud import scrape_single_artist
+app.post("/scrape/soundcloud")(scrape_single_artist)
+
 
 @app.get("/")
 async def root():
