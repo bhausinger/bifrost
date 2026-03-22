@@ -1,0 +1,230 @@
+import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { Settings as SettingsIcon } from 'lucide-react'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { useBlockedTerms, useAddBlockedTerm, useDeleteBlockedTerm } from '@/hooks/useBlockedTerms'
+
+export function Settings() {
+  const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
+  const { data: blockedTerms } = useBlockedTerms()
+  const addTerm = useAddBlockedTerm()
+  const deleteTerm = useDeleteBlockedTerm()
+  const [newTerm, setNewTerm] = useState('')
+  const [newTermType, setNewTermType] = useState<'email_domain' | 'profile_name'>('email_domain')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+  }, [])
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageHeader
+        icon={SettingsIcon}
+        title="Settings"
+        description="Manage your account and integrations"
+        gradient="from-gray-500 to-gray-600"
+        shadow="shadow-gray-500/25"
+      />
+
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="max-w-2xl space-y-6">
+        {/* Account */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Account</h2>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Email</span>
+              <span className="font-medium text-gray-900">{user?.email ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">User ID</span>
+              <span className="font-mono text-xs text-gray-400">{user?.id ?? '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Integrations */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Integrations</h2>
+          <div className="space-y-4">
+            {/* Stripe */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
+                  <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Stripe</div>
+                  <div className="text-xs text-gray-500">Send invoices and accept payments</div>
+                </div>
+              </div>
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                Setup Required
+              </span>
+            </div>
+
+            {/* Gmail */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
+                  <svg className="h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Gmail</div>
+                  <div className="text-xs text-gray-500">Send outreach emails from your Gmail</div>
+                </div>
+              </div>
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                Setup Required
+              </span>
+            </div>
+
+            {/* Spotify */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+                  <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 11-.277-1.214c3.808-.87 7.076-.496 9.712 1.114a.623.623 0 01.207.857zm1.224-2.719a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.517.781.781 0 01.517-.972c3.632-1.102 8.147-.569 11.236 1.327a.78.78 0 01.257 1.071zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.936.936 0 11-.543-1.791c3.532-1.072 9.404-.865 13.115 1.338a.936.936 0 01-.954 1.613z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Spotify API</div>
+                  <div className="text-xs text-gray-500">Auto-track stream counts</div>
+                </div>
+              </div>
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                Setup Required
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Exclude List link */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Data Management</h2>
+          <a
+            href="/excluded"
+            className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-all"
+          >
+            <div>
+              <div className="text-sm font-medium text-gray-900">Exclude List</div>
+              <div className="text-xs text-gray-500">Manage artists who opted out of contact</div>
+            </div>
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </a>
+        </div>
+
+        {/* Blocked Terms */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Blocked Terms</h2>
+          <p className="text-xs text-gray-500 mb-4">Filter out unwanted results from discovery and scraping</p>
+
+          {/* Add form */}
+          <form
+            className="flex items-center gap-2 mb-5"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!newTerm.trim()) return
+              addTerm.mutate(
+                { term: newTerm, type: newTermType },
+                { onSuccess: () => setNewTerm('') }
+              )
+            }}
+          >
+            <input
+              type="text"
+              value={newTerm}
+              onChange={(e) => setNewTerm(e.target.value)}
+              placeholder="e.g. spam.com or badprofile"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            <select
+              value={newTermType}
+              onChange={(e) => setNewTermType(e.target.value as 'email_domain' | 'profile_name')}
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="email_domain">Email Domain</option>
+              <option value="profile_name">Profile Name</option>
+            </select>
+            <button
+              type="submit"
+              disabled={addTerm.isPending || !newTerm.trim()}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {addTerm.isPending ? 'Adding...' : 'Add'}
+            </button>
+          </form>
+
+          {/* Email Domains */}
+          <div className="mb-4">
+            <h3 className="text-xs font-medium text-gray-700 mb-2">Email Domains</h3>
+            {blockedTerms?.filter((t) => t.type === 'email_domain').length ? (
+              <div className="flex flex-wrap gap-2">
+                {blockedTerms
+                  .filter((t) => t.type === 'email_domain')
+                  .map((t) => (
+                    <span
+                      key={t.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20"
+                    >
+                      {t.term}
+                      <button
+                        onClick={() => deleteTerm.mutate(t.id)}
+                        className="ml-0.5 text-red-400 hover:text-red-600"
+                        aria-label={`Remove ${t.term}`}
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">No blocked terms yet</p>
+            )}
+          </div>
+
+          {/* Profile Names */}
+          <div>
+            <h3 className="text-xs font-medium text-gray-700 mb-2">Profile Names</h3>
+            {blockedTerms?.filter((t) => t.type === 'profile_name').length ? (
+              <div className="flex flex-wrap gap-2">
+                {blockedTerms
+                  .filter((t) => t.type === 'profile_name')
+                  .map((t) => (
+                    <span
+                      key={t.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20"
+                    >
+                      {t.term}
+                      <button
+                        onClick={() => deleteTerm.mutate(t.id)}
+                        className="ml-0.5 text-orange-400 hover:text-orange-600"
+                        aria-label={`Remove ${t.term}`}
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">No blocked terms yet</p>
+            )}
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  )
+}
