@@ -41,13 +41,34 @@ export function Login() {
         setConfirmPassword('')
       }
     } else {
+      // Try sign in first
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        setError(error.message)
+        // If user doesn't exist yet, auto-create and sign in
+        if (error.message === 'Invalid login credentials') {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+          })
+          if (signUpError) {
+            setError(signUpError.message)
+          } else {
+            // Try signing in again after auto-create
+            const { error: retryError } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            })
+            if (retryError) {
+              setError('Account created but sign-in failed. Check your Supabase email confirmation settings.')
+            }
+          }
+        } else {
+          setError(error.message)
+        }
       }
     }
     setLoading(false)
