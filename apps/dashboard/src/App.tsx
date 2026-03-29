@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Layout } from '@/components/layout/Layout'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Dashboard } from '@/pages/Dashboard'
 import { Pipeline } from '@/pages/Pipeline'
 import { Campaigns } from '@/pages/Campaigns'
@@ -17,6 +18,9 @@ import type { Session } from '@supabase/supabase-js'
 export function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [devBypass, setDevBypass] = useState(() =>
+    localStorage.getItem('bifrost_dev_bypass') === 'true'
+  )
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,6 +37,12 @@ export function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Expose bypass toggle for dev — remove when auth is sorted
+  ;(window as unknown as Record<string, unknown>).__bifrostDevBypass = (on: boolean) => {
+    localStorage.setItem('bifrost_dev_bypass', String(on))
+    setDevBypass(on)
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -44,25 +54,27 @@ export function App() {
     )
   }
 
-  if (!session) {
-    return <Login />
+  if (!session && !devBypass) {
+    return <Login onDevBypass={() => { localStorage.setItem('bifrost_dev_bypass', 'true'); setDevBypass(true) }} />
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/pipeline" element={<Pipeline />} />
-        <Route path="/campaigns" element={<Campaigns />} />
-        <Route path="/artists" element={<Artists />} />
-        <Route path="/outreach" element={<Outreach />} />
-        <Route path="/curators" element={<Curators />} />
-        <Route path="/financials" element={<Financials />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/excluded" element={<ExcludeList />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Layout>
+    <ErrorBoundary>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="/pipeline" element={<ErrorBoundary><Pipeline /></ErrorBoundary>} />
+          <Route path="/campaigns" element={<ErrorBoundary><Campaigns /></ErrorBoundary>} />
+          <Route path="/artists" element={<ErrorBoundary><Artists /></ErrorBoundary>} />
+          <Route path="/outreach" element={<ErrorBoundary><Outreach /></ErrorBoundary>} />
+          <Route path="/curators" element={<ErrorBoundary><Curators /></ErrorBoundary>} />
+          <Route path="/financials" element={<ErrorBoundary><Financials /></ErrorBoundary>} />
+          <Route path="/settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
+          <Route path="/excluded" element={<ErrorBoundary><ExcludeList /></ErrorBoundary>} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Layout>
+    </ErrorBoundary>
   )
 }

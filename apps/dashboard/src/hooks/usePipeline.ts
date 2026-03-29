@@ -46,12 +46,46 @@ export function useMoveStage() {
       newStage: PipelineStage
       note?: string
     }) => {
-      const { error } = await supabase.rpc('move_pipeline_stage', {
+      // Get old stage for activity log
+      const { data: entry } = await supabase
+        .from('pipeline_entries')
+        .select('stage')
+        .eq('id', entryId)
+        .single()
+      const oldStage = entry?.stage ?? 'unknown'
+
+      // Try RPC first
+      const { error: rpcError } = await supabase.rpc('move_pipeline_stage', {
         entry_id: entryId,
         new_stage: newStage,
         note: note ?? null,
       })
-      if (error) throw error
+
+      if (rpcError) {
+        // Fallback: direct update
+        const { error: updateError } = await supabase
+          .from('pipeline_entries')
+          .update({
+            stage: newStage,
+            stage_entered_at: new Date().toISOString(),
+            contacted_at: newStage === 'contacted' ? new Date().toISOString() : undefined,
+            responded_at: newStage === 'responded' ? new Date().toISOString() : undefined,
+            paid_at: newStage === 'paid' ? new Date().toISOString() : undefined,
+            completed_at: newStage === 'completed' ? new Date().toISOString() : undefined,
+          })
+          .eq('id', entryId)
+        if (updateError) throw updateError
+      }
+
+      // Insert activity log directly if RPC failed (RPC handles its own activity insert)
+      if (rpcError) {
+        await supabase.from('pipeline_activities').insert({
+          pipeline_entry_id: entryId,
+          type: 'stage_change',
+          description: `Moved from ${oldStage} to ${newStage}`,
+          metadata: { old_stage: oldStage, new_stage: newStage, note: note ?? null },
+        })
+      }
     },
     // Optimistic update for instant drag feedback
     onMutate: async ({ entryId, newStage }) => {
@@ -73,6 +107,7 @@ export function useMoveStage() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['pipeline'] })
+      queryClient.invalidateQueries({ queryKey: ['pipeline-activities'] })
     },
   })
 }

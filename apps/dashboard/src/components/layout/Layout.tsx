@@ -28,7 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="flex w-60 flex-col border-r border-gray-200 bg-white/95">
+      <aside className="relative z-50 flex w-60 flex-col border-r border-gray-200 bg-white/95">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-6">
           <img

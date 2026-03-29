@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 type Mode = 'signin' | 'signup'
 
-export function Login() {
+export function Login({ onDevBypass }: { onDevBypass?: () => void } = {}) {
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,22 +47,8 @@ export function Login() {
       })
 
       if (error) {
-        if (error.message === 'Invalid login credentials') {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-          })
-          if (signUpError) {
-            setError(signUpError.message)
-          } else {
-            const { error: retryError } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            })
-            if (retryError) {
-              setError('Account created but sign-in failed. Check your Supabase email confirmation settings.')
-            }
-          }
+        if (error.message === 'Email not confirmed') {
+          setError('Email not confirmed. Check your Supabase auth settings, or use "Skip login" below.')
         } else {
           setError(error.message)
         }
@@ -221,6 +207,16 @@ export function Login() {
                   : 'Create account'}
             </button>
           </form>
+
+          {onDevBypass && (
+            <button
+              type="button"
+              onClick={onDevBypass}
+              className="mt-4 w-full rounded-lg border border-dashed border-gray-300 py-2.5 text-sm text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-colors"
+            >
+              Skip login (dev mode)
+            </button>
+          )}
 
           <div className="mt-6 text-center text-sm text-gray-400">
             {mode === 'signin' ? (

@@ -30,13 +30,55 @@ export function useExcludeArtist() {
       reason?: string
       notes?: string
     }) => {
-      const { error } = await supabase.rpc('exclude_artist', {
+      // Try RPC first (if migration 00002 was applied), fall back to direct queries
+      const { error: rpcError } = await supabase.rpc('exclude_artist', {
         p_artist_id: artistId,
         p_email: email,
         p_reason: reason,
         p_notes: notes ?? null,
       })
-      if (error) throw error
+
+      if (rpcError) {
+        // Fallback: do it manually with direct queries
+        const { data: artist } = await supabase
+          .from('artists')
+          .select('name')
+          .eq('id', artistId)
+          .single()
+
+        // Check if already excluded, then insert or update
+        const { data: existing } = await supabase
+          .from('excluded_artists')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle()
+
+        if (existing) {
+          await supabase
+            .from('excluded_artists')
+            .update({ reason, notes: notes ?? null })
+            .eq('id', existing.id)
+        } else {
+          const { error: insertError } = await supabase
+            .from('excluded_artists')
+            .insert({
+              email,
+              artist_name: artist?.name ?? 'Unknown',
+              artist_id: artistId,
+              reason,
+              notes: notes ?? null,
+            })
+          if (insertError) throw insertError
+        }
+
+        // Move active pipeline entries to "lost"
+        const { error: updateError } = await supabase
+          .from('pipeline_entries')
+          .update({ stage: 'lost', lost_reason: reason })
+          .eq('artist_id', artistId)
+          .not('stage', 'in', '("completed","lost")')
+        if (updateError) throw updateError
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['excluded'] })
@@ -67,11 +109,19 @@ export function useIsExcluded(email: string | null) {
     queryKey: ['is-excluded', email],
     queryFn: async () => {
       if (!email) return false
+      // Try RPC first, fall back to direct query
       const { data, error } = await supabase.rpc('is_excluded', {
         p_email: email,
       })
-      if (error) throw error
-      return data as boolean
+      if (!error) return data as boolean
+
+      // Fallback: direct query
+      const { data: row } = await supabase
+        .from('excluded_artists')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle()
+      return !!row
     },
     enabled: !!email,
   })
