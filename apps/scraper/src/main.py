@@ -1,73 +1,87 @@
-import sys
-import os
-from pathlib import Path
-
-# Add the project root to Python path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+"""
+Bifrost Scraper — SoundCloud artist discovery & profile scraping.
+Minimal FastAPI app. No database, no Redis, no Playwright.
+"""
 from contextlib import asynccontextmanager
-import uvicorn
+from typing import Optional
 
-from config.settings import settings
-from api.routes import soundcloud, discovery, health
-from core.logging import setup_logging
-try:
-    from core.database import init_db
-    database_available = True
-except ImportError:
-    database_available = False
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from services.soundcloud_scraper import SoundCloudScraper
+
+# ── Shared scraper instance ───────────────────────────────────────────
+
+scraper: Optional[SoundCloudScraper] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    setup_logging()
-    if database_available:
-        await init_db()
+    global scraper
+    scraper = SoundCloudScraper()
+    await scraper.__aenter__()
     yield
-    # Shutdown
-    pass
+    await scraper.__aexit__(None, None, None)
 
 
 app = FastAPI(
-    title="Campaign Manager Scraper Service",
-    description="SoundCloud scraping and artist discovery service",
-    version="1.0.0",
-    lifespan=lifespan
+    title="Bifrost Scraper",
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(soundcloud.router, prefix="/api/soundcloud", tags=["soundcloud"])
-app.include_router(discovery.router, prefix="/api/discovery", tags=["discovery"])
 
-# Compatibility route for ScraperModal (calls /scrape/soundcloud)
-from api.routes.soundcloud import scrape_single_artist
-app.post("/scrape/soundcloud")(scrape_single_artist)
+# ── Request/Response models ───────────────────────────────────────────
+
+
+class ScrapeRequest(BaseModel):
+    url: str
+
+
+class DiscoverRequest(BaseModel):
+    seed_url: str
+    min_followers: int = 0
+    max_followers: int = 999_999_999
+    genres: Optional[list[str]] = None
+    max_results: int = 50
+
+
+# ── Routes ────────────────────────────────────────────────────────────
 
 
 @app.get("/")
 async def root():
-    return {"message": "Campaign Manager Scraper Service", "version": "1.0.0"}
+    return {"service": "Bifrost Scraper", "version": "2.0.0", "status": "ok"}
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "src.main:app",
-        host="0.0.0.0",
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level="info" if not settings.DEBUG else "debug",
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+@app.post("/scrape/soundcloud")
+async def scrape_soundcloud(req: ScrapeRequest):
+    """Scrape a single SoundCloud profile. Used by ScraperModal."""
+    result = await scraper.scrape(req.url)
+    return result.to_api_response()
+
+
+@app.post("/discover")
+async def discover_artists(req: DiscoverRequest):
+    """Discover artists similar to a seed profile. Used by LeadGeneratorModal."""
+    return await scraper.discover(
+        seed_url=req.seed_url,
+        min_followers=req.min_followers,
+        max_followers=req.max_followers,
+        genres=req.genres,
+        max_results=req.max_results,
     )

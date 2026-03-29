@@ -16,7 +16,7 @@
 
 ## Noted (not yet investigated)
 
-- [ ] **Scraper doesn't work** — Benjamin flagged this. `apps/scraper/` exists with Python/FastAPI code but hasn't been tested or connected to the new dashboard. Needs its own investigation session.
+- [x] **Scraper doesn't work** — Rewrote from scratch using TempoV3's proven SoundCloud API approach. Removed Playwright, hybrid scraper, 79 dependencies. New scraper: 4 deps (fastapi, uvicorn, httpx, pydantic), ~300 lines, hits SoundCloud's public API directly. Supports single scrape (`POST /scrape/soundcloud`) and artist discovery (`POST /discover`). Tested with real profiles (Diplo, Skrillex). (Fixed 2026-03-29)
 
 - [ ] **Drag-and-drop not tested** — Stage moves via buttons work and persist. DnD interaction (actual dragging between columns) was not tested during smoke test.
 
