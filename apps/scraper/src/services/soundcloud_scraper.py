@@ -262,44 +262,149 @@ class SoundCloudScraper:
             return []
 
     async def _find_email_from_links(self, user: dict, web_profiles: list[dict]) -> Optional[str]:
-        """Try to find an email by fetching the artist's linked websites."""
-        urls_to_check = []
+        """
+        Multi-strategy email finder:
+        1. Linktree / link-in-bio pages (highest hit rate)
+        2. Personal websites + /contact /about /booking subpages
+        3. Instagram bio
+        """
+        SKIP_DOMAINS = {
+            "twitter.com", "x.com", "facebook.com", "youtube.com",
+            "spotify.com", "soundcloud.com", "tiktok.com", "youtu.be",
+        }
+        LINKTREE_DOMAINS = {
+            "linktr.ee", "beacons.ai", "bio.link", "linkfire.com",
+            "fanlink.to", "hoo.be", "direct.me", "msha.ke", "lnk.to",
+            "solo.to", "campsite.bio", "withkoji.com", "snipfeed.co",
+        }
 
-        # Website from SC profile
+        websites: list[str] = []      # Personal sites to deep-crawl
+        linktrees: list[str] = []     # Link-in-bio pages
+        ig_url: Optional[str] = None  # Instagram profile
+
+        # Collect URLs from SC profile + web_profiles
+        all_urls = []
         website = user.get("website", "") or ""
-        if website and not any(skip in website.lower() for skip in [
-            "instagram.com", "twitter.com", "x.com", "facebook.com",
-            "youtube.com", "spotify.com", "soundcloud.com", "tiktok.com",
-        ]):
-            urls_to_check.append(website)
-
-        # Websites from web_profiles
+        if website:
+            all_urls.append(website)
         for wp in web_profiles:
             url = wp.get("url", "")
-            if not url:
-                continue
-            ul = url.lower()
-            # Linktree, personal sites, etc. — skip major social platforms
-            if any(skip in ul for skip in [
-                "instagram.com", "twitter.com", "x.com", "facebook.com",
-                "youtube.com", "spotify.com", "soundcloud.com", "tiktok.com",
-            ]):
-                continue
-            if url not in urls_to_check:
-                urls_to_check.append(url)
+            if url and url not in all_urls:
+                all_urls.append(url)
+            # IG from web_profiles
+            if wp.get("network") == "instagram":
+                ig_url = url or f"https://www.instagram.com/{wp.get('username', '')}"
 
-        # Fetch each URL and look for emails
-        for url in urls_to_check[:3]:  # Max 3 to avoid slowing things down
-            try:
-                resp = await self._client.get(url, timeout=httpx.Timeout(10.0), follow_redirects=True)
-                if resp.status_code == 200 and "text" in resp.headers.get("content-type", ""):
-                    email = _extract_email(resp.text)
-                    if email:
-                        logger.info(f"Found email on {url}: {email}")
-                        return email
-            except Exception:
+        # Also check bio for links (some artists put linktree in their bio)
+        bio = user.get("description", "") or ""
+        bio_links = re.findall(r'https?://[^\s<>"\']+', bio)
+        for link in bio_links:
+            if link not in all_urls:
+                all_urls.append(link)
+
+        for url in all_urls:
+            ul = url.lower()
+            domain = ul.split("//")[-1].split("/")[0].lstrip("www.")
+            if domain in SKIP_DOMAINS:
+                if "instagram.com" in ul and not ig_url:
+                    ig_url = url
                 continue
+            if domain in LINKTREE_DOMAINS:
+                linktrees.append(url)
+            else:
+                websites.append(url)
+
+        # --- Strategy 1: Linktree / link-in-bio pages ---
+        for url in linktrees[:2]:
+            email = await self._fetch_email(url)
+            if email:
+                logger.info(f"Email from linktree {url}: {email}")
+                return email
+
+        # --- Strategy 2: Personal websites + subpages ---
+        for url in websites[:2]:
+            # Try homepage first
+            email = await self._fetch_email(url)
+            if email:
+                logger.info(f"Email from website {url}: {email}")
+                return email
+
+            # Try common contact/booking subpages
+            base = url.rstrip("/")
+            for path in ["/contact", "/about", "/booking", "/bookings", "/press", "/info"]:
+                email = await self._fetch_email(base + path)
+                if email:
+                    logger.info(f"Email from {base + path}: {email}")
+                    return email
+
+        # --- Strategy 3: Instagram bio ---
+        if ig_url:
+            email = await self._scrape_ig_email(ig_url)
+            if email:
+                logger.info(f"Email from IG {ig_url}: {email}")
+                return email
+
         return None
+
+    async def _fetch_email(self, url: str) -> Optional[str]:
+        """Fetch a URL and extract email. Returns first valid email or None."""
+        try:
+            resp = await self._client.get(url, timeout=httpx.Timeout(8.0), follow_redirects=True)
+            if resp.status_code != 200:
+                return None
+            ct = resp.headers.get("content-type", "")
+            if "text" not in ct and "html" not in ct:
+                return None
+            text = resp.text
+
+            # Check mailto: links first (most reliable)
+            mailtos = re.findall(r'mailto:([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7})', text)
+            for m in mailtos:
+                email = _validate_email(m)
+                if email:
+                    return email
+
+            # Then general email extraction
+            return _extract_email(text)
+        except Exception:
+            return None
+
+    async def _scrape_ig_email(self, ig_url: str) -> Optional[str]:
+        """Try to extract email from Instagram profile page."""
+        try:
+            resp = await self._client.get(
+                ig_url,
+                timeout=httpx.Timeout(8.0),
+                follow_redirects=True,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml",
+                },
+            )
+            if resp.status_code != 200:
+                return None
+
+            # IG embeds profile data in JSON — look for email in meta tags and JSON
+            text = resp.text
+
+            # Check og:description meta (often contains bio text)
+            og_match = re.search(r'<meta[^>]*property="og:description"[^>]*content="([^"]*)"', text)
+            if og_match:
+                email = _extract_email(og_match.group(1))
+                if email:
+                    return email
+
+            # Check for email in any JSON-LD or embedded data
+            email_fields = re.findall(r'"email"\s*:\s*"([^"]+@[^"]+)"', text)
+            for ef in email_fields:
+                email = _validate_email(ef)
+                if email:
+                    return email
+
+            # General extraction from page source
+            return _extract_email(text)
+        except Exception:
+            return None
 
     async def _refresh_id(self) -> bool:
         """Scrape a fresh client_id from SoundCloud's JS bundles."""
@@ -368,6 +473,24 @@ def _extract_email(text: str) -> Optional[str]:
             continue
         return email
     return None
+
+
+def _validate_email(email: str) -> Optional[str]:
+    """Validate a single email string. Returns it if valid, None if junk."""
+    if not email or "@" not in email:
+        return None
+    local, domain = email.split("@", 1)
+    if re.fullmatch(r"[0-9a-f]+", local.lower()):
+        return None
+    if not re.search(r"[a-zA-Z]", local):
+        return None
+    if len(local) > 40:
+        return None
+    if not re.match(r"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,7}$", domain):
+        return None
+    if domain.endswith((".png", ".jpg", ".js", ".css", ".svg", ".woff")):
+        return None
+    return email
 
 
 def _build_artist(user: dict, sc_url: str, web_profiles: list[dict] = None) -> ScrapedArtist:
