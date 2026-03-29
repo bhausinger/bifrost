@@ -316,11 +316,11 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
-      <div className="fixed inset-4 z-50 mx-auto flex max-w-4xl flex-col rounded-lg bg-white shadow-2xl">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-panel fixed inset-4 z-50 mx-auto flex max-w-4xl flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="font-display text-lg font-bold text-gray-900">
             {step === 'input' && 'Import from Scraper'}
             {step === 'scraping' && 'Scraping...'}
             {step === 'results' && `Results (${results.length} found)`}
@@ -329,7 +329,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-900"
           >
             ✕
           </button>
@@ -350,13 +350,13 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   placeholder={
                     'https://soundcloud.com/artist1\nhttps://soundcloud.com/artist2\nhttps://soundcloud.com/artist3'
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm"
+                  className="input-field w-full font-mono"
                 />
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+                  className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   Upload .txt / .csv
                 </button>
@@ -367,7 +367,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   className="hidden"
                   onChange={handleFileUpload}
                 />
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-400">
                   {parseUrls().length} valid URLs
                 </span>
               </div>
@@ -378,39 +378,39 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           {step === 'scraping' && (
             <div className="space-y-6 py-8 text-center">
               <div>
-                <div className="mb-2 text-2xl font-bold text-gray-900">
+                <div className="mb-2 font-mono text-2xl font-bold text-gray-900">
                   {progress.done} / {progress.total}
                 </div>
-                <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-200">
+                <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full bg-blue-500 transition-all"
+                    className="h-full bg-amber-500 transition-all"
                     style={{
                       width: `${(progress.done / progress.total) * 100}%`,
                     }}
                   />
                 </div>
-                <div className="mt-2 text-sm text-gray-500">
+                <div className="mt-2 text-sm text-gray-400">
                   ETA: {progress.eta}
                 </div>
               </div>
               <div className="flex justify-center gap-8 text-sm">
                 <div>
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="font-mono text-lg font-bold text-emerald-600">
                     {progress.successful}
                   </div>
-                  <div className="text-gray-500">Successful</div>
+                  <div className="text-gray-400">Successful</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-blue-600">
+                  <div className="font-mono text-lg font-bold text-blue-600">
                     {progress.emailsFound}
                   </div>
-                  <div className="text-gray-500">Emails Found</div>
+                  <div className="text-gray-400">Emails Found</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-red-600">
+                  <div className="font-mono text-lg font-bold text-red-600">
                     {progress.failed}
                   </div>
-                  <div className="text-gray-500">Failed</div>
+                  <div className="text-gray-400">Failed</div>
                 </div>
               </div>
             </div>
@@ -424,37 +424,37 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={selectAllWithEmails}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Select All With Emails
                   </button>
                   <button
                     onClick={deselectAll}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Deselect All
                   </button>
                   <button
                     onClick={downloadCsv}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Download CSV
                   </button>
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-400">
                   {selectedCount} selected
                 </span>
               </div>
 
               {/* Import options */}
               <div className="flex items-center gap-3 rounded-md bg-gray-50 p-3">
-                <label className="text-sm text-gray-600">Import to stage:</label>
+                <label className="text-sm text-gray-500">Import to stage:</label>
                 <select
                   value={importStage}
                   onChange={(e) =>
                     setImportStage(e.target.value as PipelineStage)
                   }
-                  className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  className="select-field"
                 >
                   <option value="discovered">Discovered</option>
                   <option value="contacted">Contacted</option>
@@ -468,16 +468,16 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="w-8 px-3 py-2" />
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                         Artist
                       </th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                         Email
                       </th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                         Followers
                       </th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
                         Links
                       </th>
                     </tr>
@@ -487,7 +487,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                       <tr
                         key={i}
                         className={`border-t border-gray-100 ${
-                          artist.isDuplicate ? 'bg-yellow-50' : ''
+                          artist.isDuplicate ? 'bg-amber-500/5' : ''
                         }`}
                       >
                         <td className="px-3 py-2">
@@ -496,7 +496,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                             checked={artist.selected}
                             disabled={artist.isDuplicate}
                             onChange={() => toggleSelect(i)}
-                            className="rounded"
+                            className="rounded accent-teal-500"
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -504,7 +504,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                             {artist.name}
                           </div>
                           {artist.isDuplicate && (
-                            <div className="text-xs text-yellow-600">
+                            <div className="text-xs text-amber-600">
                               {artist.duplicateNote}
                             </div>
                           )}
@@ -520,10 +520,10 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                             value={artist.editedEmail}
                             onChange={(e) => updateEmail(i, e.target.value)}
                             placeholder="No email found"
-                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
+                            className="input-field w-full text-xs"
                           />
                         </td>
-                        <td className="px-3 py-2 text-gray-500">
+                        <td className="px-3 py-2 font-mono text-gray-500">
                           {artist.follower_count?.toLocaleString() ?? '-'}
                         </td>
                         <td className="px-3 py-2">
@@ -533,13 +533,13 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                                 href={artist.soundcloud_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-orange-500 hover:underline"
+                                className="text-xs text-orange-600 hover:underline"
                               >
                                 SC
                               </a>
                             )}
                             {artist.instagram_handle && (
-                              <span className="text-xs text-pink-500">
+                              <span className="text-xs text-pink-400">
                                 IG
                               </span>
                             )}
@@ -556,18 +556,18 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           {/* Step: Importing */}
           {step === 'importing' && (
             <div className="py-8 text-center">
-              <div className="mb-2 text-2xl font-bold text-gray-900">
+              <div className="mb-2 font-mono text-2xl font-bold text-gray-900">
                 {importProgress.done} / {importProgress.total}
               </div>
-              <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-200">
+              <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full bg-green-500 transition-all"
+                  className="h-full bg-amber-500 transition-all"
                   style={{
                     width: `${(importProgress.done / importProgress.total) * 100}%`,
                   }}
                 />
               </div>
-              <div className="mt-2 text-sm text-gray-500">
+              <div className="mt-2 text-sm text-gray-400">
                 Importing artists to pipeline...
               </div>
             </div>
@@ -576,28 +576,28 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           {/* Step: Done */}
           {step === 'done' && (
             <div className="space-y-4 py-8 text-center">
-              <div className="rounded-md bg-green-50 p-6">
-                <div className="text-lg font-medium text-green-700">
+              <div className="rounded-md bg-emerald-50 p-6">
+                <div className="font-display text-lg font-medium text-emerald-600">
                   Import Complete
                 </div>
                 <div className="mt-3 flex justify-center gap-8 text-sm">
                   <div>
-                    <div className="text-lg font-bold text-green-600">
+                    <div className="font-mono text-lg font-bold text-emerald-600">
                       {importResults.imported}
                     </div>
-                    <div className="text-gray-500">Imported</div>
+                    <div className="text-gray-400">Imported</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-yellow-600">
+                    <div className="font-mono text-lg font-bold text-amber-600">
                       {importResults.skipped}
                     </div>
-                    <div className="text-gray-500">Skipped</div>
+                    <div className="text-gray-400">Skipped</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-red-600">
+                    <div className="font-mono text-lg font-bold text-red-600">
                       {importResults.failed}
                     </div>
-                    <div className="text-gray-500">Failed</div>
+                    <div className="text-gray-400">Failed</div>
                   </div>
                 </div>
               </div>
@@ -609,7 +609,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
         <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
             {step === 'done' ? 'Close' : 'Cancel'}
           </button>
@@ -618,7 +618,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             <button
               onClick={handleScrape}
               disabled={parseUrls().length === 0}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300"
+              className="btn-primary rounded-md px-4 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Scrape {parseUrls().length} URLs
             </button>
@@ -628,7 +628,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             <button
               onClick={handleImport}
               disabled={selectedCount === 0}
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-gray-300"
+              className="btn-primary rounded-md px-4 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Import {selectedCount} Artists
             </button>

@@ -75,8 +75,8 @@ export function Pipeline() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-[3px] border-teal-200 border-t-teal-600" />
-          <p className="text-sm text-gray-500">Loading pipeline...</p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-[3px] border-gray-300 border-t-teal-600" />
+          <p className="text-sm text-gray-400">Loading pipeline...</p>
         </div>
       </div>
     )
@@ -84,7 +84,7 @@ export function Pipeline() {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center text-red-500 text-sm">
+      <div className="flex h-full items-center justify-center text-red-600 text-sm">
         Failed to load pipeline: {error.message}
       </div>
     )
@@ -110,64 +110,62 @@ export function Pipeline() {
         icon={Wrench}
         title="Pipeline"
         description="Track and manage your artist outreach funnel"
-        gradient="from-teal-500 to-cyan-500"
-        shadow="shadow-teal-500/25"
       />
 
       {/* Stats & Filters */}
-      <div className="border-b border-gray-200 bg-white px-6 py-5">
+      <div className="border-b border-gray-200 bg-white/80 px-6 py-5">
 
         {/* Stats Cards */}
         <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
             {/* Total Artists */}
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="kpi-card flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{totalEntries}</p>
+                <p className="text-2xl font-bold font-data text-gray-900">{totalEntries}</p>
                 <p className="mt-0.5 text-sm font-medium text-gray-500">Total Artists</p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/25">
-                <Users className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+                <Users className="h-6 w-6 text-teal-500" />
               </div>
             </div>
 
             {/* Response Rate */}
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="kpi-card flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{responseRate}%</p>
+                <p className="text-2xl font-bold font-data text-gray-900">{responseRate}%</p>
                 <p className="mt-0.5 text-sm font-medium text-gray-500">Response Rate</p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-                <TrendingUp className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+                <TrendingUp className="h-6 w-6 text-emerald-600" />
               </div>
             </div>
 
             {/* Have Email */}
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="kpi-card flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{withEmail}</p>
+                <p className="text-2xl font-bold font-data text-gray-900">{withEmail}</p>
                 <p className="mt-0.5 text-sm font-medium text-gray-500">Have Email</p>
                 <p className="text-xs text-gray-400">{totalEntries > 0 ? Math.round((withEmail / totalEntries) * 100) : 0}% of leads</p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
-                <Mail className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+                <Mail className="h-6 w-6 text-violet-600" />
               </div>
             </div>
 
             {/* Contacted */}
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="kpi-card flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{contactedCount}</p>
+                <p className="text-2xl font-bold font-data text-gray-900">{contactedCount}</p>
                 <p className="mt-0.5 text-sm font-medium text-gray-500">Contacted</p>
                 <p className="text-xs text-gray-400">awaiting response</p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25">
-                <BarChart3 className="h-6 w-6 text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+                <BarChart3 className="h-6 w-6 text-blue-600" />
               </div>
             </div>
         </div>
 
         {/* Search, Filters & Action Buttons */}
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="card p-4">
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
@@ -177,7 +175,7 @@ export function Pipeline() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search artists by handle..."
-                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm placeholder:text-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                className="input-field w-full pl-10 pr-4"
               />
             </div>
 
@@ -185,7 +183,7 @@ export function Pipeline() {
             <select
               value={genreFilter}
               onChange={(e) => setGenreFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="select-field"
             >
               <option value="all">All genres</option>
               {allGenres.map((g) => (
@@ -197,7 +195,7 @@ export function Pipeline() {
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="select-field"
             >
               <option value="all">All sources</option>
               {allSources.map((s) => (
@@ -208,7 +206,7 @@ export function Pipeline() {
             {(search || genreFilter !== 'all' || sourceFilter !== 'all') && (
               <button
                 onClick={() => { setSearch(''); setGenreFilter('all'); setSourceFilter('all') }}
-                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors"
               >
                 Clear
               </button>
@@ -220,21 +218,21 @@ export function Pipeline() {
             {/* Action Buttons */}
             <button
               onClick={() => setShowLeadGen(true)}
-              className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-purple-700 transition-all"
+              className="flex items-center gap-2 rounded-lg bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-600 hover:bg-violet-100 transition-all"
             >
               <Search className="h-4 w-4" />
               Discover Artists
             </button>
             <button
               onClick={() => setShowScraper(true)}
-              className="flex items-center gap-2 rounded-lg bg-[#ff5500] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#e54b00] transition-all"
+              className="flex items-center gap-2 rounded-lg bg-[#ff5500]/10 px-4 py-2.5 text-sm font-medium text-[#ff5500] hover:bg-[#ff5500]/10 transition-all"
             >
               <Download className="h-4 w-4" />
               SoundCloud Scraper
             </button>
             <button
               onClick={() => setShowBulkEmail(true)}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-500/25 hover:from-teal-600 hover:to-cyan-600 transition-all"
+              className="btn-primary flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
               Bulk Email

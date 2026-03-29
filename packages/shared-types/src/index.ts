@@ -1,8 +1,4 @@
-// Re-export all types
-export * from './auth';
-export * from './artist';
-export * from './outreach';
-export * from './analytics';
-export * from './finance';
-export * from './common';
-export * from './campaign';
+// Shared types will be generated from Supabase schema
+// Run: pnpm db:types (from root) to regenerate
+// For now, types are defined in apps/dashboard/src/types/index.ts
+export {}

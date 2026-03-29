@@ -41,14 +41,12 @@ export function Login() {
         setConfirmPassword('')
       }
     } else {
-      // Try sign in first
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        // If user doesn't exist yet, auto-create and sign in
         if (error.message === 'Invalid login credentials') {
           const { error: signUpError } = await supabase.auth.signUp({
             email,
@@ -57,7 +55,6 @@ export function Login() {
           if (signUpError) {
             setError(signUpError.message)
           } else {
-            // Try signing in again after auto-create
             const { error: retryError } = await supabase.auth.signInWithPassword({
               email,
               password,
@@ -88,14 +85,16 @@ export function Login() {
                 <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 11-.277-1.214c3.808-.87 7.076-.496 9.712 1.114a.623.623 0 01.207.857zm1.224-2.719a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.517.781.781 0 01.517-.972c3.632-1.102 8.147-.569 11.236 1.327a.78.78 0 01.257 1.071zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.936.936 0 11-.543-1.791c3.532-1.072 9.404-.865 13.115 1.338a.936.936 0 01-.954 1.613z"/>
               </svg>
             </div>
-            <span className="text-xl font-bold tracking-tight">Campaign Manager</span>
+            <div>
+              <span className="font-display text-xl font-bold tracking-tight">BIFROST</span>
+              <p className="text-sm text-white/70">Campaign Manager</p>
+            </div>
           </div>
-          <p className="mt-1.5 text-sm text-white/70">Playlist Placement Agency</p>
         </div>
 
         <div className="relative space-y-8">
           <div>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight">
+            <h1 className="font-display text-4xl font-bold leading-tight tracking-tight">
               Manage your playlist
               <br />
               placements at scale.
@@ -126,7 +125,7 @@ export function Login() {
       </div>
 
       {/* Right side — auth form */}
-      <div className="flex flex-1 flex-col justify-center px-8 lg:px-16">
+      <div className="flex flex-1 flex-col justify-center bg-gray-50 px-8 lg:px-16">
         <div className="mx-auto w-full max-w-sm">
           <div className="lg:hidden mb-8">
             <div className="flex items-center gap-3">
@@ -136,16 +135,16 @@ export function Login() {
                 </svg>
               </div>
               <div>
-                <div className="text-lg font-bold text-gray-900">Campaign Manager</div>
-                <div className="text-xs text-gray-500">Playlist Placement Agency</div>
+                <div className="font-display text-lg font-bold text-gray-900">BIFROST</div>
+                <div className="text-xs text-gray-400">Campaign Manager</div>
               </div>
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="font-display text-2xl font-bold text-gray-900">
             {mode === 'signin' ? 'Welcome back' : 'Create account'}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-400">
             {mode === 'signin'
               ? 'Sign in to your account'
               : 'Set up your admin account'}
@@ -153,13 +152,13 @@ export function Login() {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-lg border border-red-500/30 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
                 {success}
               </div>
             )}
@@ -172,7 +171,7 @@ export function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                className="input-field w-full"
                 placeholder="you@example.com"
                 required
               />
@@ -186,7 +185,7 @@ export function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                className="input-field w-full"
                 placeholder={mode === 'signup' ? 'At least 6 characters' : 'Enter your password'}
                 required
               />
@@ -194,14 +193,14 @@ export function Login() {
 
             {mode === 'signup' && (
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-500">
                   Confirm Password
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all"
+                  className="input-field w-full"
                   placeholder="Re-enter your password"
                   required
                 />
@@ -211,7 +210,7 @@ export function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-teal-500/25 hover:from-teal-600 hover:to-cyan-600 active:from-teal-700 active:to-cyan-700 disabled:opacity-50 transition-all"
+              className="btn-primary w-full disabled:opacity-50"
             >
               {loading
                 ? mode === 'signin'
@@ -223,13 +222,13 @@ export function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
+          <div className="mt-6 text-center text-sm text-gray-400">
             {mode === 'signin' ? (
               <>
                 Need an account?{' '}
                 <button
                   onClick={() => { setMode('signup'); setError(null); setSuccess(null) }}
-                  className="font-medium text-teal-600 hover:text-teal-700"
+                  className="font-medium text-teal-500 hover:text-teal-500 transition-colors"
                 >
                   Sign up
                 </button>
@@ -239,7 +238,7 @@ export function Login() {
                 Already have an account?{' '}
                 <button
                   onClick={() => { setMode('signin'); setError(null); setSuccess(null) }}
-                  className="font-medium text-teal-600 hover:text-teal-700"
+                  className="font-medium text-teal-500 hover:text-teal-500 transition-colors"
                 >
                   Sign in
                 </button>

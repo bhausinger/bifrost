@@ -1,0 +1,17 @@
+# campaign manager
+
+TypeScript project.
+
+## Rules
+
+- State what you understand before making changes
+- Do not expose secrets, API keys, or credentials in code
+- Write clear commit messages explaining why, not just what
+- Maintain strict TypeScript — do not use `any` without justification
+- Do not modify critical config files without asking first
+
+## Do Not Modify Without Care
+
+- `tsconfig.json`
+- `package.json`
+- `.env`

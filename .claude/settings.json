@@ -1,0 +1,226 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(ls*)",
+      "Bash(cat *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(npm list*)",
+      "Bash(npm outdated*)",
+      "Bash(npm info*)",
+      "Bash(turbo run test)",
+      "Bash(turbo run test *)",
+      "Bash(turbo run lint)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(tsc --noEmit*)",
+      "Bash(turbo run build)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(npx prisma migrate reset*)",
+      "Bash(drop *)"
+    ],
+    "_raizAllow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(ls*)",
+      "Bash(cat *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(npm list*)",
+      "Bash(npm outdated*)",
+      "Bash(npm info*)",
+      "Bash(turbo run test)",
+      "Bash(turbo run test *)",
+      "Bash(turbo run lint)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(tsc --noEmit*)",
+      "Bash(turbo run build)"
+    ],
+    "_raizDeny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(npx prisma migrate reset*)",
+      "Bash(drop *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .raiz/hooks/plan-reminder.sh 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/journal.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/post-edit-check.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .raiz/hooks/test-gap-check.sh 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .raiz/hooks/post-commit-log.sh 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/task-classifier.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/context-announce.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/validation-loop.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are the Consistency Enforcer agent. A file has been edited.\n\nLook at $ARGUMENTS — check the file_path and changes (old_string → new_string).\n\nIf the edit modifies a TypeScript interface, type alias, schema definition, or API contract:\n1. Note what changed (added/removed/renamed fields, changed types)\n2. Warn that consumers of this type may need updating\n\nPresent it as:\n\"Type change: [what changed in what type]\n1. Want me to find and update consumers?\n2. Skip — I'll handle it manually\"\n\nIf the edit does NOT touch a shared type/interface/schema, respond with just \"ok\".",
+            "timeout": 15,
+            "statusMessage": "Checking consistency..."
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are the Performance Reviewer agent. A file has been written or edited.\n\nLook at $ARGUMENTS — check the file_path and content.\n\nONLY analyze if the file involves data fetching, database queries, or API calls (look for: fetch, prisma, drizzle, SQL, axios, useQuery, useSWR, getServerSideProps, loader, action). If not, respond with just \"ok\".\n\nIf it DOES involve data operations, check for:\n1. N+1 query patterns (fetching in a loop)\n2. Missing pagination on list queries\n3. Fetching more data than needed\n4. Redundant re-fetches or missing caching\n\nIf there's a concern, present it as:\n\"Performance: [specific issue]\n1. Want me to fix it?\n2. Skip — continue as is\"\n\nIf everything looks efficient, respond with just \"ok\".",
+            "timeout": 15,
+            "statusMessage": "Reviewing performance..."
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/planner-check.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/critical-file-check.mjs 2>/dev/null || true"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .raiz/hooks/code-quality-gate.mjs"
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are the Architect agent for a development project. A new file is being created.\n\nAnalyze the tool input in $ARGUMENTS — look at the file_path and content being written.\n\nCheck:\n1. Does this file follow the naming conventions of existing files in the same directory?\n2. Does it introduce a pattern that conflicts with how similar things are already done in the project?\n3. Is it in the right directory, or should it be somewhere else based on the project structure?\n\nIf everything looks consistent, respond with just \"ok\".\nIf there's a concern, respond with a brief warning explaining the inconsistency. Do NOT block — just warn.\nKeep your response under 3 lines.",
+            "timeout": 15,
+            "statusMessage": "Architect reviewing..."
+          }
+        ],
+        "__raiz": true
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are the Dependency Manager agent. A bash command is being run.\n\nLook at the command in $ARGUMENTS.\n\nIf this is NOT a package install command (npm install, yarn add, pnpm add), respond with just \"ok\" and nothing else.\n\nIf it IS a package install command:\n1. What packages are being added?\n2. Are any of them very large or known to have security issues?\n3. Could any of them be replaced by a built-in Node.js API or a smaller alternative?\n4. Is there already a similar package in the project that does the same thing?\n\nIf the install looks fine, respond with just \"ok\".\nIf there's a concern, respond with a brief warning. Do NOT block unless it's a known-malicious package.\nKeep your response under 4 lines.",
+            "timeout": 15,
+            "statusMessage": "Reviewing dependencies..."
+          }
+        ],
+        "__raiz": true
+      }
+    ]
+  }
+}

@@ -527,8 +527,8 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
         {/* ── Header ── */}
         <div className="relative overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 px-6 py-5">
           {/* Subtle SoundCloud-orange glow */}
-          <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#ff5500]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-amber-500/10 blur-2xl" />
+          <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#ff5500]/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-amber-50 blur-2xl" />
 
           <div className="relative flex items-center justify-between">
             <div>
@@ -713,7 +713,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
             <div className="flex flex-col items-center justify-center py-20">
               {/* Animated rings */}
               <div className="relative mb-8">
-                <div className="absolute inset-0 animate-ping rounded-full bg-[#ff5500]/20" style={{ animationDuration: '2s' }} />
+                <div className="absolute inset-0 animate-ping rounded-full bg-[#ff5500]/10" style={{ animationDuration: '2s' }} />
                 <div className="absolute inset-2 animate-ping rounded-full bg-[#ff5500]/15" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
                 <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#ff5500] to-amber-500 shadow-lg shadow-[#ff5500]/25">
                   <svg className="h-8 w-8 animate-spin text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -1172,7 +1172,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
         <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/50 px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900"
           >
             {step === 'done' ? 'Close' : 'Cancel'}
           </button>

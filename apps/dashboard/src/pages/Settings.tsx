@@ -24,15 +24,13 @@ export function Settings() {
         icon={SettingsIcon}
         title="Settings"
         description="Manage your account and integrations"
-        gradient="from-gray-500 to-gray-600"
-        shadow="shadow-gray-500/25"
       />
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-2xl space-y-6">
         {/* Account */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Account</h2>
+        <div className="card p-6">
+          <h2 className="text-sm font-display font-semibold text-gray-900 mb-4">Account</h2>
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-gray-500">Email</span>
@@ -46,29 +44,29 @@ export function Settings() {
         </div>
 
         {/* Integrations */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Integrations</h2>
+        <div className="card p-6">
+          <h2 className="text-sm font-display font-semibold text-gray-900 mb-4">Integrations</h2>
           <div className="space-y-4">
             {/* Stripe */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-                  <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="h-5 w-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
                   </svg>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-900">Stripe</div>
-                  <div className="text-xs text-gray-500">Send invoices and accept payments</div>
+                  <div className="text-xs text-gray-400">Send invoices and accept payments</div>
                 </div>
               </div>
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 ring-1 ring-inset ring-amber-600/20">
                 Setup Required
               </span>
             </div>
 
             {/* Gmail */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
                   <svg className="h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
@@ -77,10 +75,10 @@ export function Settings() {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-900">Gmail</div>
-                  <div className="text-xs text-gray-500">Send outreach emails from your Gmail</div>
+                  <div className="text-xs text-gray-400">Send outreach emails from your Gmail</div>
                 </div>
               </div>
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 ring-1 ring-inset ring-amber-600/20">
                 Setup Required
               </span>
             </div>
@@ -89,15 +87,15 @@ export function Settings() {
         </div>
 
         {/* Exclude List link */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Data Management</h2>
+        <div className="card p-6">
+          <h2 className="text-sm font-display font-semibold text-gray-900 mb-4">Data Management</h2>
           <a
             href="/excluded"
             className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-all"
           >
             <div>
               <div className="text-sm font-medium text-gray-900">Exclude List</div>
-              <div className="text-xs text-gray-500">Manage artists who opted out of contact</div>
+              <div className="text-xs text-gray-400">Manage artists who opted out of contact</div>
             </div>
             <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -106,9 +104,9 @@ export function Settings() {
         </div>
 
         {/* Blocked Terms */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">Blocked Terms</h2>
-          <p className="text-xs text-gray-500 mb-4">Filter out unwanted results from discovery and scraping</p>
+        <div className="card p-6">
+          <h2 className="text-sm font-display font-semibold text-gray-900 mb-1">Blocked Terms</h2>
+          <p className="text-xs text-gray-400 mb-4">Filter out unwanted results from discovery and scraping</p>
 
           {/* Add form */}
           <form
@@ -127,12 +125,12 @@ export function Settings() {
               value={newTerm}
               onChange={(e) => setNewTerm(e.target.value)}
               placeholder="e.g. spam.com or badprofile"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="input-field flex-1"
             />
             <select
               value={newTermType}
               onChange={(e) => setNewTermType(e.target.value as 'email_domain' | 'profile_name')}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="select-field"
             >
               <option value="email_domain">Email Domain</option>
               <option value="profile_name">Profile Name</option>
@@ -140,7 +138,7 @@ export function Settings() {
             <button
               type="submit"
               disabled={addTerm.isPending || !newTerm.trim()}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {addTerm.isPending ? 'Adding...' : 'Add'}
             </button>
@@ -156,12 +154,12 @@ export function Settings() {
                   .map((t) => (
                     <span
                       key={t.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20"
+                      className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 ring-1 ring-inset ring-red-600/20"
                     >
                       {t.term}
                       <button
                         onClick={() => deleteTerm.mutate(t.id)}
-                        className="ml-0.5 text-red-400 hover:text-red-600"
+                        className="ml-0.5 text-red-500 hover:text-red-300"
                         aria-label={`Remove ${t.term}`}
                       >
                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -186,12 +184,12 @@ export function Settings() {
                   .map((t) => (
                     <span
                       key={t.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20"
+                      className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600 ring-1 ring-inset ring-orange-600/20"
                     >
                       {t.term}
                       <button
                         onClick={() => deleteTerm.mutate(t.id)}
-                        className="ml-0.5 text-orange-400 hover:text-orange-600"
+                        className="ml-0.5 text-orange-500 hover:text-orange-300"
                         aria-label={`Remove ${t.term}`}
                       >
                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
