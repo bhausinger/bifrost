@@ -831,11 +831,40 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
 
           {/* Step: Scraping progress */}
           {step === 'scraping' && (
-            <ScrapeProgressView
-              progress={scrapeProgress}
-              liveFeed={liveFeed}
-              feedRef={feedRef}
-            />
+            <div className="space-y-6 py-8 text-center">
+              <div>
+                <div className="mb-2 font-mono text-2xl font-bold text-gray-900">
+                  {scrapeProgress.done} / {scrapeProgress.total}
+                </div>
+                <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full bg-[#ff5500] transition-all"
+                    style={{ width: `${scrapeProgress.total ? (scrapeProgress.done / scrapeProgress.total) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="mt-2 text-sm text-gray-400">ETA: {scrapeProgress.eta}</div>
+              </div>
+              <div className="flex justify-center gap-8 text-sm">
+                <div>
+                  <div className="font-mono text-lg font-bold text-emerald-600">{scrapeProgress.emailsFound}</div>
+                  <div className="text-gray-400">Emails Found</div>
+                </div>
+                <div>
+                  <div className="font-mono text-lg font-bold text-gray-400">{scrapeProgress.done - scrapeProgress.emailsFound}</div>
+                  <div className="text-gray-400">No Email</div>
+                </div>
+              </div>
+              {liveFeed.length > 0 && (
+                <div ref={feedRef} className="mx-auto max-w-md max-h-40 overflow-y-auto rounded-lg bg-gray-50 p-3 text-left text-xs">
+                  {liveFeed.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 py-0.5">
+                      <span className={item.hasEmail ? 'text-emerald-500' : 'text-gray-300'}>{item.hasEmail ? '✓' : '✗'}</span>
+                      <span className="text-gray-600">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Step: Review */}
