@@ -345,7 +345,20 @@ def _extract_email(text: str) -> Optional[str]:
     if not text:
         return None
     found = re.findall(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", text)
-    return found[0] if found else None
+    # Filter out junk: must have letters before @, reasonable length, real-looking domain
+    for email in found:
+        local, domain = email.split("@", 1)
+        # Skip if local part is all digits (not a real email)
+        if local.replace(".", "").replace("-", "").replace("_", "").isdigit():
+            continue
+        # Skip common false positives from JS/CSS
+        if domain.endswith((".png", ".jpg", ".js", ".css", ".svg", ".woff")):
+            continue
+        # Skip unreasonably long emails
+        if len(email) > 80:
+            continue
+        return email
+    return None
 
 
 def _build_artist(user: dict, sc_url: str, web_profiles: list[dict] = None) -> ScrapedArtist:

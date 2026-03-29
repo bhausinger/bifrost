@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
+import { fetchDedupData, checkDuplicate } from '@/lib/dedup'
 import type { PipelineStage } from '@/types'
 
 interface ScraperModalProps {
@@ -95,37 +96,8 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
     const scraped: ScrapedArtist[] = []
     const startTime = Date.now()
 
-    // Check existing artists for duplicate detection
-    const { data: existing } = await supabase
-      .from('artists')
-      .select('soundcloud_url, spotify_url, email')
-    const existingUrls = new Set(
-      (existing ?? []).flatMap((a) => {
-        const urls: string[] = []
-        if (a.soundcloud_url) urls.push(a.soundcloud_url.toLowerCase())
-        if (a.spotify_url) urls.push(a.spotify_url.toLowerCase())
-        return urls
-      })
-    )
-
-    // Check excluded emails
-    const { data: excluded } = await supabase
-      .from('excluded_artists')
-      .select('email')
-    const excludedEmails = new Set(
-      (excluded ?? []).map((e) => e.email?.toLowerCase()).filter(Boolean)
-    )
-
-    // Fetch blocked terms
-    const { data: blockedTermsData } = await supabase
-      .from('blocked_terms')
-      .select('term, type')
-    const blockedDomains = (blockedTermsData ?? [])
-      .filter((t) => t.type === 'email_domain')
-      .map((t) => t.term.toLowerCase())
-    const blockedNames = (blockedTermsData ?? [])
-      .filter((t) => t.type === 'profile_name')
-      .map((t) => t.term.toLowerCase())
+    // Single parallel fetch for all dedup data
+    const dedup = await fetchDedupData()
 
     for (let i = 0; i < urlList.length; i++) {
       const url = urlList[i]!
@@ -148,12 +120,8 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
 
         const data = await response.json()
 
-        const isDuplicate = existingUrls.has(url.toLowerCase())
-        const isExcluded = data.email && excludedEmails.has(data.email.toLowerCase())
-        const isBlocked =
-          (data.email && blockedDomains.some((d: string) => data.email.toLowerCase().split('@')[1]?.includes(d))) ||
-          blockedNames.some((n: string) => (data.name || '').toLowerCase().includes(n))
-        const isFlagged = isDuplicate || isExcluded || isBlocked
+        const reason = checkDuplicate(dedup, url, data.email, data.name, data.bio)
+        const isFlagged = !!reason
 
         scraped.push({
           name: data.name || (url.split('/').pop() ?? 'Unknown'),
@@ -169,13 +137,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           selected: !isFlagged && !!data.email,
           editedEmail: data.email || '',
           isDuplicate: isFlagged,
-          duplicateNote: isDuplicate
-            ? 'Already in pipeline'
-            : isExcluded
-              ? 'Excluded'
-              : isBlocked
-                ? 'Blocked'
-                : '',
+          duplicateNote: reason ?? '',
         })
 
         setProgress((p) => ({

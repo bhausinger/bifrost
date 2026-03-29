@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
+import { fetchDedupData, checkDuplicate, type DedupData } from '@/lib/dedup'
 import type { PipelineStage } from '@/types'
 
 interface LeadGeneratorModalProps {
@@ -63,6 +64,7 @@ const UPLOAD_RECENCY = [
 
 export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
   const createEntry = useCreatePipelineEntry()
+  const dedupRef = useRef<DedupData | null>(null)
 
   // Step state
   const [step, setStep] = useState<Step>('config')
@@ -88,6 +90,10 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
     emailsFound: 0,
     eta: '',
   })
+
+  // Live feed for scraping
+  const [liveFeed, setLiveFeed] = useState<Array<{ name: string; hasEmail: boolean }>>([])
+  const feedRef = useRef<HTMLDivElement>(null)
 
   // Import state
   const [importStage, setImportStage] = useState<PipelineStage>('discovered')
@@ -134,15 +140,9 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
       const results = data.results || []
       setTotalFound(data.total_found ?? results.length)
 
-      // Duplicate detection
-      const { data: existing } = await supabase
-        .from('artists')
-        .select('soundcloud_url')
-      const existingUrls = new Set(
-        (existing ?? [])
-          .map((a) => a.soundcloud_url?.toLowerCase())
-          .filter(Boolean)
-      )
+      // Fetch dedup data once, cache for scrape step
+      const dedup = await fetchDedupData()
+      dedupRef.current = dedup
 
       const leads: DiscoveredLead[] = results.map(
         (r: {
@@ -157,7 +157,8 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
           country: string | null
           sc_user_id: string | null
         }) => {
-          const alreadyInPipeline = existingUrls.has(r.url?.toLowerCase())
+          const reason = checkDuplicate(dedup, r.url, null, r.name, null)
+          const alreadyInPipeline = !!reason
           return {
             name: r.name,
             url: r.url,
@@ -222,6 +223,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
     if (selected.length === 0) return
 
     setStep('scraping')
+    setLiveFeed([])
     setScrapeProgress({
       done: 0,
       total: selected.length,
@@ -232,26 +234,8 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
     const scraped: ScrapedLead[] = []
     const startTime = Date.now()
 
-    // Check existing artists for duplicate detection
-    const { data: existing } = await supabase
-      .from('artists')
-      .select('soundcloud_url, spotify_url, email')
-    const existingUrls = new Set(
-      (existing ?? []).flatMap((a) => {
-        const urls: string[] = []
-        if (a.soundcloud_url) urls.push(a.soundcloud_url.toLowerCase())
-        if (a.spotify_url) urls.push(a.spotify_url.toLowerCase())
-        return urls
-      })
-    )
-
-    // Check excluded emails
-    const { data: excluded } = await supabase
-      .from('excluded_artists')
-      .select('email')
-    const excludedEmails = new Set(
-      (excluded ?? []).map((e) => e.email?.toLowerCase()).filter(Boolean)
-    )
+    // Reuse cached dedup data, or fetch fresh if not available
+    const dedup = dedupRef.current ?? await fetchDedupData()
 
     for (let i = 0; i < selected.length; i++) {
       const lead = selected[i]!
@@ -276,9 +260,8 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
 
         const data = await response.json()
 
-        const isDuplicate = existingUrls.has(lead.url.toLowerCase())
-        const isExcluded =
-          data.email && excludedEmails.has(data.email.toLowerCase())
+        const reason = checkDuplicate(dedup, lead.url, data.email, data.name ?? lead.name, data.bio)
+        const isFlagged = !!reason
 
         scraped.push({
           ...lead,
@@ -289,18 +272,15 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
           image_url: data.image_url || lead.avatar_url,
           bio: data.bio ?? null,
           social_links: data.social_links ?? {},
-          isDuplicate,
-          isBlocked: false, // Will be set after blocked terms check
-          duplicateNote: isDuplicate
-            ? 'Already in pipeline'
-            : isExcluded
-              ? 'Excluded'
-              : '',
-          selected: !isDuplicate && !isExcluded && !!data.email,
+          isDuplicate: isFlagged,
+          isBlocked: false,
+          duplicateNote: reason ?? '',
+          selected: !isFlagged && !!data.email,
           followers: data.followers ?? lead.followers,
           track_count: data.track_count ?? lead.track_count,
         })
 
+        setLiveFeed((prev) => [...prev, { name: data.name ?? lead.name, hasEmail: !!data.email }])
         setScrapeProgress((p) => ({
           ...p,
           done: i + 1,
@@ -324,39 +304,12 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
           selected: false,
         })
 
+        setLiveFeed((prev) => [...prev, { name: lead.name, hasEmail: false }])
         setScrapeProgress((p) => ({
           ...p,
           done: i + 1,
           eta,
         }))
-      }
-    }
-
-    // Blocked terms filtering
-    const { data: blockedTerms } = await supabase
-      .from('blocked_terms')
-      .select('term, type')
-
-    if (blockedTerms && blockedTerms.length > 0) {
-      for (const lead of scraped) {
-        const nameLC = lead.name.toLowerCase()
-        const emailLC = (lead.email || '').toLowerCase()
-        const bioLC = (lead.bio || '').toLowerCase()
-
-        for (const bt of blockedTerms) {
-          const term = bt.term.toLowerCase()
-          if (
-            nameLC.includes(term) ||
-            emailLC.includes(term) ||
-            bioLC.includes(term)
-          ) {
-            lead.isBlocked = true
-            lead.isDuplicate = true // reuse duplicate styling
-            lead.duplicateNote = `Blocked term: ${bt.term}`
-            lead.selected = false
-            break
-          }
-        }
       }
     }
 
@@ -878,52 +831,11 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
 
           {/* Step: Scraping progress */}
           {step === 'scraping' && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="mb-8 text-center">
-                <div className="text-4xl font-bold tracking-tight text-gray-900">
-                  {scrapeProgress.done}
-                  <span className="text-gray-300"> / </span>
-                  <span className="text-gray-400">{scrapeProgress.total}</span>
-                </div>
-                <p className="mt-1 text-xs text-gray-400">artists scraped</p>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mx-auto w-full max-w-md">
-                <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#ff5500] to-amber-400 transition-all duration-500"
-                    style={{
-                      width: `${(scrapeProgress.done / scrapeProgress.total) * 100}%`,
-                    }}
-                  />
-                </div>
-                <div className="mt-2 flex justify-between text-xs text-gray-400">
-                  <span>{Math.round((scrapeProgress.done / scrapeProgress.total) * 100)}%</span>
-                  <span>ETA: {scrapeProgress.eta}</span>
-                </div>
-              </div>
-
-              {/* Stats cards */}
-              <div className="mt-8 flex gap-6">
-                <div className="flex flex-col items-center rounded-xl border border-gray-100 bg-white px-6 py-4 shadow-sm">
-                  <span className="text-2xl font-bold text-[#ff5500]">
-                    {scrapeProgress.emailsFound}
-                  </span>
-                  <span className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                    Emails Found
-                  </span>
-                </div>
-                <div className="flex flex-col items-center rounded-xl border border-gray-100 bg-white px-6 py-4 shadow-sm">
-                  <span className="text-2xl font-bold text-gray-700">
-                    {scrapeProgress.done}
-                  </span>
-                  <span className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                    Profiles Scraped
-                  </span>
-                </div>
-              </div>
-            </div>
+            <ScrapeProgressView
+              progress={scrapeProgress}
+              liveFeed={liveFeed}
+              feedRef={feedRef}
+            />
           )}
 
           {/* Step: Review */}
