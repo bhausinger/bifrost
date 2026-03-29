@@ -115,7 +115,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
     setDiscoveryError('')
 
     try {
-      const res = await fetch(`${SCRAPER_URL}/api/discovery/discover`, {
+      const res = await fetch(`${SCRAPER_URL}/discover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -266,7 +266,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
           : `~${remaining}s`
 
       try {
-        const response = await fetch(`${SCRAPER_URL}/api/soundcloud/scrape`, {
+        const response = await fetch(`${SCRAPER_URL}/scrape/soundcloud`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: lead.url }),
@@ -526,10 +526,6 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
       <div className="fixed inset-3 z-50 mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-modal">
         {/* ── Header ── */}
         <div className="relative overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 px-6 py-5">
-          {/* Subtle SoundCloud-orange glow */}
-          <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#ff5500]/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-amber-50 blur-2xl" />
-
           <div className="relative flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-white tracking-tight">
@@ -746,7 +742,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                       <span className="text-sm font-bold text-[#ff5500]">{filteredCount}</span>
                     </div>
                     <div className="text-xs text-gray-500">
-                      found from<br />{totalFound} scanned
+                      found from {totalFound} scanned
                     </div>
                   </div>
                   {pipelineCount > 0 && (
@@ -761,7 +757,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
                       <span className="text-sm font-bold text-emerald-600">{filteredCount - pipelineCount}</span>
                     </div>
-                    <div className="text-xs text-gray-500">new<br />leads</div>
+                    <div className="text-xs text-gray-500">new leads</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

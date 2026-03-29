@@ -105,9 +105,18 @@ class SoundCloudScraper:
             user = await self._resolve(clean)
             if not user:
                 raise ValueError("Could not resolve profile")
-            result = _build_artist(user, clean)
+
+            # Get linked social profiles from SC API
+            web_profiles = await self._web_profiles(user["id"])
+
+            result = _build_artist(user, clean, web_profiles)
+
+            # If no email found in bio, try scraping their linked website
+            if not result.email:
+                result.email = await self._find_email_from_links(user, web_profiles)
+
             result.success = True
-            logger.info(f"OK: {result.name} ({result.followers} followers)")
+            logger.info(f"OK: {result.name} ({result.followers} followers, email={'yes' if result.email else 'no'})")
             return result
         except Exception as e:
             logger.error(f"FAIL: {url} — {e}")
@@ -239,6 +248,59 @@ class SoundCloudScraper:
         except Exception:
             return []
 
+    async def _web_profiles(self, user_id: int) -> list[dict]:
+        """Get linked social profiles (Instagram, Spotify, website, etc.)."""
+        try:
+            resp = await self._get(
+                f"{SC_API}/users/soundcloud:users:{user_id}/web-profiles",
+                {"client_id": self.client_id},
+            )
+            if resp.status_code == 200:
+                return resp.json()
+            return []
+        except Exception:
+            return []
+
+    async def _find_email_from_links(self, user: dict, web_profiles: list[dict]) -> Optional[str]:
+        """Try to find an email by fetching the artist's linked websites."""
+        urls_to_check = []
+
+        # Website from SC profile
+        website = user.get("website", "") or ""
+        if website and not any(skip in website.lower() for skip in [
+            "instagram.com", "twitter.com", "x.com", "facebook.com",
+            "youtube.com", "spotify.com", "soundcloud.com", "tiktok.com",
+        ]):
+            urls_to_check.append(website)
+
+        # Websites from web_profiles
+        for wp in web_profiles:
+            url = wp.get("url", "")
+            if not url:
+                continue
+            ul = url.lower()
+            # Linktree, personal sites, etc. — skip major social platforms
+            if any(skip in ul for skip in [
+                "instagram.com", "twitter.com", "x.com", "facebook.com",
+                "youtube.com", "spotify.com", "soundcloud.com", "tiktok.com",
+            ]):
+                continue
+            if url not in urls_to_check:
+                urls_to_check.append(url)
+
+        # Fetch each URL and look for emails
+        for url in urls_to_check[:3]:  # Max 3 to avoid slowing things down
+            try:
+                resp = await self._client.get(url, timeout=httpx.Timeout(10.0), follow_redirects=True)
+                if resp.status_code == 200 and "text" in resp.headers.get("content-type", ""):
+                    email = _extract_email(resp.text)
+                    if email:
+                        logger.info(f"Found email on {url}: {email}")
+                        return email
+            except Exception:
+                continue
+        return None
+
     async def _refresh_id(self) -> bool:
         """Scrape a fresh client_id from SoundCloud's JS bundles."""
         try:
@@ -286,13 +348,15 @@ def _extract_email(text: str) -> Optional[str]:
     return found[0] if found else None
 
 
-def _build_artist(user: dict, sc_url: str) -> ScrapedArtist:
+def _build_artist(user: dict, sc_url: str, web_profiles: list[dict] = None) -> ScrapedArtist:
     bio = user.get("description", "") or ""
     email = _extract_email(bio)
 
-    # Parse social links from website field
+    # Parse social links from website field + web_profiles
     spotify_url = None
     instagram = None
+
+    # Check website field
     website = user.get("website", "") or ""
     if website:
         wl = website.lower()
@@ -300,6 +364,18 @@ def _build_artist(user: dict, sc_url: str) -> ScrapedArtist:
             spotify_url = website
         elif "instagram.com/" in wl:
             handle = website.rstrip("/").split("/")[-1]
+            instagram = f"@{handle}" if not handle.startswith("@") else handle
+
+    # Check web_profiles for more links
+    for wp in (web_profiles or []):
+        url = wp.get("url", "")
+        if not url:
+            continue
+        ul = url.lower()
+        if not spotify_url and "open.spotify.com/artist/" in ul:
+            spotify_url = url
+        elif not instagram and "instagram.com/" in ul:
+            handle = url.rstrip("/").split("/")[-1]
             instagram = f"@{handle}" if not handle.startswith("@") else handle
 
     genre = user.get("genre", "") or ""
