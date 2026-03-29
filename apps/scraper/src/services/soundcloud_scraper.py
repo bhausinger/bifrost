@@ -344,18 +344,27 @@ def _name_from_url(url: str) -> str:
 def _extract_email(text: str) -> Optional[str]:
     if not text:
         return None
-    found = re.findall(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", text)
-    # Filter out junk: must have letters before @, reasonable length, real-looking domain
+    # Use stricter regex: TLD must be followed by non-alpha or end of string
+    found = re.findall(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7}(?=[^A-Za-z]|$)", text)
     for email in found:
         local, domain = email.split("@", 1)
-        # Skip if local part is all digits (not a real email)
+        # Skip if local part is all hex (hashes like 7c33659f530ef43fb4532fc6e83354)
+        if re.fullmatch(r"[0-9a-f]+", local.lower()):
+            continue
+        # Skip if local part is all digits
         if local.replace(".", "").replace("-", "").replace("_", "").isdigit():
             continue
-        # Skip common false positives from JS/CSS
-        if domain.endswith((".png", ".jpg", ".js", ".css", ".svg", ".woff")):
+        # Skip if local part has no letters at all
+        if not re.search(r"[a-zA-Z]", local):
             continue
-        # Skip unreasonably long emails
-        if len(email) > 80:
+        # Skip common false positives from JS/CSS/assets
+        if domain.endswith((".png", ".jpg", ".js", ".css", ".svg", ".woff", ".woff2", ".ttf", ".eot")):
+            continue
+        # Skip unreasonably long local parts (real emails rarely exceed 30 chars)
+        if len(local) > 40:
+            continue
+        # Skip if domain doesn't have at least one dot with letters on both sides
+        if not re.match(r"[a-zA-Z0-9.-]+\.[a-zA-Z]{2,7}$", domain):
             continue
         return email
     return None
