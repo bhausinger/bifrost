@@ -24,7 +24,7 @@ export async function fetchDedupData(): Promise<DedupData> {
         .select('artist:artists(soundcloud_url, email)')
         .not('status', 'in', '("cancelled")'),
       supabase.from('excluded_artists').select('email'),
-      supabase.from('blocked_terms').select('term, type').catch(() => ({ data: [], error: null })),
+      supabase.from('blocked_terms').select('term, type'),
     ])
 
   const artists = artistsRes.data ?? []
