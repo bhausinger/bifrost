@@ -143,6 +143,21 @@ export interface Campaign {
   updated_at: string
 }
 
+export interface Placement {
+  id: string
+  campaign_id: string
+  playlist_id: string
+  status: string
+  cost: number | null
+  placed_at: string | null
+  removed_at: string | null
+  streams_attributed: number
+  notes: string | null
+  created_at: string
+  updated_at: string
+  playlist?: Playlist & { curator?: Curator }
+}
+
 export interface Transaction {
   id: string
   type: 'income' | 'expense'

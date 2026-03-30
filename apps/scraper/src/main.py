@@ -53,6 +53,7 @@ class DiscoverRequest(BaseModel):
     max_followers: int = 999_999_999
     genres: Optional[list[str]] = None
     max_results: int = 50
+    uploaded_within_days: Optional[int] = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────
@@ -84,4 +85,5 @@ async def discover_artists(req: DiscoverRequest):
         max_followers=req.max_followers,
         genres=req.genres,
         max_results=req.max_results,
+        uploaded_within_days=req.uploaded_within_days,
     )

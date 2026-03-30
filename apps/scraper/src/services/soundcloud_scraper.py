@@ -4,9 +4,11 @@ No browser, no Playwright, no Selenium. Just httpx.
 """
 import re
 import asyncio
+import datetime
 import random
 import logging
 from typing import Optional
+from urllib.parse import urlparse, parse_qs
 from dataclasses import dataclass, field
 
 import httpx
@@ -16,6 +18,34 @@ logger = logging.getLogger(__name__)
 # SoundCloud's public client_id (embedded in their frontend JS)
 DEFAULT_CLIENT_ID = "WU4bVxk5Df0g5JC8ULzW77Ry7OM10Lyj"
 SC_API = "https://api-v2.soundcloud.com"
+
+# Genre variants for expanded search — maps each genre to related terms
+GENRE_VARIANTS: dict[str, list[str]] = {
+    "hip-hop": ["rap", "trap", "hip hop"],
+    "rap": ["hip-hop", "trap", "hip hop"],
+    "trap": ["hip-hop", "rap"],
+    "electronic": ["edm", "electro"],
+    "edm": ["electronic", "electro"],
+    "lo-fi": ["lofi", "lo fi", "chillhop"],
+    "lofi": ["lo-fi", "lo fi", "chillhop"],
+    "house": ["deep house", "tech house"],
+    "techno": ["tech house", "minimal"],
+    "drum & bass": ["dnb", "drum and bass", "jungle"],
+    "dnb": ["drum & bass", "drum and bass", "jungle"],
+    "dubstep": ["bass music", "riddim"],
+    "r&b": ["rnb", "r and b", "soul"],
+    "rnb": ["r&b", "r and b", "soul"],
+    "ambient": ["downtempo", "chillout"],
+    "indie": ["indie pop", "indie rock", "alternative"],
+    "pop": ["indie pop", "synth pop"],
+    "grime": ["uk rap", "uk drill"],
+    "drill": ["uk drill", "chicago drill"],
+    "phonk": ["drift phonk", "memphis"],
+    "afrobeats": ["afro house", "amapiano"],
+    "amapiano": ["afrobeats", "afro house"],
+    "jersey club": ["club", "baltimore club"],
+    "jungle": ["drum & bass", "dnb", "ragga jungle"],
+}
 
 
 @dataclass
@@ -135,6 +165,7 @@ class SoundCloudScraper:
         max_followers: int = 999_999_999,
         genres: Optional[list[str]] = None,
         max_results: int = 50,
+        uploaded_within_days: Optional[int] = None,
     ) -> dict:
         """Find artists similar to a seed profile."""
         clean = _normalize_url(seed_url)
@@ -146,19 +177,41 @@ class SoundCloudScraper:
         seed_name = seed.get("username", "Unknown")
         seed_genre = seed.get("genre", "")
 
+        # Build expanded search queries using genre variants
         queries = [seed_name]
-        for g in (genres or ([seed_genre] if seed_genre else [])):
-            if g and g.lower() not in [q.lower() for q in queries]:
+        base_genres = genres or ([seed_genre] if seed_genre else [])
+        for g in base_genres:
+            gl = g.lower().strip()
+            if gl and gl not in [q.lower() for q in queries]:
                 queries.append(g)
+            # Add genre variants
+            for variant in GENRE_VARIANTS.get(gl, []):
+                if variant.lower() not in [q.lower() for q in queries]:
+                    queries.append(variant)
+        # Cap at 8 unique queries
+        queries = queries[:8]
 
-        # Fan out: related + followings + followers + search queries
+        # Build genre tags for track searches (up to 4)
+        genre_tags = []
+        for g in base_genres:
+            gl = g.lower().strip()
+            if gl and gl not in genre_tags:
+                genre_tags.append(gl)
+            for variant in GENRE_VARIANTS.get(gl, []):
+                if variant.lower() not in genre_tags:
+                    genre_tags.append(variant.lower())
+        genre_tags = genre_tags[:4]
+
+        # Phase 1: Fan out — related + paginated followings/followers + multi-page search + tag searches
         tasks = [
             self._related(seed_id),
-            self._followings(seed_id),
-            self._followers(seed_id),
+            self._followings_paginated(seed_id),
+            self._followers_paginated(seed_id),
         ]
-        for q in queries[:5]:
-            tasks.append(self._search(q))
+        for q in queries:
+            tasks.append(self._search_paginated(q))
+        for tag in genre_tags:
+            tasks.append(self._search_tracks_by_tag(tag))
 
         raw = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -166,6 +219,7 @@ class SoundCloudScraper:
         candidates = []
         for r in raw:
             if isinstance(r, Exception):
+                logger.debug(f"Discovery task error: {r}")
                 continue
             for u in (r or []):
                 uid = u.get("id")
@@ -173,20 +227,84 @@ class SoundCloudScraper:
                     seen.add(uid)
                     candidates.append(u)
 
-        # Filter
-        filtered = [
-            u for u in candidates
-            if min_followers <= (u.get("followers_count", 0) or 0) <= max_followers
-            and (u.get("track_count", 0) or 0) >= 1
-        ]
+        # Phase 5: 2nd-degree connections — top 3 related artists' related + followings
+        if candidates:
+            # Pick top 3 by followers from initial candidates
+            top3 = sorted(candidates, key=lambda u: u.get("followers_count", 0) or 0, reverse=True)[:3]
+            second_degree_tasks = []
+            for u in top3:
+                uid = u.get("id")
+                if uid:
+                    second_degree_tasks.append(self._related(uid))
+                    second_degree_tasks.append(self._followings(uid))
+
+            if second_degree_tasks:
+                raw2 = await asyncio.gather(*second_degree_tasks, return_exceptions=True)
+                for r in raw2:
+                    if isinstance(r, Exception):
+                        continue
+                    for u in (r or []):
+                        uid = u.get("id")
+                        if uid and uid not in seen:
+                            seen.add(uid)
+                            candidates.append(u)
+
+        total_raw = len(candidates)
+
+        # Filter with stats tracking
+        cutoff_date = None
+        if uploaded_within_days:
+            cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=uploaded_within_days)
+
+        below_min = 0
+        above_max = 0
+        no_tracks = 0
+        too_old = 0
+        passed = 0
+
+        filtered = []
+        for u in candidates:
+            fc = u.get("followers_count", 0) or 0
+            tc = u.get("track_count", 0) or 0
+
+            if fc < min_followers:
+                below_min += 1
+                continue
+            if fc > max_followers:
+                above_max += 1
+                continue
+            if tc < 1:
+                no_tracks += 1
+                continue
+            if cutoff_date:
+                last_mod = u.get("last_modified")
+                if last_mod:
+                    try:
+                        mod_dt = datetime.datetime.fromisoformat(last_mod.replace("Z", "+00:00"))
+                        if mod_dt < cutoff_date:
+                            too_old += 1
+                            continue
+                    except (ValueError, TypeError):
+                        pass
+            passed += 1
+            filtered.append(u)
+
         filtered.sort(key=lambda u: u.get("followers_count", 0) or 0, reverse=True)
         filtered = filtered[:max_results]
 
         return {
             "results": [_user_summary(u) for u in filtered],
-            "total_found": len(candidates),
+            "total_found": total_raw,
             "filtered_count": len(filtered),
             "seed_artist": seed_name,
+            "filter_stats": {
+                "total_raw": total_raw,
+                "below_min": below_min,
+                "above_max": above_max,
+                "no_tracks": no_tracks,
+                "too_old": too_old,
+                "passed": passed,
+            },
         }
 
     # ── SC API wrappers ───────────────────────────────────────────────
@@ -248,6 +366,94 @@ class SoundCloudScraper:
         except Exception:
             return []
 
+    # ── Paginated helpers ──────────────────────────────────────────
+
+    async def _paginated_fetch(self, url: str, params: dict, max_pages: int = 3, limit: int = 200) -> list[dict]:
+        """Follow SC's next_href cursor pagination up to max_pages."""
+        all_items: list[dict] = []
+        params = {**params, "client_id": self.client_id, "limit": limit}
+
+        for page in range(max_pages):
+            try:
+                resp = await self._get(url, params)
+                if resp.status_code == 401:
+                    await self._refresh_id()
+                    params["client_id"] = self.client_id
+                    resp = await self._get(url, params)
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                collection = data.get("collection", [])
+                all_items.extend(collection)
+                if not collection:
+                    break
+                next_href = data.get("next_href")
+                if not next_href:
+                    break
+                # next_href is a full URL with query params — parse and use
+                url = next_href.split("?")[0]
+                parsed = urlparse(next_href)
+                params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+                params["client_id"] = self.client_id
+            except Exception as e:
+                logger.debug(f"Pagination error on page {page}: {e}")
+                break
+
+        return all_items
+
+    async def _followings_paginated(self, uid: int) -> list[dict]:
+        """Fetch up to 600 followings (3 pages x 200)."""
+        try:
+            return await self._paginated_fetch(
+                f"{SC_API}/users/{uid}/followings", {}, max_pages=3, limit=200
+            )
+        except Exception:
+            return []
+
+    async def _followers_paginated(self, uid: int) -> list[dict]:
+        """Fetch up to 600 followers (3 pages x 200)."""
+        try:
+            return await self._paginated_fetch(
+                f"{SC_API}/users/{uid}/followers", {}, max_pages=3, limit=200
+            )
+        except Exception:
+            return []
+
+    async def _search_paginated(self, query: str) -> list[dict]:
+        """Search users with 2-page pagination (up to 400 results)."""
+        try:
+            return await self._paginated_fetch(
+                f"{SC_API}/search/users", {"q": query}, max_pages=2, limit=200
+            )
+        except Exception:
+            return []
+
+    async def _search_tracks_by_tag(self, tag: str, limit: int = 200) -> list[dict]:
+        """Search tracks by tag/genre, extract unique artists from results."""
+        try:
+            params = {"q": tag, "client_id": self.client_id, "limit": limit}
+            resp = await self._get(f"{SC_API}/search/tracks", params)
+            if resp.status_code == 401:
+                await self._refresh_id()
+                params["client_id"] = self.client_id
+                resp = await self._get(f"{SC_API}/search/tracks", params)
+            if resp.status_code != 200:
+                return []
+            tracks = resp.json().get("collection", [])
+            # Extract unique user objects from tracks
+            seen_ids: set[int] = set()
+            users: list[dict] = []
+            for track in tracks:
+                user = track.get("user")
+                if user:
+                    uid = user.get("id")
+                    if uid and uid not in seen_ids:
+                        seen_ids.add(uid)
+                        users.append(user)
+            return users
+        except Exception:
+            return []
+
     async def _web_profiles(self, user_id: int) -> list[dict]:
         """Get linked social profiles (Instagram, Spotify, website, etc.)."""
         try:
@@ -278,6 +484,22 @@ class SoundCloudScraper:
             "solo.to", "campsite.bio", "withkoji.com", "snipfeed.co",
         }
 
+        # --- Strategy 0: Check web_profiles for direct email entries ---
+        for wp in web_profiles:
+            url = wp.get("url", "")
+            # SC profiles can have mailto: links in web_profiles
+            if url and url.lower().startswith("mailto:"):
+                email = _validate_email(url[7:].split("?")[0])
+                if email:
+                    logger.info(f"Email from SC web_profiles mailto: {email}")
+                    return email
+            # Some profiles use network="personal" with an email as the URL
+            if url and "@" in url and not url.startswith("http"):
+                email = _validate_email(url)
+                if email:
+                    logger.info(f"Email from SC web_profiles entry: {email}")
+                    return email
+
         websites: list[str] = []      # Personal sites to deep-crawl
         linktrees: list[str] = []     # Link-in-bio pages
         ig_url: Optional[str] = None  # Instagram profile
@@ -289,7 +511,7 @@ class SoundCloudScraper:
             all_urls.append(website)
         for wp in web_profiles:
             url = wp.get("url", "")
-            if url and url not in all_urls:
+            if url and url not in all_urls and url.startswith("http"):
                 all_urls.append(url)
             # IG from web_profiles
             if wp.get("network") == "instagram":
@@ -564,4 +786,5 @@ def _user_summary(u: dict) -> dict:
         "avatar_url": avatar,
         "city": u.get("city", ""),
         "country": u.get("country_code", ""),
+        "last_modified": u.get("last_modified"),
     }

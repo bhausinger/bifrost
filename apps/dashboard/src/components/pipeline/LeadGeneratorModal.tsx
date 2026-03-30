@@ -28,8 +28,16 @@ interface DiscoveredLead {
   city: string | null
   country: string | null
   sc_user_id: string | null
-  already_in_pipeline: boolean
   selected: boolean
+}
+
+interface FilterStats {
+  total_raw: number
+  below_min: number
+  above_max: number
+  no_tracks: number
+  too_old: number
+  passed: number
 }
 
 interface ScrapedLead extends DiscoveredLead {
@@ -80,6 +88,8 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
   // Discovery state
   const [discoveredLeads, setDiscoveredLeads] = useState<DiscoveredLead[]>([])
   const [totalFound, setTotalFound] = useState(0)
+  const [excludedCount, setExcludedCount] = useState(0)
+  const [filterStats, setFilterStats] = useState<FilterStats | null>(null)
   const [discoveryError, setDiscoveryError] = useState('')
 
   // Scrape state
@@ -139,43 +149,48 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
       const data = await res.json()
       const results = data.results || []
       setTotalFound(data.total_found ?? results.length)
+      setFilterStats(data.filter_stats ?? null)
 
       // Fetch dedup data once, cache for scrape step
       const dedup = await fetchDedupData()
       dedupRef.current = dedup
 
-      const leads: DiscoveredLead[] = results.map(
-        (r: {
-          name: string
-          url: string
-          followers: number
-          track_count: number
-          genre: string
-          last_modified: string | null
-          avatar_url: string | null
-          city: string | null
-          country: string | null
-          sc_user_id: string | null
-        }) => {
-          const reason = checkDuplicate(dedup, r.url, null, r.name, null)
-          const alreadyInPipeline = !!reason
-          return {
-            name: r.name,
-            url: r.url,
-            followers: r.followers ?? 0,
-            track_count: r.track_count ?? 0,
-            genre: r.genre ?? '',
-            last_modified: r.last_modified ?? null,
-            avatar_url: r.avatar_url ?? null,
-            city: r.city ?? null,
-            country: r.country ?? null,
-            sc_user_id: r.sc_user_id ?? null,
-            already_in_pipeline: alreadyInPipeline,
-            selected: !alreadyInPipeline,
-          }
+      // Filter out known artists entirely — don't show them
+      let excluded = 0
+      const leads: DiscoveredLead[] = []
+      for (const r of results as Array<{
+        name: string
+        url: string
+        followers: number
+        track_count: number
+        genre: string
+        last_modified: string | null
+        avatar_url: string | null
+        city: string | null
+        country: string | null
+        sc_user_id: string | null
+      }>) {
+        const reason = checkDuplicate(dedup, r.url, null, r.name, null)
+        if (reason) {
+          excluded++
+          continue
         }
-      )
+        leads.push({
+          name: r.name,
+          url: r.url,
+          followers: r.followers ?? 0,
+          track_count: r.track_count ?? 0,
+          genre: r.genre ?? '',
+          last_modified: r.last_modified ?? null,
+          avatar_url: r.avatar_url ?? null,
+          city: r.city ?? null,
+          country: r.country ?? null,
+          sc_user_id: r.sc_user_id ?? null,
+          selected: true,
+        })
+      }
 
+      setExcludedCount(excluded)
       setDiscoveredLeads(leads)
       setStep('results')
     } catch (err) {
@@ -191,18 +206,14 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
   function toggleLeadSelect(index: number) {
     setDiscoveredLeads((prev) =>
       prev.map((l, i) =>
-        i === index && !l.already_in_pipeline
-          ? { ...l, selected: !l.selected }
-          : l
+        i === index ? { ...l, selected: !l.selected } : l
       )
     )
   }
 
   function selectAllLeads() {
     setDiscoveredLeads((prev) =>
-      prev.map((l) =>
-        !l.already_in_pipeline ? { ...l, selected: true } : l
-      )
+      prev.map((l) => ({ ...l, selected: true }))
     )
   }
 
@@ -211,10 +222,33 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
   }
 
   const selectedLeadCount = discoveredLeads.filter((l) => l.selected).length
-  const filteredCount = discoveredLeads.length
-  const pipelineCount = discoveredLeads.filter(
-    (l) => l.already_in_pipeline
-  ).length
+  const newLeadCount = discoveredLeads.length
+
+  // --- Exclude single lead ---
+
+  const [excludingIndex, setExcludingIndex] = useState<number | null>(null)
+
+  async function handleExcludeLead(index: number) {
+    const lead = discoveredLeads[index]
+    if (!lead) return
+
+    setExcludingIndex(index)
+    try {
+      await supabase.from('excluded_artists').insert({
+        artist_name: lead.name,
+        email: null,
+        artist_id: null,
+        reason: 'not_interested',
+        notes: `Excluded from discovery (seed: ${seedUrl})`,
+      })
+      setDiscoveredLeads((prev) => prev.filter((_, i) => i !== index))
+      setExcludedCount((prev) => prev + 1)
+    } catch (err) {
+      console.error('Failed to exclude artist:', err)
+    } finally {
+      setExcludingIndex(null)
+    }
+  }
 
   // --- Scraping ---
 
@@ -691,27 +725,30 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
               <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-6 py-3">
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ff5500]/10">
-                      <span className="text-sm font-bold text-[#ff5500]">{filteredCount}</span>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+                      <span className="text-sm font-bold text-emerald-600">{newLeadCount}</span>
                     </div>
                     <div className="text-xs text-gray-500">
-                      found from {totalFound} scanned
+                      new leads
+                      {excludedCount > 0 && (
+                        <span className="text-amber-600"> ({excludedCount} known, excluded)</span>
+                      )}
                     </div>
                   </div>
-                  {pipelineCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                        <span className="text-sm font-bold text-amber-600">{pipelineCount}</span>
-                      </div>
-                      <div className="text-xs text-gray-500">already in<br />pipeline</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
+                      <span className="text-sm font-bold text-gray-500">{totalFound.toLocaleString()}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">scanned</div>
+                  </div>
+                  {filterStats && (
+                    <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                      {filterStats.below_min > 0 && <span>{filterStats.below_min} too small</span>}
+                      {filterStats.above_max > 0 && <span>{filterStats.above_max} too big</span>}
+                      {filterStats.no_tracks > 0 && <span>{filterStats.no_tracks} no tracks</span>}
+                      {filterStats.too_old > 0 && <span>{filterStats.too_old} inactive</span>}
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
-                      <span className="text-sm font-bold text-emerald-600">{filteredCount - pipelineCount}</span>
-                    </div>
-                    <div className="text-xs text-gray-500">new leads</div>
-                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -753,23 +790,19 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                         Location
                       </th>
+                      <th className="w-10 px-2 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
                     {discoveredLeads.map((lead, i) => (
                       <tr
                         key={i}
-                        className={`group border-b border-gray-50 transition-colors ${
-                          lead.already_in_pipeline
-                            ? 'bg-amber-50/50'
-                            : 'hover:bg-gray-50/80'
-                        }`}
+                        className="group border-b border-gray-50 transition-colors hover:bg-gray-50/80"
                       >
                         <td className="px-4 py-2.5">
                           <input
                             type="checkbox"
                             checked={lead.selected}
-                            disabled={lead.already_in_pipeline}
                             onChange={() => toggleLeadSelect(i)}
                             className="h-3.5 w-3.5 rounded border-gray-300 text-[#ff5500] focus:ring-[#ff5500]/30"
                           />
@@ -796,12 +829,6 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                               >
                                 {lead.name}
                               </a>
-                              {lead.already_in_pipeline && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                                  <span className="h-1 w-1 rounded-full bg-amber-500" />
-                                  In pipeline
-                                </span>
-                              )}
                             </div>
                           </div>
                         </td>
@@ -820,6 +847,18 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-400">
                           {[lead.city, lead.country].filter(Boolean).join(', ')}
+                        </td>
+                        <td className="px-2 py-2.5">
+                          <button
+                            onClick={() => handleExcludeLead(i)}
+                            disabled={excludingIndex === i}
+                            title="Exclude artist"
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 disabled:opacity-50"
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                          </button>
                         </td>
                       </tr>
                     ))}

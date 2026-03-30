@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Music, Plus, Search, ExternalLink, Globe, Tag, DollarSign, Users, ListMusic, ChevronLeft, Check, Mail, MessageSquare, Send, CheckCircle2 } from 'lucide-react'
+import { Music, Plus, Search, ExternalLink, Globe, Tag, DollarSign, Users, ListMusic, ChevronLeft, Mail, MessageSquare, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
+import { Input, Textarea, Select, Label, Modal, Button } from '@/components/ui'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -25,17 +26,37 @@ function getCuratorGradient(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!
 }
 
-// ─── Outreach Status Pill ───
-function StatusPill({ date, label }: { date: string | null; label: string }) {
-  return date ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600 ring-1 ring-inset ring-emerald-600/20">
-      <Check className="h-3 w-3" />
-      {label}
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-400 ring-1 ring-inset ring-gray-300/60">
-      {label}
-    </span>
+// ─── Progress Dots — shows how far through the funnel a playlist is ───
+const PROGRESS_STEPS = ['emailed_at', 'followed_up_at', 'replied_at', 'confirmed_at'] as const
+const PROGRESS_LABELS = ['Emailed', 'Followed up', 'Replied', 'Confirmed']
+
+function ProgressDots({ entry, onToggle }: { entry: CuratorOutreach; onToggle: (field: typeof PROGRESS_STEPS[number]) => void }) {
+  // Find the furthest completed step
+  const furthestLabel = (() => {
+    for (let i = PROGRESS_STEPS.length - 1; i >= 0; i--) {
+      if (entry[PROGRESS_STEPS[i]!]) return PROGRESS_LABELS[i]
+    }
+    return 'Not started'
+  })()
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        {PROGRESS_STEPS.map((field, i) => (
+          <button
+            key={field}
+            onClick={(e) => { e.stopPropagation(); onToggle(field) }}
+            title={`${PROGRESS_LABELS[i]}: ${entry[field] ? new Date(entry[field]!).toLocaleDateString() : 'Click to mark'}`}
+            className={`h-3 w-3 rounded-full transition-all duration-200 ${
+              entry[field]
+                ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30 hover:bg-emerald-400'
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-xs text-gray-500">{furthestLabel}</span>
+    </div>
   )
 }
 
@@ -113,6 +134,19 @@ export function Curators() {
     },
   })
 
+  const deleteOutreach = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('curator_outreach').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curator-outreach'] })
+    },
+  })
+
+  // Edit outreach state
+  const [editingOutreach, setEditingOutreach] = useState<CuratorOutreach | null>(null)
+
   // ─── Curator form state ───
   const [formName, setFormName] = useState('')
   const [formContactName, setFormContactName] = useState('')
@@ -132,10 +166,34 @@ export function Curators() {
   const [oOrganic, setOOrganic] = useState<string>('')
   const [oPrice, setOPrice] = useState('')
 
+  // Directory genre filter
+  const [directoryGenreFilter, setDirectoryGenreFilter] = useState('all')
+
   // ─── Computed ───
-  const filtered = curators?.filter(
-    (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const allDirectoryGenres = useMemo(() => {
+    if (!curators) return []
+    const genres = new Set<string>()
+    curators.forEach((c) => {
+      c.genres?.forEach((g) => genres.add(g))
+      c.playlists.forEach((p) => { if (p.genre) genres.add(p.genre) })
+    })
+    return Array.from(genres).sort()
+  }, [curators])
+
+  const filtered = curators?.filter((c) => {
+    if (search) {
+      const q = search.toLowerCase()
+      if (!c.name.toLowerCase().includes(q) && !c.email?.toLowerCase().includes(q)) return false
+    }
+    if (directoryGenreFilter !== 'all') {
+      const curatorGenresSet = new Set([
+        ...(c.genres ?? []),
+        ...c.playlists.map((p) => p.genre).filter(Boolean),
+      ])
+      if (!curatorGenresSet.has(directoryGenreFilter)) return false
+    }
+    return true
+  })
 
   const totalPlaylists = curators?.reduce((s, c) => s + c.playlists.length, 0) ?? 0
   const activeCurators = curators?.filter((c) => c.is_active).length ?? 0
@@ -325,14 +383,22 @@ export function Curators() {
                 <input type="text" value={playlistSearch} onChange={(e) => setPlaylistSearch(e.target.value)} placeholder="Search playlists..."
                   className="input-field w-full py-2.5 pl-10 pr-4" />
               </div>
-              <select value={genreFilter} onChange={(e) => setGenreFilter(e.target.value)} className="select-field">
-                <option value="all">All genres</option>
-                {curatorGenres.map((g) => <option key={g} value={g}>{g}</option>)}
-              </select>
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="select-field">
-                <option value="all">All countries</option>
-                {curatorCountries.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <Select
+                value={genreFilter}
+                onChange={setGenreFilter}
+                options={[
+                  { value: 'all', label: 'All genres' },
+                  ...curatorGenres.map((g) => ({ value: g, label: g })),
+                ]}
+              />
+              <Select
+                value={countryFilter}
+                onChange={setCountryFilter}
+                options={[
+                  { value: 'all', label: 'All countries' },
+                  ...curatorCountries.map((c) => ({ value: c, label: c })),
+                ]}
+              />
               {(playlistSearch || genreFilter !== 'all' || countryFilter !== 'all') && (
                 <button onClick={() => { setPlaylistSearch(''); setGenreFilter('all'); setCountryFilter('all') }} className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors">Clear</button>
               )}
@@ -448,14 +514,17 @@ export function Curators() {
                   <input type="text" value={outreachSearch} onChange={(e) => setOutreachSearch(e.target.value)} placeholder="Search playlists, emails, genres..."
                     className="input-field w-full py-2.5 pl-10 pr-4" />
                 </div>
-                <select value={outreachFilter} onChange={(e) => setOutreachFilter(e.target.value)}
-                  className="select-field">
-                  <option value="all">All statuses</option>
-                  <option value="not_emailed">Not emailed</option>
-                  <option value="emailed">Emailed</option>
-                  <option value="replied">Replied</option>
-                  <option value="confirmed">Confirmed</option>
-                </select>
+                <Select
+                  value={outreachFilter}
+                  onChange={setOutreachFilter}
+                  options={[
+                    { value: 'all', label: 'All statuses' },
+                    { value: 'not_emailed', label: 'Not emailed' },
+                    { value: 'emailed', label: 'Emailed' },
+                    { value: 'replied', label: 'Replied' },
+                    { value: 'confirmed', label: 'Confirmed' },
+                  ]}
+                />
                 {(outreachSearch || outreachFilter !== 'all') && (
                   <button onClick={() => { setOutreachSearch(''); setOutreachFilter('all') }} className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors">Clear</button>
                 )}
@@ -476,63 +545,70 @@ export function Curators() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100 bg-white">
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Playlist</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Genre</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Organic</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Emailed</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Followed Up</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Replied</th>
-                      <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Confirmed</th>
-                      <th className="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Price/10K</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Playlist</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Genre</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Organic</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Progress</th>
+                      <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Price/10K</th>
+                      <th className="w-20 px-3 py-3.5" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredOutreach.map((entry) => (
-                      <tr key={entry.id} className="table-row transition-colors hover:bg-gray-50">
-                        <td className="px-4 py-3">
+                      <tr key={entry.id} className="group table-row transition-colors hover:bg-gray-50">
+                        <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{entry.playlist_name}</span>
-                            {entry.playlist_url && (
-                              <a href={entry.playlist_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-gray-400 hover:text-[#1DB954] transition-colors">
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </a>
-                            )}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900 truncate">{entry.playlist_name}</span>
+                                {entry.playlist_url && (
+                                  <a href={entry.playlist_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-gray-400 hover:text-[#1DB954] transition-colors">
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                              {entry.email && (
+                                <div className="text-xs text-gray-400 truncate">{entry.email}</div>
+                              )}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500 truncate max-w-[160px]">{entry.email || '-'}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-3.5">
                           {entry.genre ? (
                             <span className="inline-flex items-center rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-600 ring-1 ring-inset ring-violet-200/60">{entry.genre}</span>
-                          ) : <span className="text-sm text-gray-400">-</span>}
+                          ) : <span className="text-sm text-gray-400">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          {entry.is_organic === true && <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">Yes</span>}
-                          {entry.is_organic === false && <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">No</span>}
-                          {entry.is_organic == null && <span className="text-sm text-gray-400">-</span>}
+                        <td className="px-5 py-3.5">
+                          {entry.is_organic === true && <span className="text-sm font-medium text-emerald-600">Yes</span>}
+                          {entry.is_organic === false && <span className="text-sm font-medium text-red-500">No</span>}
+                          {entry.is_organic == null && <span className="text-sm text-gray-400">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => toggleOutreachField(entry, 'emailed_at')} className="mx-auto">
-                            <StatusPill date={entry.emailed_at} label="Emailed" />
-                          </button>
+                        <td className="px-5 py-3.5">
+                          <ProgressDots
+                            entry={entry}
+                            onToggle={(field) => toggleOutreachField(entry, field)}
+                          />
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => toggleOutreachField(entry, 'followed_up_at')} className="mx-auto">
-                            <StatusPill date={entry.followed_up_at} label="Followed Up" />
-                          </button>
+                        <td className="px-5 py-3.5 text-right">
+                          {entry.price_per_10k != null ? <span className="font-mono text-sm font-medium text-gray-900">${entry.price_per_10k}</span> : <span className="text-sm text-gray-400">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => toggleOutreachField(entry, 'replied_at')} className="mx-auto">
-                            <StatusPill date={entry.replied_at} label="Replied" />
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => toggleOutreachField(entry, 'confirmed_at')} className="mx-auto">
-                            <StatusPill date={entry.confirmed_at} label="Confirmed" />
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
-                          {entry.price_per_10k != null ? <span className="font-mono font-medium text-emerald-600">${entry.price_per_10k}</span> : <span className="text-gray-400">-</span>}
+                        <td className="px-3 py-3.5">
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              onClick={() => setEditingOutreach(entry)}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                              title="Edit"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => { if (confirm(`Remove "${entry.playlist_name}" from tracking?`)) deleteOutreach.mutate(entry.id) }}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -566,11 +642,26 @@ export function Curators() {
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="relative max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search curators..."
-                  className="input-field w-full py-2.5 pl-10 pr-4" />
+            <div className="card mb-4 p-4">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search curators..."
+                    className="input-field w-full py-2.5 pl-10 pr-4" />
+                </div>
+                <Select
+                  value={directoryGenreFilter}
+                  onChange={setDirectoryGenreFilter}
+                  options={[
+                    { value: 'all', label: 'All genres' },
+                    ...allDirectoryGenres.map((g) => ({ value: g, label: g })),
+                  ]}
+                />
+                {(search || directoryGenreFilter !== 'all') && (
+                  <button onClick={() => { setSearch(''); setDirectoryGenreFilter('all') }} className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors">Clear</button>
+                )}
+                <div className="flex-1" />
+                <span className="text-sm text-gray-400">{filtered?.length ?? 0} curator{(filtered?.length ?? 0) !== 1 ? 's' : ''}</span>
               </div>
             </div>
 
@@ -648,9 +739,23 @@ export function Curators() {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-500">Payment Method</label>
-                  <select value={formPaymentMethod} onChange={(e) => setFormPaymentMethod(e.target.value)} className="select-field w-full">
-                    <option value="">Select...</option><option value="PayPal">PayPal</option><option value="XRP">XRP</option><option value="CashApp">CashApp</option><option value="Venmo">Venmo</option><option value="Zelle">Zelle</option><option value="Bank Transfer">Bank Transfer</option><option value="Online">Online</option><option value="Other">Other</option>
-                  </select>
+                  <Select
+                    value={formPaymentMethod}
+                    onChange={setFormPaymentMethod}
+                    placeholder="Select..."
+                    fullWidth
+                    options={[
+                      { value: '', label: 'Select...' },
+                      { value: 'PayPal', label: 'PayPal' },
+                      { value: 'XRP', label: 'XRP' },
+                      { value: 'CashApp', label: 'CashApp' },
+                      { value: 'Venmo', label: 'Venmo' },
+                      { value: 'Zelle', label: 'Zelle' },
+                      { value: 'Bank Transfer', label: 'Bank Transfer' },
+                      { value: 'Online', label: 'Online' },
+                      { value: 'Other', label: 'Other' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-500">Payment Address</label>
@@ -702,9 +807,16 @@ export function Curators() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-500">Organic?</label>
-                  <select value={oOrganic} onChange={(e) => setOOrganic(e.target.value)} className="select-field w-full">
-                    <option value="">Unknown</option><option value="yes">Yes</option><option value="no">No</option>
-                  </select>
+                  <Select
+                    value={oOrganic}
+                    onChange={setOOrganic}
+                    fullWidth
+                    options={[
+                      { value: '', label: 'Unknown' },
+                      { value: 'yes', label: 'Yes' },
+                      { value: 'no', label: 'No' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-500">Price per 10K</label>
@@ -719,6 +831,95 @@ export function Curators() {
           </div>
         </>
       )}
+
+      {/* Edit Outreach Modal */}
+      {editingOutreach && <EditOutreachModal
+        entry={editingOutreach}
+        onClose={() => setEditingOutreach(null)}
+        onSave={(updates) => {
+          updateOutreach.mutate({ id: editingOutreach.id, ...updates })
+          setEditingOutreach(null)
+        }}
+      />}
     </div>
+  )
+}
+
+// ─── Edit Outreach Modal (extracted for controlled state) ───
+
+function EditOutreachModal({
+  entry,
+  onClose,
+  onSave,
+}: {
+  entry: CuratorOutreach
+  onClose: () => void
+  onSave: (updates: Partial<CuratorOutreach>) => void
+}) {
+  const [name, setName] = useState(entry.playlist_name)
+  const [url, setUrl] = useState(entry.playlist_url ?? '')
+  const [email, setEmail] = useState(entry.email ?? '')
+  const [genre, setGenre] = useState(entry.genre ?? '')
+  const [organic, setOrganic] = useState(entry.is_organic === true ? 'yes' : entry.is_organic === false ? 'no' : '')
+  const [price, setPrice] = useState(entry.price_per_10k?.toString() ?? '')
+  const [notes, setNotes] = useState(entry.notes ?? '')
+
+  return (
+    <Modal open onClose={onClose} title="Edit Playlist" footer={<>
+      <Button variant="secondary" onClick={onClose}>Cancel</Button>
+      <Button variant="primary" onClick={() => onSave({
+        playlist_name: name,
+        playlist_url: url || null,
+        email: email || null,
+        genre: genre || null,
+        is_organic: organic === '' ? null : organic === 'yes',
+        price_per_10k: price ? Number(price) : null,
+        notes: notes || null,
+      })}>Save Changes</Button>
+    </>}>
+      <div className="space-y-4">
+        <div>
+          <Label>Playlist Name *</Label>
+          <Input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <Label>Playlist URL</Label>
+          <Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/..." />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Email</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <Label>Genre</Label>
+            <Input type="text" value={genre} onChange={(e) => setGenre(e.target.value)} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Organic?</Label>
+            <Select
+              value={organic}
+              onChange={setOrganic}
+              fullWidth
+              options={[
+                { value: '', label: 'Unknown' },
+                { value: 'yes', label: 'Yes' },
+                { value: 'no', label: 'No' },
+              ]}
+            />
+          </div>
+          <div>
+            <Label>Price per 10K</Label>
+            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} step="0.01" />
+          </div>
+        </div>
+        <div>
+          <Label>Notes</Label>
+          <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+      </div>
+    </Modal>
   )
 }
