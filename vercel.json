@@ -3,5 +3,8 @@
   "buildCommand": "turbo run build --filter=@campaign-manager/dashboard",
   "outputDirectory": "apps/dashboard/dist",
   "framework": "vite",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
