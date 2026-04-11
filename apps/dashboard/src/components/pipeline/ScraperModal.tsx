@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { env } from '@/lib/env'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import { fetchDedupData, checkDuplicate } from '@/lib/dedup'
 import type { PipelineStage } from '@/types'
@@ -37,7 +38,7 @@ interface ScrapeProgress {
   eta: string
 }
 
-const SCRAPER_URL = import.meta.env.VITE_SCRAPER_URL || 'http://localhost:9999'
+const SCRAPER_URL = env.VITE_SCRAPER_URL
 
 export function ScraperModal({ onClose }: ScraperModalProps) {
   const createEntry = useCreatePipelineEntry()

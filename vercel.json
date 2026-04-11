@@ -5,6 +5,7 @@
   "framework": "vite",
   "installCommand": "pnpm install",
   "rewrites": [
+    { "source": "/api/scraper/:path*", "destination": "https://campaign-scraper-production.up.railway.app/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
