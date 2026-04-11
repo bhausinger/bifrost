@@ -10,7 +10,13 @@ const envSchema = z.object({
   ),
 })
 
-function validateEnv(): z.infer<typeof envSchema> {
+type Env = z.infer<typeof envSchema>
+
+let _env: Env | null = null
+
+function getEnv(): Env {
+  if (_env) return _env
+
   const result = envSchema.safeParse({
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
     VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -28,7 +34,12 @@ function validateEnv(): z.infer<typeof envSchema> {
     )
   }
 
-  return result.data
+  _env = result.data
+  return _env
 }
 
-export const env = validateEnv()
+export const env = new Proxy({} as Env, {
+  get(_, prop: string) {
+    return getEnv()[prop as keyof Env]
+  },
+})
