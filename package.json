@@ -9,9 +9,12 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "restart:force": "lsof -ti:5173,9999 | xargs kill -9 2>/dev/null; sleep 1; (cd apps/scraper && ./venv/bin/python run.py &); turbo run dev"
+    "restart:force": "lsof -ti:5173,9999 | xargs kill -9 2>/dev/null; sleep 1; (cd apps/scraper && ./venv/bin/python run.py &); turbo run dev",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "turbo": "^2.4.0",
     "typescript": "^5.7.0"
   },
@@ -19,5 +22,10 @@
     "node": ">=18.0.0 <23.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.0",
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "bash scripts/check-file-size.sh"
+    ]
+  }
 }
