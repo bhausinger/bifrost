@@ -17,11 +17,12 @@ let _env: Env | null = null
 function getEnv(): Env {
   if (_env) return _env
 
-  const result = envSchema.safeParse({
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    VITE_SCRAPER_URL: import.meta.env.VITE_SCRAPER_URL,
-  })
+  const raw = {
+    VITE_SUPABASE_URL: (import.meta.env.VITE_SUPABASE_URL ?? '').trim(),
+    VITE_SUPABASE_ANON_KEY: (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim(),
+    VITE_SCRAPER_URL: (import.meta.env.VITE_SCRAPER_URL ?? '').trim() || undefined,
+  }
+  const result = envSchema.safeParse(raw)
 
   if (!result.success) {
     const errors = result.error.flatten().fieldErrors
