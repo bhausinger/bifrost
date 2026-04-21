@@ -37,7 +37,7 @@ export interface Artist {
   instagram_handle: string | null
   other_socials: Record<string, string>
   genres: string[]
-  monthly_listeners: number | null
+  track_count: number | null
   follower_count: number | null
   location: string | null
   bio: string | null
@@ -63,6 +63,7 @@ export interface PipelineEntry {
   paid_at: string | null
   completed_at: string | null
   lost_reason: string | null
+  created_by: string | null
   created_at: string
   updated_at: string
   artist?: Artist

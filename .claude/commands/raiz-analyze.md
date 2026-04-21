@@ -1,24 +1,40 @@
-Run a deep analysis of the project and discuss findings.
+Run a deep analysis of this codebase. $ARGUMENTS
 
-Check the following:
+Read the following to build full context:
+- CLAUDE.md (project identity and stack)
+- CONTEXT.md (current state)
+- package.json (dependencies)
+- The full directory structure: find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/.raiz/*"
 
-**Dependencies:**
-- Run `npx depcheck` to find unused and missing dependencies
-- Flag any that should be removed or added
+Then use ultrathink to analyze:
 
-**Code quality:**
-- Count TODOs/FIXMEs across the project
-- Check for files over 300 lines
-- Look for `any` type usage in TypeScript files
-- Check for console.log statements that should be removed
+1. **Architecture** — does the structure make sense? Is it consistent? What patterns are being used?
+2. **Dependencies** — anything outdated, risky, or unnecessary?
+3. **Technical debt** — what's messy, inconsistent, or going to cause problems?
+4. **Hot spots** — which files are doing too much or changing too often?
+5. **Missing pieces** — what's obviously absent (error handling, tests, types, docs)?
 
-**Architecture:**
-- Are there circular imports? Check with `npx madge --circular src/`
-- Are there orphan modules nobody imports?
+Format output as:
 
-**Test coverage:**
-- How many test files exist vs source files?
-- Which important modules lack tests?
+## Codebase Analysis
 
-Present findings organized by severity (Critical → Warning → Info).
-For each finding, suggest a specific fix.
+### Architecture
+{assessment with specific examples}
+
+### Dependencies
+{anything worth flagging}
+
+### Technical Debt
+{ranked by impact: high / medium / low}
+
+### Hot Spots
+{files that need attention}
+
+### Missing Pieces
+{what's not there that should be}
+
+### Overall Assessment
+{honest summary — is this codebase in good shape, okay, or needs work?}
+
+### Recommended Actions
+{top 3 things to fix, in priority order}

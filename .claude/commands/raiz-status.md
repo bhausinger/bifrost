@@ -1,17 +1,31 @@
-Show the current project status using Raiz data.
+Run a full Raiz status check and display a clean summary. Do all of these steps:
 
-Read and summarize:
-1. CLAUDE.md state block — last commit, uncommitted files, session activity
-2. `.raiz/plans/current.md` — active plan progress (done/remaining, next step)
-3. `.raiz/logs/progress.md` — recent session history
-4. `.raiz/logs/session.md` — current session file edits
-5. Run `git status` and `git log --oneline -5` for current git state
+1. Run `supabase status` and show the linked project name, or "not linked" if unlinked
+2. Check if the dev server is responding at the configured port (check .raiz/config.json for port, default 3000): curl -s -o /dev/null -w "%{http_code}" http://localhost:{port}
+3. Read .raiz/plans/current.md and show the current plan step and X/Y progress
+4. Read the last 5 lines of .raiz/logs/session.md and show the most recent edits
+5. Read CONTEXT.md and show the full contents
+6. Run `git status --short` and show what's changed but not committed
+7. Run `pnpm typecheck` silently and report: "✓ No TypeScript errors" or list the errors
 
-Present a concise summary:
-- Project health (any build/test issues?)
-- Plan progress
-- What happened recently
-- What's uncommitted
-- Suggested next action
+Format the output as:
 
-If anything looks broken or concerning, flag it.
+---
+## Raiz Status
+
+**Supabase:** {linked project or "not linked"}
+**Server:** {✓ up at localhost:{port} / ✗ not responding}
+**TypeScript:** {✓ clean / ✗ {n} errors}
+**Git:** {n files changed / clean}
+
+## Active Plan
+{current step and progress from current.md}
+
+## Context
+{full CONTEXT.md contents}
+
+## Recent Edits
+{last 5 journal entries}
+---
+
+If anything is red (not linked, server down, TS errors), flag it prominently at the top.

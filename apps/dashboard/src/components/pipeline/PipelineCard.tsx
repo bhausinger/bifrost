@@ -1,10 +1,11 @@
 import { useDraggable } from '@dnd-kit/core'
-import { Mail, Users, Music2, Clock, Globe } from 'lucide-react'
+import { Mail, Users, Music2, Clock } from 'lucide-react'
 import { getFollowUpStatus } from '@/hooks/useFollowUpStatus'
 import type { PipelineEntry, Artist } from '@/types'
 
 interface PipelineCardProps {
   entry: PipelineEntry & { artist: Artist }
+  ownerName?: string
   onClick: () => void
 }
 
@@ -33,11 +34,11 @@ function formatListeners(n: number): string {
   return String(n)
 }
 
-export function PipelineCard({ entry, onClick }: PipelineCardProps) {
+export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: entry.id, data: { entry } })
 
-  const style = transform
+  const style: React.CSSProperties | undefined = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined
 
@@ -58,7 +59,7 @@ export function PipelineCard({ entry, onClick }: PipelineCardProps) {
       style={style}
       onClick={onClick}
       className={`group cursor-grab rounded-lg border bg-white border-gray-200 p-3 transition-[box-shadow,border-color,transform,opacity] duration-200 ease-out hover:border-gray-300 active:cursor-grabbing active:scale-[0.98] ${
-        isDragging ? 'opacity-60 ring-2 ring-teal-500/30 rotate-2 scale-105' : ''
+        isDragging ? 'opacity-30 ring-2 ring-teal-500/30' : ''
       } ${
         hasFollowUp
           ? `${followUp.borderColor} border-l-[3px] ${followUp.bgColor}`
@@ -94,18 +95,18 @@ export function PipelineCard({ entry, onClick }: PipelineCardProps) {
             )}
           </div>
 
-          {/* Stats row */}
+          {/* Stats row: followers, tracks, days */}
           <div className="mt-1 flex items-center gap-2.5 text-[11px] text-gray-400">
-            {entry.artist.monthly_listeners != null && (
-              <span className="flex items-center gap-0.5 font-data">
-                <Users className="h-3 w-3" />
-                {formatListeners(entry.artist.monthly_listeners)}
-              </span>
-            )}
             {entry.artist.follower_count != null && entry.artist.follower_count > 0 && (
               <span className="flex items-center gap-0.5 font-data">
-                <Music2 className="h-3 w-3" />
+                <Users className="h-3 w-3" />
                 {formatListeners(entry.artist.follower_count)}
+              </span>
+            )}
+            {entry.artist.track_count != null && entry.artist.track_count > 0 && (
+              <span className="flex items-center gap-0.5 font-data">
+                <Music2 className="h-3 w-3" />
+                {entry.artist.track_count}
               </span>
             )}
             {daysInStage > 0 && (
@@ -133,13 +134,10 @@ export function PipelineCard({ entry, onClick }: PipelineCardProps) {
             </div>
           )}
 
-          {/* Source badge */}
-          {entry.artist.source && (
-            <div className="mt-1.5">
-              <span className="inline-flex items-center gap-0.5 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
-                <Globe className="h-2.5 w-2.5" />
-                {entry.artist.source}
-              </span>
+          {/* Owner name */}
+          {ownerName && (
+            <div className="mt-1 text-[11px] text-gray-500">
+              {ownerName}
             </div>
           )}
         </div>

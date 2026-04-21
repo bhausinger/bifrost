@@ -3,14 +3,30 @@ import { DollarSign, Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { Button, Input, Label, Modal, Select } from '@/components/ui'
 import type { Transaction } from '@/types'
+
+const CATEGORY_OPTIONS = [
+  { value: 'client_payment', label: 'Client Payment' },
+  { value: 'curator_payment', label: 'Curator Payment' },
+  { value: 'software', label: 'Software' },
+  { value: 'other', label: 'Other' },
+]
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'stripe', label: 'Stripe' },
+  { value: 'cashapp', label: 'CashApp' },
+  { value: 'paypal', label: 'PayPal' },
+  { value: 'venmo', label: 'Venmo' },
+  { value: 'bank', label: 'Bank Transfer' },
+]
 
 export function Financials() {
   const queryClient = useQueryClient()
   const [showAddTransaction, setShowAddTransaction] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
 
-  const { data: transactions, isLoading } = useQuery({
+  const { data: transactions, isLoading, error } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -57,17 +73,25 @@ export function Financials() {
         title="Financials"
         description="Revenue, expenses, and profitability"
         actions={
-          <button
+          <Button
+            variant="primary"
             onClick={() => setShowAddTransaction(true)}
-            className="btn-primary flex items-center gap-2"
+            className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Add Transaction
-          </button>
+          </Button>
         }
       />
 
       <div className="flex-1 overflow-y-auto p-8">
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm font-medium text-red-600">Failed to load transactions</p>
+          <p className="mt-1 text-xs text-red-400">{error.message}</p>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="mb-8 grid grid-cols-4 gap-4">
@@ -101,7 +125,7 @@ export function Financials() {
             onClick={() => setTypeFilter(t)}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               typeFilter === t
-                ? 'bg-gray-900 text-gray-900'
+                ? 'bg-teal-600 text-white'
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-50'
             }`}
           >
@@ -156,80 +180,63 @@ export function Financials() {
         )}
       </div>
 
-      {/* Add Transaction Modal */}
-      {showAddTransaction && (
-        <>
-          <div className="modal-overlay" onClick={() => setShowAddTransaction(false)} />
-          <div className="modal-panel fixed inset-x-0 top-[10%] z-50 mx-auto w-full max-w-lg">
-            <h3 className="text-lg font-display font-semibold text-gray-900">Add Transaction</h3>
-            <div className="mt-4 space-y-4">
-              <div className="flex gap-2">
-                {(['income', 'expense'] as const).map((t) => (
-                  <button key={t} onClick={() => { setFormType(t); setFormCategory(t === 'income' ? 'client_payment' : 'curator_payment') }}
-                    className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                      formType === t ? (t === 'income' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-gray-100 text-gray-500'
-                    }`}>
-                    {t === 'income' ? 'Income' : 'Expense'}
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Amount *</label>
-                  <input type="number" value={formAmount} onChange={(e) => setFormAmount(e.target.value)}
-                    className="input-field w-full"
-                    placeholder="0.00" step="0.01" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Date</label>
-                  <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)}
-                    className="input-field w-full" />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Description</label>
-                <input type="text" value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
-                  className="input-field w-full"
-                  placeholder="What's this for?" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Category</label>
-                  <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)}
-                    className="select-field w-full">
-                    <option value="client_payment">Client Payment</option>
-                    <option value="curator_payment">Curator Payment</option>
-                    <option value="software">Software</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Payment Method</label>
-                  <select value={formPaymentMethod} onChange={(e) => setFormPaymentMethod(e.target.value)}
-                    className="select-field w-full">
-                    <option value="">Select...</option>
-                    <option value="stripe">Stripe</option>
-                    <option value="cashapp">CashApp</option>
-                    <option value="paypal">PayPal</option>
-                    <option value="venmo">Venmo</option>
-                    <option value="bank">Bank Transfer</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <button onClick={() => setShowAddTransaction(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">Cancel</button>
-                <button
-                  onClick={() => addTransaction.mutate({ type: formType, amount: parseFloat(formAmount), description: formDescription || null, category: formCategory || null, payment_method: formPaymentMethod || null, transaction_date: formDate } as any)}
-                  disabled={!formAmount}
-                  className="btn-primary disabled:opacity-50">
-                  Add {formType === 'income' ? 'Income' : 'Expense'}
-                </button>
-              </div>
+      <Modal
+        open={showAddTransaction}
+        onClose={() => setShowAddTransaction(false)}
+        title="Add Transaction"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddTransaction(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              onClick={() => addTransaction.mutate({ type: formType, amount: parseFloat(formAmount), description: formDescription || null, category: formCategory || null, payment_method: formPaymentMethod || null, transaction_date: formDate } as any)}
+              disabled={!formAmount}
+            >
+              Add {formType === 'income' ? 'Income' : 'Expense'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            {(['income', 'expense'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setFormType(t); setFormCategory(t === 'income' ? 'client_payment' : 'curator_payment') }}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                  formType === t ? (t === 'income' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {t === 'income' ? 'Income' : 'Expense'}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Amount *</Label>
+              <Input type="number" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} placeholder="0.00" step="0.01" />
+            </div>
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
             </div>
           </div>
-        </>
-      )}
+          <div>
+            <Label optional>Description</Label>
+            <Input type="text" value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="What's this for?" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Category</Label>
+              <Select fullWidth value={formCategory} onChange={setFormCategory} options={CATEGORY_OPTIONS} />
+            </div>
+            <div>
+              <Label optional>Payment Method</Label>
+              <Select fullWidth value={formPaymentMethod} onChange={setFormPaymentMethod} options={PAYMENT_METHOD_OPTIONS} placeholder="Select..." />
+            </div>
+          </div>
+        </div>
+      </Modal>
       </div>
     </div>
   )

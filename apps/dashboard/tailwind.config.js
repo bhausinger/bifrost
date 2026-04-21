@@ -4,9 +4,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Syne', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'SF Mono', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['Geist Mono', 'SF Mono', 'monospace'],
       },
       boxShadow: {
         'card': '0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.02)',

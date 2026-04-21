@@ -1,22 +1,114 @@
 import { supabase } from '@/lib/supabase'
-import { useEffect, useState } from 'react'
+import { env } from '@/lib/env'
+import { useEffect, useState, useCallback } from 'react'
 import { Settings as SettingsIcon } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useBlockedTerms, useAddBlockedTerm, useDeleteBlockedTerm } from '@/hooks/useBlockedTerms'
+import { Select, Input, Button } from '@/components/ui'
+
+const BLOCKED_TERM_TYPE_OPTIONS = [
+  { value: 'email_domain', label: 'Email Domain' },
+  { value: 'profile_name', label: 'Profile Name' },
+]
+
+type GmailStatus = { connected: false } | { connected: true; email: string }
 
 export function Settings() {
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
-  const { data: blockedTerms } = useBlockedTerms()
+  const { data: blockedTerms, isLoading: termsLoading, error: termsError } = useBlockedTerms()
   const addTerm = useAddBlockedTerm()
   const deleteTerm = useDeleteBlockedTerm()
   const [newTerm, setNewTerm] = useState('')
   const [newTermType, setNewTermType] = useState<'email_domain' | 'profile_name'>('email_domain')
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus>({ connected: false })
+  const [gmailLoading, setGmailLoading] = useState(true)
+
+  const checkGmailStatus = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/status`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: env.VITE_SUPABASE_ANON_KEY,
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setGmailStatus(data.connected ? { connected: true, email: data.email } : { connected: false })
+      }
+    } catch { /* ignore */ }
+    setGmailLoading(false)
+  }, [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    checkGmailStatus()
+  }, [checkGmailStatus])
+
+  async function connectGmail(): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/auth-url`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+      },
     })
-  }, [])
+    if (!res.ok) return
+    const { authUrl } = await res.json()
+
+    // Open OAuth popup
+    const popup = window.open(authUrl, 'gmail-auth', 'width=600,height=700')
+    // Listen for the OAuth redirect to send the code back
+    const interval = setInterval(() => {
+      try {
+        if (!popup || popup.closed) {
+          clearInterval(interval)
+          checkGmailStatus()
+          return
+        }
+        const popupUrl = popup.location.href
+        if (popupUrl.includes('code=')) {
+          const url = new URL(popupUrl)
+          const code = url.searchParams.get('code')
+          popup.close()
+          clearInterval(interval)
+          if (code) exchangeGmailCode(code)
+        }
+      } catch {
+        // Cross-origin — popup hasn't redirected back yet
+      }
+    }, 500)
+  }
+
+  async function exchangeGmailCode(code: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/callback`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code }),
+    })
+    checkGmailStatus()
+  }
+
+  async function disconnectGmail(): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/disconnect`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+      },
+    })
+    setGmailStatus({ connected: false })
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -75,12 +167,30 @@ export function Settings() {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-900">Gmail</div>
-                  <div className="text-xs text-gray-400">Send outreach emails from your Gmail</div>
+                  <div className="text-xs text-gray-400">
+                    {gmailStatus.connected
+                      ? `Connected as ${gmailStatus.email}`
+                      : 'Send outreach emails from your Gmail'}
+                  </div>
                 </div>
               </div>
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 ring-1 ring-inset ring-amber-600/20">
-                Setup Required
-              </span>
+              {gmailLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-teal-500" />
+              ) : gmailStatus.connected ? (
+                <button
+                  onClick={disconnectGmail}
+                  className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600 ring-1 ring-inset ring-emerald-600/20 hover:bg-red-50 hover:text-red-600 hover:ring-red-600/20 transition-all"
+                >
+                  Connected
+                </button>
+              ) : (
+                <button
+                  onClick={connectGmail}
+                  className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 ring-1 ring-inset ring-amber-600/20 hover:bg-amber-100 transition-all cursor-pointer"
+                >
+                  Connect
+                </button>
+              )}
             </div>
 
           </div>
@@ -105,6 +215,17 @@ export function Settings() {
 
         {/* Blocked Terms */}
         <div className="card p-6">
+          {termsError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-center">
+              <p className="text-xs font-medium text-red-600">Failed to load blocked terms</p>
+            </div>
+          )}
+          {termsLoading && (
+            <div className="mb-4 flex items-center gap-2 text-xs text-gray-400">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-teal-500" />
+              Loading blocked terms...
+            </div>
+          )}
           <h2 className="text-sm font-display font-semibold text-gray-900 mb-1">Blocked Terms</h2>
           <p className="text-xs text-gray-400 mb-4">Filter out unwanted results from discovery and scraping</p>
 
@@ -120,28 +241,22 @@ export function Settings() {
               )
             }}
           >
-            <input
+            <Input
               type="text"
               value={newTerm}
               onChange={(e) => setNewTerm(e.target.value)}
               placeholder="e.g. spam.com or badprofile"
-              className="input-field flex-1"
+              className="flex-1"
+              fullWidth={false}
             />
-            <select
+            <Select
               value={newTermType}
-              onChange={(e) => setNewTermType(e.target.value as 'email_domain' | 'profile_name')}
-              className="select-field"
-            >
-              <option value="email_domain">Email Domain</option>
-              <option value="profile_name">Profile Name</option>
-            </select>
-            <button
-              type="submit"
-              disabled={addTerm.isPending || !newTerm.trim()}
-              className="rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
+              onChange={(v) => setNewTermType(v as 'email_domain' | 'profile_name')}
+              options={BLOCKED_TERM_TYPE_OPTIONS}
+            />
+            <Button type="submit" variant="primary" disabled={addTerm.isPending || !newTerm.trim()}>
               {addTerm.isPending ? 'Adding...' : 'Add'}
-            </button>
+            </Button>
           </form>
 
           {/* Email Domains */}

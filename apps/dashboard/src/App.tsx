@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { env } from '@/lib/env'
 import { Layout } from '@/components/layout/Layout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Dashboard } from '@/pages/Dashboard'
@@ -22,9 +23,32 @@ export function App() {
     localStorage.getItem('bifrost_dev_bypass') === 'true'
   )
 
+  // Auto-sync Google OAuth tokens to user_google_tokens for Gmail sending
+  const syncGmailTokens = useCallback(async (session: Session) => {
+    if (!session.provider_token) return
+    try {
+      await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/callback`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          apikey: env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          // Pass the Google tokens directly — the edge function stores them
+          provider_token: session.provider_token,
+          provider_refresh_token: session.provider_refresh_token,
+        }),
+      })
+    } catch {
+      // Non-critical — Gmail features just won't work until manually connected
+    }
+  }, [])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session?.provider_token) syncGmailTokens(session)
       setLoading(false)
     })
 
@@ -32,10 +56,13 @@ export function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (_event === 'SIGNED_IN' && session?.provider_token) {
+        syncGmailTokens(session)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [syncGmailTokens])
 
   // Expose bypass toggle for dev — remove when auth is sorted
   ;(window as unknown as Record<string, unknown>).__bifrostDevBypass = (on: boolean) => {

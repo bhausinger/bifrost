@@ -49,7 +49,7 @@ See CONTEXT.md
 
 <!-- RAIZ:STATE:START -->
 
-**Last updated:** 2026-04-11 18:55:22
+**Last updated:** 2026-04-12 14:29:13
 **Last commit:** fix: CORS preflight failure — disable credentials with wildcard origin
 **Commit hash:** `109fca86`
 

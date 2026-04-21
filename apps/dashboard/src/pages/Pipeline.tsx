@@ -2,10 +2,13 @@ import { useState, useMemo } from 'react'
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
+import { PipelineCard } from '@/components/pipeline/PipelineCard'
 import { Users, TrendingUp, Mail, BarChart3, Download, Send, Search, Wrench } from 'lucide-react'
 import { usePipelineEntries, useMoveStage } from '@/hooks/usePipeline'
 import { PipelineColumn } from '@/components/pipeline/PipelineColumn'
@@ -16,13 +19,17 @@ import { LeadGeneratorModal } from '@/components/pipeline/LeadGeneratorModal'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PIPELINE_BOARD_STAGES } from '@/types'
 import type { PipelineEntry, Artist, PipelineStage } from '@/types'
+import { useTeamUsers, getOwnerName } from '@/hooks/useTeamUsers'
+import { Select, Input, Button } from '@/components/ui'
 
 export function Pipeline() {
   const { data: entries, isLoading, error } = usePipelineEntries()
+  const { data: teamUsers } = useTeamUsers()
   const moveStage = useMoveStage()
   const [selectedEntry, setSelectedEntry] = useState<
     (PipelineEntry & { artist: Artist }) | null
   >(null)
+  const [activeEntry, setActiveEntry] = useState<(PipelineEntry & { artist: Artist }) | null>(null)
   const [showBulkEmail, setShowBulkEmail] = useState(false)
   const [showScraper, setShowScraper] = useState(false)
   const [showLeadGen, setShowLeadGen] = useState(false)
@@ -65,10 +72,20 @@ export function Pipeline() {
     })
   }, [entries, search, genreFilter, sourceFilter])
 
+  function handleDragStart(event: DragStartEvent) {
+    const entry = event.active.data.current?.entry as (PipelineEntry & { artist: Artist }) | undefined
+    setActiveEntry(entry ?? null)
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveEntry(null)
     const { active, over } = event
-    if (!over || active.id === over.id) return
-    moveStage.mutate({ entryId: active.id as string, newStage: over.id as PipelineStage })
+    if (!over) return
+    const entry = active.data.current?.entry as (PipelineEntry & { artist: Artist }) | undefined
+    const newStage = over.id as PipelineStage
+    // Don't fire mutation if dropped back into the same column
+    if (!entry || entry.stage === newStage) return
+    moveStage.mutate({ entryId: active.id as string, newStage })
   }
 
   if (isLoading) {
@@ -170,46 +187,36 @@ export function Pipeline() {
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search artists by handle..."
-                className="input-field w-full pl-10 pr-4"
+                className="pl-10 pr-4"
               />
             </div>
 
             {/* Genre filter */}
-            <select
+            <Select
               value={genreFilter}
-              onChange={(e) => setGenreFilter(e.target.value)}
-              className="select-field"
-            >
-              <option value="all">All genres</option>
-              {allGenres.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+              onChange={setGenreFilter}
+              options={[{ value: 'all', label: 'All genres' }, ...allGenres.map((g) => ({ value: g, label: g }))]}
+            />
 
             {/* Source filter */}
-            <select
+            <Select
               value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="select-field"
-            >
-              <option value="all">All sources</option>
-              {allSources.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+              onChange={setSourceFilter}
+              options={[{ value: 'all', label: 'All sources' }, ...allSources.map((s) => ({ value: s, label: s }))]}
+            />
 
             {(search || genreFilter !== 'all' || sourceFilter !== 'all') && (
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => { setSearch(''); setGenreFilter('all'); setSourceFilter('all') }}
-                className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors"
               >
                 Clear
-              </button>
+              </Button>
             )}
 
             {/* Spacer */}
@@ -230,28 +237,37 @@ export function Pipeline() {
               <Download className="h-4 w-4" />
               SoundCloud Scraper
             </button>
-            <button
+            <Button
+              variant="primary"
               onClick={() => setShowBulkEmail(true)}
-              className="btn-primary flex items-center gap-2"
+              className="flex items-center gap-2"
             >
               <Send className="h-4 w-4" />
               Bulk Email
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Kanban Board */}
       <div className="flex flex-1 gap-3 overflow-x-auto bg-gray-50/80 p-4">
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {PIPELINE_BOARD_STAGES.map((stage) => (
             <PipelineColumn
               key={stage}
               stage={stage}
               entries={grouped[stage] ?? []}
               onCardClick={setSelectedEntry}
+              getOwnerName={(id) => getOwnerName(id, teamUsers)}
             />
           ))}
+          <DragOverlay dropAnimation={null}>
+            {activeEntry && (
+              <div className="rotate-2 scale-105 opacity-90">
+                <PipelineCard entry={activeEntry} onClick={() => {}} />
+              </div>
+            )}
+          </DragOverlay>
         </DndContext>
       </div>
 

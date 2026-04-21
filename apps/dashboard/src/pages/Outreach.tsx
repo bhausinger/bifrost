@@ -3,10 +3,18 @@ import { Mail, Plus } from 'lucide-react'
 import { useEmailTemplates, useCreateEmailTemplate } from '@/hooks/useEmailTemplates'
 import { supabase } from '@/lib/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { Select, Modal, Button, Input, Textarea, Label } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 
+const TEMPLATE_CATEGORIES = [
+  { value: 'initial_outreach', label: 'Initial Outreach' },
+  { value: 'follow_up', label: 'Follow Up' },
+  { value: 'pricing', label: 'Pricing' },
+  { value: 'confirmation', label: 'Confirmation' },
+]
+
 export function Outreach() {
-  const { data: templates, isLoading: templatesLoading } = useEmailTemplates()
+  const { data: templates, isLoading: templatesLoading, error: templatesError } = useEmailTemplates()
   const createTemplate = useCreateEmailTemplate()
   const [showNewTemplate, setShowNewTemplate] = useState(false)
   const [newName, setNewName] = useState('')
@@ -14,7 +22,7 @@ export function Outreach() {
   const [newBody, setNewBody] = useState('')
   const [newCategory, setNewCategory] = useState('initial_outreach')
 
-  const { data: emailRecords } = useQuery({
+  const { data: emailRecords, error: emailError } = useQuery({
     queryKey: ['email-records'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,17 +61,21 @@ export function Outreach() {
         title="Outreach"
         description="Email templates and send history"
         actions={
-          <button
-            onClick={() => setShowNewTemplate(true)}
-            className="btn-primary flex items-center gap-2"
-          >
+          <Button variant="primary" onClick={() => setShowNewTemplate(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             New Template
-          </button>
+          </Button>
         }
       />
 
       <div className="flex-1 overflow-y-auto bg-gray-50 p-8">
+
+      {(templatesError || emailError) && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm font-medium text-red-600">Failed to load outreach data</p>
+          <p className="mt-1 text-xs text-red-400">{(templatesError ?? emailError)?.message}</p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="mb-8 grid grid-cols-4 gap-4">
@@ -162,75 +174,48 @@ export function Outreach() {
         </div>
       </div>
 
-      {/* New Template Modal */}
-      {showNewTemplate && (
-        <>
-          <div className="modal-overlay" onClick={() => setShowNewTemplate(false)} />
-          <div className="modal-panel fixed inset-x-0 top-[10%] z-50 mx-auto w-full max-w-lg">
-            <h3 className="font-display text-lg font-semibold text-gray-900">New Email Template</h3>
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="input-field w-full"
-                  placeholder="e.g., Initial Outreach"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="select-field w-full"
-                >
-                  <option value="initial_outreach">Initial Outreach</option>
-                  <option value="follow_up">Follow Up</option>
-                  <option value="pricing">Pricing</option>
-                  <option value="confirmation">Confirmation</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Subject</label>
-                <input
-                  type="text"
-                  value={newSubject}
-                  onChange={(e) => setNewSubject(e.target.value)}
-                  className="input-field w-full"
-                  placeholder="Email subject line"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Body</label>
-                <textarea
-                  value={newBody}
-                  onChange={(e) => setNewBody(e.target.value)}
-                  rows={8}
-                  className="input-field w-full font-mono"
-                  placeholder="Use {{artistName}}, {{deckLink}}, {{senderName}} as variables"
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowNewTemplate(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateTemplate}
-                  disabled={!newName || !newSubject || !newBody}
-                  className="btn-primary disabled:opacity-50"
-                >
-                  Create Template
-                </button>
-              </div>
-            </div>
+      <Modal
+        open={showNewTemplate}
+        onClose={() => setShowNewTemplate(false)}
+        title="New Email Template"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowNewTemplate(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateTemplate}
+              disabled={!newName || !newSubject || !newBody}
+            >
+              Create Template
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <Label>Name</Label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g., Initial Outreach" />
           </div>
-        </>
-      )}
+          <div>
+            <Label>Category</Label>
+            <Select fullWidth value={newCategory} onChange={setNewCategory} options={TEMPLATE_CATEGORIES} />
+          </div>
+          <div>
+            <Label>Subject</Label>
+            <Input value={newSubject} onChange={(e) => setNewSubject(e.target.value)} placeholder="Email subject line" />
+          </div>
+          <div>
+            <Label>Body</Label>
+            <Textarea
+              value={newBody}
+              onChange={(e) => setNewBody(e.target.value)}
+              rows={8}
+              className="font-mono"
+              placeholder="Use {{artistName}}, {{deckLink}}, {{senderName}} as variables"
+            />
+          </div>
+        </div>
+      </Modal>
       </div>
     </div>
   )

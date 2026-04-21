@@ -3,7 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { env } from '@/lib/env'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import { fetchDedupData, checkDuplicate, type DedupData } from '@/lib/dedup'
+import { Select } from '@/components/ui'
 import type { PipelineStage } from '@/types'
+
+const IMPORT_STAGE_OPTIONS = [
+  { value: 'discovered', label: 'Discovered' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'responded', label: 'Responded' },
+]
 
 interface LeadGeneratorModalProps {
   onClose: () => void
@@ -442,7 +449,7 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
             soundcloud_url: artist.url,
             instagram_handle: artist.instagram_handle,
             genres: artist.genre ? [artist.genre] : [],
-            monthly_listeners: null,
+            track_count: artist.track_count || null,
             follower_count: artist.followers || null,
             image_url: artist.image_url,
             location: [artist.city, artist.country]
@@ -663,17 +670,12 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                     Upload Recency
                   </label>
-                  <select
-                    value={uploadRecency}
-                    onChange={(e) => setUploadRecency(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm focus:border-[#ff5500]/50 focus:outline-none focus:ring-2 focus:ring-[#ff5500]/20"
-                  >
-                    {UPLOAD_RECENCY.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    fullWidth
+                    value={String(uploadRecency)}
+                    onChange={(v) => setUploadRecency(Number(v))}
+                    options={UPLOAD_RECENCY.map((o) => ({ value: String(o.value), label: o.label }))}
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -936,17 +938,11 @@ export function LeadGeneratorModal({ onClose }: LeadGeneratorModalProps) {
                   </button>
                   <div className="mx-2 h-4 w-px bg-gray-200" />
                   <label className="text-xs text-gray-500">Stage:</label>
-                  <select
+                  <Select
                     value={importStage}
-                    onChange={(e) =>
-                      setImportStage(e.target.value as PipelineStage)
-                    }
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm focus:border-[#ff5500]/50 focus:outline-none focus:ring-1 focus:ring-[#ff5500]/20"
-                  >
-                    <option value="discovered">Discovered</option>
-                    <option value="contacted">Contacted</option>
-                    <option value="responded">Responded</option>
-                  </select>
+                    onChange={(v) => setImportStage(v as PipelineStage)}
+                    options={IMPORT_STAGE_OPTIONS}
+                  />
                 </div>
                 <div className="rounded-lg bg-[#ff5500]/10 px-3 py-1.5 text-xs font-semibold text-[#ff5500]">
                   {selectedScrapedCount} selected

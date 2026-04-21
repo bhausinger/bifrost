@@ -1,8 +1,20 @@
-import { useState, useMemo } from 'react'
-import { BarChart3, Search, Plus, MoreHorizontal, ExternalLink, DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react'
-import { useCampaigns, useUpdateCampaign } from '@/hooks/useCampaigns'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { BarChart3, Search, Plus, MoreHorizontal, ExternalLink, DollarSign, TrendingUp, CheckCircle2, Music2, Clock, AlertTriangle, CheckCircle } from 'lucide-react'
+import { useCampaigns, useCreateCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
+import { useCampaignPlacements } from '@/hooks/usePlacements'
+import { useArtists } from '@/hooks/useArtists'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { Select, Input, Textarea, Button, Label, Modal } from '@/components/ui'
 import type { Campaign, Artist } from '@/types'
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'active', label: 'Active' },
+  { value: 'placing', label: 'Placing' },
+  { value: 'paused', label: 'Paused' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+]
 
 type CampaignWithArtist = Campaign & { artist: Artist }
 
@@ -39,12 +51,267 @@ function formatNumber(n: number): string {
   return String(n)
 }
 
+const PLACEMENT_STATUS_ICON: Record<string, { icon: typeof CheckCircle; color: string }> = {
+  placed: { icon: CheckCircle, color: 'text-emerald-500' },
+  pending: { icon: Clock, color: 'text-amber-500' },
+  removed: { icon: AlertTriangle, color: 'text-red-400' },
+}
+
+function getPacingLabel(selected: CampaignWithArtist): { label: string; color: string } | null {
+  if (!selected.start_date || !selected.target_streams || selected.target_streams === 0) return null
+  const start = new Date(selected.start_date).getTime()
+  const now = Date.now()
+  const end = selected.end_date ? new Date(selected.end_date).getTime() : start + 90 * 86_400_000 // default 90 days
+  const elapsed = Math.max(0, now - start)
+  const total = Math.max(1, end - start)
+  const expectedProgress = Math.min(1, elapsed / total)
+  const actualProgress = selected.actual_streams / selected.target_streams
+  const ratio = actualProgress / Math.max(0.01, expectedProgress)
+
+  if (ratio >= 1.1) return { label: 'Ahead of pace', color: 'text-emerald-600' }
+  if (ratio >= 0.85) return { label: 'On pace', color: 'text-gray-500' }
+  return { label: 'Behind pace', color: 'text-amber-600' }
+}
+
+function CampaignDrawerContent({
+  selected,
+  updateCampaign,
+}: {
+  selected: CampaignWithArtist
+  updateCampaign: ReturnType<typeof useUpdateCampaign>
+}) {
+  const { data: placements, isLoading: placementsLoading } = useCampaignPlacements(selected.id)
+  const [notes, setNotes] = useState(selected.notes ?? '')
+  const [notesDirty, setNotesDirty] = useState(false)
+  const notesTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync notes when selected campaign changes
+  useEffect(() => {
+    setNotes(selected.notes ?? '')
+    setNotesDirty(false)
+  }, [selected.id, selected.notes])
+
+  function handleNotesChange(value: string) {
+    setNotes(value)
+    setNotesDirty(true)
+    if (notesTimeout.current) clearTimeout(notesTimeout.current)
+    notesTimeout.current = setTimeout(() => {
+      updateCampaign.mutate({ id: selected.id, notes: value })
+      setNotesDirty(false)
+    }, 1000)
+  }
+
+  function handleNotesBlur() {
+    if (notesDirty) {
+      if (notesTimeout.current) clearTimeout(notesTimeout.current)
+      updateCampaign.mutate({ id: selected.id, notes })
+      setNotesDirty(false)
+    }
+  }
+
+  const budget = selected.total_budget ?? 0
+  const cost = selected.total_cost ?? 0
+  const profit = budget - cost
+  const margin = budget > 0 ? Math.round((profit / budget) * 100) : 0
+
+  const streamProgress = selected.target_streams && selected.target_streams > 0
+    ? Math.min(100, Math.round((selected.actual_streams / selected.target_streams) * 100))
+    : null
+  const pacing = getPacingLabel(selected)
+
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="space-y-6">
+        {/* Status Selector */}
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Status</h3>
+          <div className="flex flex-wrap gap-2">
+            {['active', 'placing', 'paused', 'completed', 'cancelled'].map((status) => {
+              const sc = STATUS_CONFIG[status]!
+              return (
+                <button
+                  key={status}
+                  onClick={() => updateCampaign.mutate({ id: selected.id, status })}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    selected.status === status
+                      ? 'bg-amber-500 text-gray-900 shadow-sm'
+                      : `${sc.bg} ${sc.text} hover:opacity-80`
+                  }`}
+                >
+                  {sc.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Track */}
+        {selected.track_name && (
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Track</h3>
+            <p className="text-sm font-medium text-gray-900">{selected.track_name}</p>
+            {selected.track_spotify_url && (
+              <a
+                href={selected.track_spotify_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-[#1DB954] hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Open on Spotify
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Financials + Profit */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Financials</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-medium text-gray-400">Amount Paid</p>
+              <p className="mt-1 font-mono text-lg font-bold text-emerald-600">
+                ${budget.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-medium text-gray-400">Spent on Curators</p>
+              <p className="mt-1 font-mono text-lg font-bold text-gray-900">
+                ${cost.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          {budget > 0 && (
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-400">Profit</span>
+                <span className={`font-mono text-sm font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                  ${profit.toLocaleString()}
+                </span>
+              </div>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                margin >= 50 ? 'bg-emerald-50 text-emerald-600' :
+                margin >= 20 ? 'bg-amber-50 text-amber-600' :
+                'bg-red-50 text-red-500'
+              }`}>
+                {margin}% margin
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Performance — Progress Bar */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Performance</h3>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex items-baseline justify-between">
+              <p className="font-mono text-lg font-bold text-gray-900">
+                {selected.actual_streams.toLocaleString()}
+              </p>
+              {selected.target_streams != null && selected.target_streams > 0 && (
+                <p className="text-sm text-gray-400">
+                  / {selected.target_streams.toLocaleString()} target
+                </p>
+              )}
+            </div>
+            {streamProgress !== null && (
+              <>
+                <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      streamProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${streamProgress}%` }}
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-400">{streamProgress}%</span>
+                  {pacing && (
+                    <span className={`text-xs font-medium ${pacing.color}`}>{pacing.label}</span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Placements */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Placements
+            {placements && placements.length > 0 && (
+              <span className="ml-1.5 text-gray-300">({placements.length})</span>
+            )}
+          </h3>
+          {placementsLoading && (
+            <p className="text-xs text-gray-400">Loading...</p>
+          )}
+          {!placementsLoading && (!placements || placements.length === 0) && (
+            <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center">
+              <Music2 className="mx-auto h-5 w-5 text-gray-300" />
+              <p className="mt-1.5 text-xs text-gray-400">No placements yet</p>
+            </div>
+          )}
+          {!placementsLoading && placements && placements.length > 0 && (
+            <div className="space-y-2">
+              {placements.map((p) => {
+                const statusCfg = PLACEMENT_STATUS_ICON[p.status] ?? PLACEMENT_STATUS_ICON.pending!
+                const Icon = statusCfg.icon
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
+                  >
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${statusCfg.color}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">
+                        {p.playlist?.name ?? 'Unknown playlist'}
+                      </p>
+                      <p className="truncate text-xs text-gray-400">
+                        {p.playlist?.curator?.name ?? 'Unknown curator'}
+                        {p.cost != null && ` · $${p.cost.toLocaleString()}`}
+                      </p>
+                    </div>
+                    <span className={`flex-shrink-0 text-xs font-medium capitalize ${statusCfg.color}`}>
+                      {p.status}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Notes — Editable */}
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            Notes
+            {notesDirty && <span className="ml-1.5 text-gray-300">saving...</span>}
+          </h3>
+          <Textarea
+            value={notes}
+            onChange={(e) => handleNotesChange(e.target.value)}
+            onBlur={handleNotesBlur}
+            placeholder="Add notes... e.g. 'artist wants update by April 5'"
+            rows={3}
+            className="resize-none leading-relaxed"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Campaigns() {
   const { data: campaigns, isLoading } = useCampaigns()
+  const { data: artists } = useArtists()
+  const createCampaign = useCreateCampaign()
   const updateCampaign = useUpdateCampaign()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selected, setSelected] = useState<CampaignWithArtist | null>(null)
+  const [showNewCampaign, setShowNewCampaign] = useState(false)
+  const [newCampaignArtistId, setNewCampaignArtistId] = useState('')
 
   const filtered = useMemo(() => {
     if (!campaigns) return []
@@ -74,10 +341,10 @@ export function Campaigns() {
         title="Campaigns"
         description="Manage your playlist placement campaigns"
         actions={
-          <button className="btn-primary flex items-center gap-2">
+          <Button variant="primary" onClick={() => setShowNewCampaign(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             New Campaign
-          </button>
+          </Button>
         }
       />
 
@@ -131,27 +398,20 @@ export function Campaigns() {
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search campaigns, artists, tracks..."
-                className="input-field w-full pl-10"
+                className="pl-10"
               />
             </div>
 
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="select-field"
-            >
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="placing">Placing</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              onChange={setStatusFilter}
+              options={STATUS_FILTER_OPTIONS}
+            />
 
             {(search || statusFilter !== 'all') && (
               <button
@@ -260,16 +520,9 @@ export function Campaigns() {
 
                       {/* Paid */}
                       <td className="px-5 py-3.5">
-                        <div>
-                          <span className="font-mono text-sm font-medium text-gray-900">
-                            ${(campaign.total_budget ?? 0).toLocaleString()}
-                          </span>
-                          {campaign.total_cost != null && campaign.total_cost > 0 && (
-                            <p className="text-xs text-gray-400">
-                              ${campaign.total_cost.toLocaleString()} spent
-                            </p>
-                          )}
-                        </div>
+                        <span className="font-mono text-sm font-medium text-gray-900">
+                          ${(campaign.total_budget ?? 0).toLocaleString()}
+                        </span>
                       </td>
 
                       {/* Streams */}
@@ -350,100 +603,75 @@ export function Campaigns() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-6">
-                {/* Status Selector */}
-                <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Status</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {['active', 'placing', 'paused', 'completed', 'cancelled'].map((status) => {
-                      const sc = STATUS_CONFIG[status]!
-                      return (
-                        <button
-                          key={status}
-                          onClick={() => updateCampaign.mutate({ id: selected.id, status })}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                            selected.status === status
-                              ? 'bg-amber-500 text-gray-900 shadow-sm'
-                              : `${sc.bg} ${sc.text} hover:opacity-80`
-                          }`}
-                        >
-                          {sc.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Track */}
-                {selected.track_name && (
-                  <div>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Track</h3>
-                    <p className="text-sm font-medium text-gray-900">{selected.track_name}</p>
-                    {selected.track_spotify_url && (
-                      <a
-                        href={selected.track_spotify_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-[#1DB954] hover:underline"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Open on Spotify
-                      </a>
-                    )}
-                  </div>
-                )}
-
-                {/* Financials */}
-                <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Financials</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium text-gray-400">Amount Paid</p>
-                      <p className="mt-1 font-mono text-lg font-bold text-emerald-600">
-                        ${selected.total_budget?.toLocaleString() ?? '0'}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium text-gray-400">Spent on Curators</p>
-                      <p className="mt-1 font-mono text-lg font-bold text-gray-900">
-                        ${selected.total_cost?.toLocaleString() ?? '0'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Performance */}
-                <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Performance</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium text-gray-400">Streams</p>
-                      <p className="mt-1 font-mono text-lg font-bold text-gray-900">
-                        {selected.actual_streams.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium text-gray-400">Target</p>
-                      <p className="mt-1 font-mono text-lg font-bold text-gray-900">
-                        {selected.target_streams?.toLocaleString() ?? '-'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {selected.notes && (
-                  <div>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Notes</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">{selected.notes}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <CampaignDrawerContent
+              selected={selected}
+              updateCampaign={updateCampaign}
+            />
           </div>
         </>
       )}
+
+      {/* New Campaign Modal */}
+      <Modal
+        open={showNewCampaign}
+        onClose={() => setShowNewCampaign(false)}
+        title="New Campaign"
+      >
+        <form
+          id="new-campaign-form"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            if (!newCampaignArtistId) return
+            const form = new FormData(e.currentTarget)
+            const artist = artists?.find((a) => a.id === newCampaignArtistId)
+            await createCampaign.mutateAsync({
+              artist_id: newCampaignArtistId,
+              name: (form.get('name') as string) || `${artist?.name ?? 'Unknown'} Campaign`,
+              track_name: (form.get('track_name') as string) || undefined,
+              track_spotify_url: (form.get('track_spotify_url') as string) || undefined,
+              total_budget: form.get('total_budget') ? Number(form.get('total_budget')) : undefined,
+            })
+            setShowNewCampaign(false)
+            setNewCampaignArtistId('')
+          }}
+          className="space-y-5"
+        >
+          <div>
+            <Label htmlFor="nc-artist">Artist <span className="text-red-500 normal-case">*</span></Label>
+            <Select
+              fullWidth
+              value={newCampaignArtistId}
+              onChange={setNewCampaignArtistId}
+              options={(artists ?? []).map((a) => ({ value: a.id, label: a.name }))}
+              placeholder="Select artist..."
+            />
+          </div>
+          <div>
+            <Label htmlFor="nc-name" optional>Campaign Name</Label>
+            <Input id="nc-name" name="name" placeholder="Auto-generated if left blank" />
+          </div>
+          <div>
+            <Label htmlFor="nc-track" optional>Track Name</Label>
+            <Input id="nc-track" name="track_name" placeholder="e.g. Midnight Drive" />
+          </div>
+          <div>
+            <Label htmlFor="nc-url" optional>Track Spotify URL</Label>
+            <Input id="nc-url" name="track_spotify_url" type="url" placeholder="https://open.spotify.com/track/..." />
+          </div>
+          <div>
+            <Label htmlFor="nc-budget" optional>Amount Paid</Label>
+            <Input id="nc-budget" name="total_budget" type="number" step="0.01" placeholder="0.00" />
+          </div>
+          <div className="flex gap-3 pt-3">
+            <Button type="button" variant="secondary" onClick={() => setShowNewCampaign(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" disabled={createCampaign.isPending} className="flex-1">
+              {createCampaign.isPending ? 'Creating...' : 'Create Campaign'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

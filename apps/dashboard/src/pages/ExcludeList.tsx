@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useExcludedArtists, useRestoreArtist } from '@/hooks/useExcludeList'
+import { Input, Button } from '@/components/ui'
 
 const REASON_LABELS: Record<string, string> = {
   opt_out: 'Opted out',
@@ -10,7 +11,7 @@ const REASON_LABELS: Record<string, string> = {
 }
 
 export function ExcludeList() {
-  const { data: excluded, isLoading } = useExcludedArtists()
+  const { data: excluded, isLoading, error } = useExcludedArtists()
   const restoreArtist = useRestoreArtist()
   const [search, setSearch] = useState('')
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null)
@@ -34,17 +35,22 @@ export function ExcludeList() {
       </div>
 
       <div className="px-6 py-3">
-        <input
+        <Input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, email, or reason..."
-          className="input-field w-full max-w-md"
+          className="max-w-md"
         />
       </div>
 
       <div className="flex-1 overflow-auto px-6">
-        {isLoading ? (
+        {error ? (
+          <div className="my-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+            <p className="text-sm font-medium text-red-600">Failed to load exclude list</p>
+            <p className="mt-1 text-xs text-red-400">{error.message}</p>
+          </div>
+        ) : isLoading ? (
           <div className="py-8 text-center text-gray-400">Loading...</div>
         ) : filtered?.length === 0 ? (
           <div className="py-8 text-center text-gray-400">
@@ -81,29 +87,32 @@ export function ExcludeList() {
                   <td className="py-2 px-2 text-right">
                     {confirmRestore === entry.id ? (
                       <div className="flex items-center gap-1">
-                        <button
+                        <Button
+                          variant="primary"
                           onClick={async () => {
                             await restoreArtist.mutateAsync(entry.id)
                             setConfirmRestore(null)
                           }}
-                          className="rounded bg-emerald-500 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-400 transition-all"
+                          className="px-2 py-1 text-xs"
                         >
                           Confirm
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="secondary"
                           onClick={() => setConfirmRestore(null)}
-                          className="rounded bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-all"
+                          className="px-2 py-1 text-xs"
                         >
                           No
-                        </button>
+                        </Button>
                       </div>
                     ) : (
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => setConfirmRestore(entry.id)}
-                        className="text-xs font-medium text-emerald-600 hover:text-emerald-300 transition-colors"
+                        className="text-xs text-emerald-600 hover:text-emerald-700"
                       >
                         Restore
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>

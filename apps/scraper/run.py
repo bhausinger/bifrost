@@ -7,8 +7,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
-    port = 9999
+    port = int(os.environ.get("PORT", 9999))
     print(f"🚀 Bifrost Scraper starting on port {port}")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, log_level="info")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")

@@ -3,7 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { env } from '@/lib/env'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import { fetchDedupData, checkDuplicate } from '@/lib/dedup'
+import { Select } from '@/components/ui'
 import type { PipelineStage } from '@/types'
+
+const IMPORT_STAGE_OPTIONS = [
+  { value: 'discovered', label: 'Discovered' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'responded', label: 'Responded' },
+]
 
 interface ScraperModalProps {
   onClose: () => void
@@ -18,7 +25,7 @@ interface ScrapedArtist {
   soundcloud_url: string | null
   instagram_handle: string | null
   genres: string[]
-  monthly_listeners: number | null
+  track_count: number | null
   follower_count: number | null
   image_url: string | null
   source: string
@@ -131,7 +138,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           soundcloud_url: url,
           instagram_handle: data.instagram ?? null,
           genres: data.genres || [],
-          monthly_listeners: data.monthly_listeners || null,
+          track_count: data.track_count || null,
           follower_count: data.followers || null,
           image_url: data.image_url || null,
           source: 'scraper',
@@ -214,7 +221,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             soundcloud_url: artist.soundcloud_url,
             instagram_handle: artist.instagram_handle,
             genres: artist.genres,
-            monthly_listeners: artist.monthly_listeners,
+            track_count: artist.track_count,
             follower_count: artist.follower_count,
             image_url: artist.image_url,
             source: artist.source,
@@ -412,17 +419,11 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
               {/* Import options */}
               <div className="flex items-center gap-3 rounded-md bg-gray-50 p-3">
                 <label className="text-sm text-gray-500">Import to stage:</label>
-                <select
+                <Select
                   value={importStage}
-                  onChange={(e) =>
-                    setImportStage(e.target.value as PipelineStage)
-                  }
-                  className="select-field"
-                >
-                  <option value="discovered">Discovered</option>
-                  <option value="contacted">Contacted</option>
-                  <option value="responded">Responded</option>
-                </select>
+                  onChange={(v) => setImportStage(v as PipelineStage)}
+                  options={IMPORT_STAGE_OPTIONS}
+                />
               </div>
 
               {/* Results table */}

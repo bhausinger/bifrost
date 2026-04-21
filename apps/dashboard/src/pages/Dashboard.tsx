@@ -4,8 +4,11 @@ import { useCampaigns } from '@/hooks/useCampaigns'
 import { PageHeader } from '@/components/layout/PageHeader'
 
 export function Dashboard() {
-  const { data: entries } = usePipelineEntries()
-  const { data: campaigns } = useCampaigns()
+  const { data: entries, isLoading: entriesLoading, error: entriesError } = usePipelineEntries()
+  const { data: campaigns, isLoading: campaignsLoading, error: campaignsError } = useCampaigns()
+
+  const isLoading = entriesLoading || campaignsLoading
+  const error = entriesError || campaignsError
 
   const pipelineCount = entries?.length ?? 0
   const withEmail = entries?.filter((e) => e.artist?.email).length ?? 0
@@ -32,6 +35,20 @@ export function Dashboard() {
 
       <div className="flex-1 overflow-y-auto p-8">
 
+      {isLoading && (
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-teal-500" />
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm font-medium text-red-600">Failed to load dashboard data</p>
+          <p className="mt-1 text-xs text-red-400">{error.message}</p>
+        </div>
+      )}
+
+      {!isLoading && !error && <>
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="kpi-card flex items-center justify-between">
@@ -145,6 +162,7 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+      </>}
       </div>
     </div>
   )

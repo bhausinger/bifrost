@@ -6,6 +6,7 @@ interface PipelineColumnProps {
   stage: PipelineStage
   entries: (PipelineEntry & { artist: Artist })[]
   onCardClick: (entry: PipelineEntry & { artist: Artist }) => void
+  getOwnerName?: (userId: string | null) => string
 }
 
 const STAGE_CONFIG: Record<string, { label: string; accent: string; dot: string; countBg: string; countText: string }> = {
@@ -45,6 +46,7 @@ export function PipelineColumn({
   stage,
   entries,
   onCardClick,
+  getOwnerName,
 }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const config = STAGE_CONFIG[stage] ?? DEFAULT_CONFIG
@@ -86,6 +88,7 @@ export function PipelineColumn({
           <PipelineCard
             key={entry.id}
             entry={entry}
+            ownerName={getOwnerName?.(entry.assigned_to ?? entry.created_by)}
             onClick={() => onCardClick(entry)}
           />
         ))}

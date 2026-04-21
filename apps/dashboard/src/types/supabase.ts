@@ -12,12 +12,38 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       artists: {
         Row: {
           bio: string | null
           created_at: string | null
+          created_by: string | null
           email: string | null
           follower_count: number | null
           genres: string[] | null
@@ -25,7 +51,6 @@ export type Database = {
           image_url: string | null
           instagram_handle: string | null
           location: string | null
-          monthly_listeners: number | null
           name: string
           notes: string | null
           other_socials: Json | null
@@ -34,11 +59,13 @@ export type Database = {
           spotify_artist_id: string | null
           spotify_url: string | null
           tags: string[] | null
+          track_count: number | null
           updated_at: string | null
         }
         Insert: {
           bio?: string | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           follower_count?: number | null
           genres?: string[] | null
@@ -46,7 +73,6 @@ export type Database = {
           image_url?: string | null
           instagram_handle?: string | null
           location?: string | null
-          monthly_listeners?: number | null
           name: string
           notes?: string | null
           other_socials?: Json | null
@@ -55,11 +81,13 @@ export type Database = {
           spotify_artist_id?: string | null
           spotify_url?: string | null
           tags?: string[] | null
+          track_count?: number | null
           updated_at?: string | null
         }
         Update: {
           bio?: string | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           follower_count?: number | null
           genres?: string[] | null
@@ -67,7 +95,6 @@ export type Database = {
           image_url?: string | null
           instagram_handle?: string | null
           location?: string | null
-          monthly_listeners?: number | null
           name?: string
           notes?: string | null
           other_socials?: Json | null
@@ -76,6 +103,7 @@ export type Database = {
           spotify_artist_id?: string | null
           spotify_url?: string | null
           tags?: string[] | null
+          track_count?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -284,45 +312,57 @@ export type Database = {
           body: string
           created_at: string | null
           gmail_message_id: string | null
+          gmail_thread_id: string | null
           id: string
           opened_at: string | null
           pipeline_entry_id: string | null
+          recipient_email: string
+          recipient_name: string | null
           replied_at: string | null
+          sender_email: string | null
+          sender_name: string | null
           sent_at: string | null
           status: string | null
           subject: string
           template_id: string | null
-          to_email: string
         }
         Insert: {
           artist_id: string
           body: string
           created_at?: string | null
           gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
           opened_at?: string | null
           pipeline_entry_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
           replied_at?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_at?: string | null
           status?: string | null
           subject: string
           template_id?: string | null
-          to_email: string
         }
         Update: {
           artist_id?: string
           body?: string
           created_at?: string | null
           gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
           opened_at?: string | null
           pipeline_entry_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
           replied_at?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_at?: string | null
           status?: string | null
           subject?: string
           template_id?: string | null
-          to_email?: string
         }
         Relationships: [
           {
@@ -470,6 +510,7 @@ export type Database = {
           completed_at: string | null
           contacted_at: string | null
           created_at: string | null
+          created_by: string | null
           deal_value: number | null
           id: string
           lost_reason: string | null
@@ -487,6 +528,7 @@ export type Database = {
           completed_at?: string | null
           contacted_at?: string | null
           created_at?: string | null
+          created_by?: string | null
           deal_value?: number | null
           id?: string
           lost_reason?: string | null
@@ -504,6 +546,7 @@ export type Database = {
           completed_at?: string | null
           contacted_at?: string | null
           created_at?: string | null
+          created_by?: string | null
           deal_value?: number | null
           id?: string
           lost_reason?: string | null
@@ -755,6 +798,42 @@ export type Database = {
           },
         ]
       }
+      user_google_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          gmail_email: string | null
+          id: string
+          refresh_token: string | null
+          scopes: string
+          token_expiry: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          gmail_email?: string | null
+          id?: string
+          refresh_token?: string | null
+          scopes?: string
+          token_expiry?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          gmail_email?: string | null
+          id?: string
+          refresh_token?: string | null
+          scopes?: string
+          token_expiry?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -903,6 +982,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
