@@ -19,10 +19,6 @@ import type { Session } from '@supabase/supabase-js'
 export function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [devBypass, setDevBypass] = useState(() =>
-    localStorage.getItem('bifrost_dev_bypass') === 'true'
-  )
-
   // Auto-sync Google OAuth tokens to user_google_tokens for Gmail sending
   const syncGmailTokens = useCallback(async (session: Session) => {
     if (!session.provider_token) return
@@ -64,12 +60,6 @@ export function App() {
     return () => subscription.unsubscribe()
   }, [syncGmailTokens])
 
-  // Expose bypass toggle for dev — remove when auth is sorted
-  ;(window as unknown as Record<string, unknown>).__bifrostDevBypass = (on: boolean) => {
-    localStorage.setItem('bifrost_dev_bypass', String(on))
-    setDevBypass(on)
-  }
-
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -81,8 +71,8 @@ export function App() {
     )
   }
 
-  if (!session && !devBypass) {
-    return <Login onDevBypass={() => { localStorage.setItem('bifrost_dev_bypass', 'true'); setDevBypass(true) }} />
+  if (!session) {
+    return <Login />
   }
 
   return (

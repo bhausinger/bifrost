@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export function Login({ onDevBypass }: { onDevBypass?: () => void } = {}) {
+export function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -124,16 +124,6 @@ export function Login({ onDevBypass }: { onDevBypass?: () => void } = {}) {
               {loading ? 'Redirecting...' : 'Continue with Google'}
             </button>
           </div>
-
-          {onDevBypass && (
-            <button
-              type="button"
-              onClick={onDevBypass}
-              className="mt-4 w-full rounded-lg border border-dashed border-gray-300 py-2.5 text-sm text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-colors"
-            >
-              Skip login (dev mode)
-            </button>
-          )}
 
           <div className="mt-8 text-center text-xs text-gray-400">
             Internal tool — authorized users only
