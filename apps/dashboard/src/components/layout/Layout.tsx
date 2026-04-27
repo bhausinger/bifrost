@@ -32,7 +32,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-6">
           <img
-            src="/bifrost-logo.jpg"
+            src="/bifrost-logo.png"
             alt="BIFROST"
             className="h-11 w-11 rounded-xl object-cover shadow-lg ring-1 ring-gray-200"
           />
@@ -77,7 +77,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Sign out */}
         <div className="border-t border-gray-200 p-3">
           <button
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => { localStorage.removeItem('bifrost_dev_bypass'); supabase.auth.signOut() }}
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="h-[18px] w-[18px] text-gray-400 transition-colors group-hover:text-red-500" />
