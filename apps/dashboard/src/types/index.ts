@@ -27,6 +27,8 @@ export const ACTIVE_STAGES = PIPELINE_STAGES.filter(
   (s) => s !== 'completed' && s !== 'lost'
 )
 
+export type ArtistStatus = 'lead' | 'client'
+
 export interface Artist {
   id: string
   name: string
@@ -43,6 +45,7 @@ export interface Artist {
   bio: string | null
   image_url: string | null
   source: string
+  status: ArtistStatus
   notes: string | null
   tags: string[]
   created_at: string

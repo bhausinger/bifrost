@@ -51,11 +51,18 @@ export function useCreateCampaign() {
           .eq('id', pipeline_entry_id)
       }
 
+      // Promote the artist from lead to client
+      await supabase
+        .from('artists')
+        .update({ status: 'client' })
+        .eq('id', campaign.artist_id)
+
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] })
       queryClient.invalidateQueries({ queryKey: ['pipeline'] })
+      queryClient.invalidateQueries({ queryKey: ['artists'] })
     },
   })
 }

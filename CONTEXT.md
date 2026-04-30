@@ -1,7 +1,7 @@
 # Context — Campaign Manager
 
-**Last updated:** 2026-04-11
-**Last commit:** `109fca8` — fix: CORS preflight failure
+**Last updated:** 2026-04-29
+**Last commit:** `1ed601a` — chore: remove dev bypass
 **Status:** Functional, in production use
 
 ---
@@ -43,6 +43,10 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 
 ---
 
+## Recently Completed
+
+- **Lead vs client separation** — Added `status` column (`'lead' | 'client'`) to `artists` table. Artists page now shows only clients. Pipeline leads stay as leads until "Move to Campaign" promotes them. Manual adds in Artists page create clients directly with no pipeline entry. Migration: `00008_artist_status.sql`.
+
 ## In Progress
 
 Nothing actively in progress.
@@ -57,7 +61,7 @@ Nothing actively in progress.
 | `LeadGeneratorModal.tsx` is 1192 lines | Medium | `apps/dashboard/src/components/pipeline/` |
 | `Campaigns.tsx` is 720 lines | Medium | `apps/dashboard/src/pages/` |
 | `ScraperModal.tsx` is 602 lines | Medium | `apps/dashboard/src/components/pipeline/` |
-| Dev auth bypass (`window.__bifrostDevBypass`) ships to production | High | `apps/dashboard/src/App.tsx` |
+| Dev auth bypass removed (commit `1ed601a`) | Resolved | — |
 | Supabase types generated but not wired into `createClient<Database>()` | Medium | `apps/dashboard/src/lib/supabase.ts` |
 | `shared-types` package is an empty stub | Low | `packages/shared-types/` |
 | Hardcoded SoundCloud `client_id` will break on rotation | Medium | `apps/scraper/` |

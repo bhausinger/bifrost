@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { Users, Plus, X, ExternalLink, Search } from 'lucide-react'
 import { useArtists, useCreateArtist } from '@/hooks/useArtists'
 import { useExcludedArtists, useExcludeArtist } from '@/hooks/useExcludeList'
-import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import { ExcludeModal } from '@/components/exclude/ExcludeModal'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Modal, Button, Input, Label } from '@/components/ui'
@@ -34,7 +33,6 @@ export function Artists() {
   const { data: artists, isLoading } = useArtists()
   const { data: excluded } = useExcludedArtists()
   const createArtist = useCreateArtist()
-  const createPipelineEntry = useCreatePipelineEntry()
   const excludeArtist = useExcludeArtist()
   const [search, setSearch] = useState('')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
@@ -76,7 +74,7 @@ export function Artists() {
   async function handleAddArtist(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
-    const artist = await createArtist.mutateAsync({
+    await createArtist.mutateAsync({
       name: form.get('name') as string,
       email: (form.get('email') as string) || null,
       spotify_url: (form.get('spotify_url') as string) || null,
@@ -85,8 +83,8 @@ export function Artists() {
         .map((g) => g.trim())
         .filter(Boolean),
       source: 'manual',
+      status: 'client',
     })
-    await createPipelineEntry.mutateAsync({ artistId: artist.id })
     setShowAdd(false)
   }
 
@@ -95,7 +93,7 @@ export function Artists() {
       <PageHeader
         icon={Users}
         title="Artists"
-        description="All artists in your database"
+        description="Artists you've worked with or are currently in a campaign"
         actions={
           <Button variant="primary" onClick={() => setShowAdd(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -340,7 +338,7 @@ export function Artists() {
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={createArtist.isPending} className="flex-1">
-              {createArtist.isPending ? 'Adding...' : 'Add & Start Pipeline'}
+              {createArtist.isPending ? 'Adding...' : 'Add Artist'}
             </Button>
           </div>
         </form>

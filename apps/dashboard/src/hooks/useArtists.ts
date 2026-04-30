@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Artist } from '@/types'
 
+/** Fetches confirmed clients only (status = 'client'). Leads live in the pipeline. */
 export function useArtists() {
   return useQuery({
     queryKey: ['artists'],
@@ -9,6 +10,7 @@ export function useArtists() {
       const { data, error } = await supabase
         .from('artists')
         .select('*')
+        .eq('status', 'client')
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as Artist[]
