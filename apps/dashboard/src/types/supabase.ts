@@ -58,6 +58,7 @@ export type Database = {
           source: string | null
           spotify_artist_id: string | null
           spotify_url: string | null
+          status: string
           tags: string[] | null
           track_count: number | null
           updated_at: string | null
@@ -80,6 +81,7 @@ export type Database = {
           source?: string | null
           spotify_artist_id?: string | null
           spotify_url?: string | null
+          status?: string
           tags?: string[] | null
           track_count?: number | null
           updated_at?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           source?: string | null
           spotify_artist_id?: string | null
           spotify_url?: string | null
+          status?: string
           tags?: string[] | null
           track_count?: number | null
           updated_at?: string | null
