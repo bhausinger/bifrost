@@ -6,9 +6,10 @@ export interface EmailTemplate {
   name: string
   subject: string
   body: string
-  category: string
-  created_at: string
-  updated_at: string
+  template_type: string | null
+  variables: string[] | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export function useEmailTemplates() {
@@ -32,7 +33,7 @@ export function useCreateEmailTemplate() {
       name: string
       subject: string
       body: string
-      category: string
+      template_type: string
     }) => {
       const { data, error } = await supabase
         .from('email_templates')

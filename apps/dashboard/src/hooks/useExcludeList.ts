@@ -35,7 +35,7 @@ export function useExcludeArtist() {
         p_artist_id: artistId,
         p_email: email,
         p_reason: reason,
-        p_notes: notes ?? null,
+        p_notes: notes,
       })
 
       if (rpcError) {

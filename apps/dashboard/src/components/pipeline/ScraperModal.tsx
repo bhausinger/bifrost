@@ -1,294 +1,35 @@
-import { useState, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
-import { useCreatePipelineEntry } from '@/hooks/usePipeline'
-import { fetchDedupData, checkDuplicate } from '@/lib/dedup'
-import { Select } from '@/components/ui'
-import type { PipelineStage } from '@/types'
-
-const IMPORT_STAGE_OPTIONS = [
-  { value: 'discovered', label: 'Discovered' },
-  { value: 'contacted', label: 'Contacted' },
-  { value: 'responded', label: 'Responded' },
-]
-
-interface ScraperModalProps {
-  onClose: () => void
-}
-
-type Step = 'input' | 'scraping' | 'results' | 'importing' | 'done'
-
-interface ScrapedArtist {
-  name: string
-  email: string | null
-  spotify_url: string | null
-  soundcloud_url: string | null
-  instagram_handle: string | null
-  genres: string[]
-  track_count: number | null
-  follower_count: number | null
-  image_url: string | null
-  source: string
-  // UI state
-  selected: boolean
-  editedEmail: string
-  isDuplicate: boolean
-  duplicateNote: string
-}
-
-interface ScrapeProgress {
-  total: number
-  done: number
-  successful: number
-  emailsFound: number
-  failed: number
-  eta: string
-}
-
-const SCRAPER_URL = env.VITE_SCRAPER_URL
+import { useScraperImport } from './useScraperImport'
+import { ScraperResults } from './ScraperResults'
+import type { ScraperModalProps } from './scraperTypes'
 
 export function ScraperModal({ onClose }: ScraperModalProps) {
-  const createEntry = useCreatePipelineEntry()
-  const [step, setStep] = useState<Step>('input')
-  const [urls, setUrls] = useState('')
-  const [results, setResults] = useState<ScrapedArtist[]>([])
-  const [progress, setProgress] = useState<ScrapeProgress>({
-    total: 0,
-    done: 0,
-    successful: 0,
-    emailsFound: 0,
-    failed: 0,
-    eta: '',
-  })
-  const [importStage, setImportStage] = useState<PipelineStage>('discovered')
-  const [importProgress, setImportProgress] = useState({ done: 0, total: 0 })
-  const [importResults, setImportResults] = useState({
-    imported: 0,
-    skipped: 0,
-    failed: 0,
-  })
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const text = reader.result as string
-      setUrls((prev) => (prev ? prev + '\n' + text : text))
-    }
-    reader.readAsText(file)
-  }
-
-  function parseUrls(): string[] {
-    return urls
-      .split('\n')
-      .map((u) => u.trim())
-      .filter((u) => u.length > 0 && (u.startsWith('http') || u.includes('soundcloud.com')))
-  }
-
-  async function handleScrape() {
-    const urlList = parseUrls()
-    if (urlList.length === 0) return
-
-    setStep('scraping')
-    setProgress({
-      total: urlList.length,
-      done: 0,
-      successful: 0,
-      emailsFound: 0,
-      failed: 0,
-      eta: 'Calculating...',
-    })
-
-    const scraped: ScrapedArtist[] = []
-    const startTime = Date.now()
-
-    // Single parallel fetch for all dedup data
-    const dedup = await fetchDedupData()
-
-    for (let i = 0; i < urlList.length; i++) {
-      const url = urlList[i]!
-      const elapsed = Date.now() - startTime
-      const perItem = elapsed / (i + 1)
-      const remaining = Math.round((perItem * (urlList.length - i - 1)) / 1000)
-      const eta =
-        remaining > 60
-          ? `~${Math.round(remaining / 60)}m`
-          : `~${remaining}s`
-
-      try {
-        const response = await fetch(`${SCRAPER_URL}/scrape/soundcloud`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-        })
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-        const data = await response.json()
-
-        const reason = checkDuplicate(dedup, url, data.email, data.name, data.bio)
-        const isFlagged = !!reason
-
-        scraped.push({
-          name: data.name || (url.split('/').pop() ?? 'Unknown'),
-          email: data.email ?? null,
-          spotify_url: data.spotify_url ?? null,
-          soundcloud_url: url,
-          instagram_handle: data.instagram ?? null,
-          genres: data.genres || [],
-          track_count: data.track_count || null,
-          follower_count: data.followers || null,
-          image_url: data.image_url || null,
-          source: 'scraper',
-          selected: !isFlagged && !!data.email,
-          editedEmail: data.email || '',
-          isDuplicate: isFlagged,
-          duplicateNote: reason ?? '',
-        })
-
-        setProgress((p) => ({
-          ...p,
-          done: i + 1,
-          successful: p.successful + 1,
-          emailsFound: p.emailsFound + (data.email ? 1 : 0),
-          eta,
-        }))
-      } catch {
-        setProgress((p) => ({
-          ...p,
-          done: i + 1,
-          failed: p.failed + 1,
-          eta,
-        }))
-      }
-    }
-
-    setResults(scraped)
-    setStep('results')
-  }
-
-  function toggleSelect(index: number) {
-    setResults((prev) =>
-      prev.map((r, i) =>
-        i === index && !r.isDuplicate ? { ...r, selected: !r.selected } : r
-      )
-    )
-  }
-
-  function selectAllWithEmails() {
-    setResults((prev) =>
-      prev.map((r) =>
-        !r.isDuplicate && r.editedEmail
-          ? { ...r, selected: true }
-          : r
-      )
-    )
-  }
-
-  function deselectAll() {
-    setResults((prev) => prev.map((r) => ({ ...r, selected: false })))
-  }
-
-  function updateEmail(index: number, email: string) {
-    setResults((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, editedEmail: email } : r))
-    )
-  }
-
-  async function handleImport() {
-    const selected = results.filter((r) => r.selected)
-    if (selected.length === 0) return
-
-    setStep('importing')
-    setImportProgress({ done: 0, total: selected.length })
-
-    let imported = 0
-    let skipped = 0
-    let failed = 0
-
-    for (let i = 0; i < selected.length; i++) {
-      const artist = selected[i]!
-      try {
-        // Insert artist
-        const { data: newArtist, error: artistError } = await supabase
-          .from('artists')
-          .insert({
-            name: artist.name,
-            email: artist.editedEmail || null,
-            spotify_url: artist.spotify_url,
-            soundcloud_url: artist.soundcloud_url,
-            instagram_handle: artist.instagram_handle,
-            genres: artist.genres,
-            track_count: artist.track_count,
-            follower_count: artist.follower_count,
-            image_url: artist.image_url,
-            source: artist.source,
-            other_socials: {},
-            tags: [],
-          })
-          .select()
-          .single()
-
-        if (artistError) {
-          // Might be duplicate — try to find existing
-          const { data: existing } = await supabase
-            .from('artists')
-            .select('id')
-            .eq('soundcloud_url', artist.soundcloud_url)
-            .single()
-
-          if (existing) {
-            skipped++
-          } else {
-            throw artistError
-          }
-        } else {
-          // Create pipeline entry
-          await createEntry.mutateAsync({
-            artistId: newArtist.id,
-            stage: importStage,
-          })
-          imported++
-        }
-      } catch {
-        failed++
-      }
-
-      setImportProgress({ done: i + 1, total: selected.length })
-    }
-
-    setImportResults({ imported, skipped, failed })
-    setStep('done')
-  }
-
-  function downloadCsv() {
-    const headers = ['Name', 'Email', 'SoundCloud URL', 'Genres', 'Followers']
-    const rows = results.map((r) => [
-      r.name,
-      r.editedEmail,
-      r.soundcloud_url || '',
-      r.genres.join('; '),
-      String(r.follower_count ?? ''),
-    ])
-    const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `scraper-results-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const selectedCount = results.filter((r) => r.selected).length
+  const {
+    step,
+    urls,
+    setUrls,
+    results,
+    progress,
+    importStage,
+    setImportStage,
+    importProgress,
+    importResults,
+    fileInputRef,
+    handleFileUpload,
+    parseUrls,
+    handleScrape,
+    toggleSelect,
+    selectAllWithEmails,
+    deselectAll,
+    updateEmail,
+    handleImport,
+    downloadCsv,
+    selectedCount,
+  } = useScraperImport()
 
   return (
     <>
       <div className="modal-overlay" onClick={onClose} />
       <div className="modal-panel fixed inset-4 z-50 mx-auto flex max-w-4xl flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="font-display text-lg font-bold text-gray-900">
             {step === 'input' && 'Import from Scraper'}
@@ -306,7 +47,6 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {/* Step: Input */}
           {step === 'input' && (
             <div className="space-y-4">
               <div>
@@ -344,7 +84,6 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             </div>
           )}
 
-          {/* Step: Scraping progress */}
           {step === 'scraping' && (
             <div className="space-y-6 py-8 text-center">
               <div>
@@ -386,138 +125,20 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             </div>
           )}
 
-          {/* Step: Results */}
           {step === 'results' && (
-            <div className="space-y-4">
-              {/* Controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button
-                    onClick={selectAllWithEmails}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Select All With Emails
-                  </button>
-                  <button
-                    onClick={deselectAll}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Deselect All
-                  </button>
-                  <button
-                    onClick={downloadCsv}
-                    className="rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Download CSV
-                  </button>
-                </div>
-                <span className="text-sm text-gray-400">
-                  {selectedCount} selected
-                </span>
-              </div>
-
-              {/* Import options */}
-              <div className="flex items-center gap-3 rounded-md bg-gray-50 p-3">
-                <label className="text-sm text-gray-500">Import to stage:</label>
-                <Select
-                  value={importStage}
-                  onChange={(v) => setImportStage(v as PipelineStage)}
-                  options={IMPORT_STAGE_OPTIONS}
-                />
-              </div>
-
-              {/* Results table */}
-              <div className="overflow-x-auto rounded-md border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="w-8 px-3 py-2" />
-                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                        Artist
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                        Email
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                        Followers
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                        Links
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((artist, i) => (
-                      <tr
-                        key={i}
-                        className={`border-t border-gray-100 ${
-                          artist.isDuplicate ? 'bg-amber-500/5' : ''
-                        }`}
-                      >
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={artist.selected}
-                            disabled={artist.isDuplicate}
-                            onChange={() => toggleSelect(i)}
-                            className="rounded accent-teal-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-gray-900">
-                            {artist.name}
-                          </div>
-                          {artist.isDuplicate && (
-                            <div className="text-xs text-amber-600">
-                              {artist.duplicateNote}
-                            </div>
-                          )}
-                          {artist.genres.length > 0 && (
-                            <div className="text-xs text-gray-400">
-                              {artist.genres.slice(0, 3).join(', ')}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="email"
-                            value={artist.editedEmail}
-                            onChange={(e) => updateEmail(i, e.target.value)}
-                            placeholder="No email found"
-                            className="input-field w-full text-xs"
-                          />
-                        </td>
-                        <td className="px-3 py-2 font-mono text-gray-500">
-                          {artist.follower_count?.toLocaleString() ?? '-'}
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex gap-1.5">
-                            {artist.soundcloud_url && (
-                              <a
-                                href={artist.soundcloud_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-orange-600 hover:underline"
-                              >
-                                SC
-                              </a>
-                            )}
-                            {artist.instagram_handle && (
-                              <span className="text-xs text-pink-400">
-                                IG
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ScraperResults
+              results={results}
+              toggleSelect={toggleSelect}
+              selectAllWithEmails={selectAllWithEmails}
+              deselectAll={deselectAll}
+              downloadCsv={downloadCsv}
+              updateEmail={updateEmail}
+              importStage={importStage}
+              setImportStage={setImportStage}
+              selectedCount={selectedCount}
+            />
           )}
 
-          {/* Step: Importing */}
           {step === 'importing' && (
             <div className="py-8 text-center">
               <div className="mb-2 font-mono text-2xl font-bold text-gray-900">
@@ -537,7 +158,6 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
             </div>
           )}
 
-          {/* Step: Done */}
           {step === 'done' && (
             <div className="space-y-4 py-8 text-center">
               <div className="rounded-md bg-emerald-50 p-6">
@@ -569,7 +189,6 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
           <button
             onClick={onClose}

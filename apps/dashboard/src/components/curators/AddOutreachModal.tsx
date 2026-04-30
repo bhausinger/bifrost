@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Input, Select, Label, Modal, Button } from '@/components/ui'
-import type { CuratorOutreach } from '@/types'
+import type { Database } from '@/types/supabase'
+
+type OutreachInsert = Database['public']['Tables']['curator_outreach']['Insert']
 
 type AddOutreachModalProps = {
   open: boolean
   onClose: () => void
-  onSubmit: (entry: Partial<CuratorOutreach>) => void
+  onSubmit: (entry: OutreachInsert) => void
   isSubmitting: boolean
 }
 

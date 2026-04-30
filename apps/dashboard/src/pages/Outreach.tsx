@@ -46,7 +46,7 @@ export function Outreach() {
       name: newName,
       subject: newSubject,
       body: newBody,
-      category: newCategory,
+      template_type: newCategory,
     })
     setShowNewTemplate(false)
     setNewName('')
@@ -123,7 +123,7 @@ export function Outreach() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-gray-900">{t.name}</div>
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-300/50">
-                    {t.category}
+                    {t.template_type}
                   </span>
                 </div>
                 <div className="mt-1 text-sm text-gray-500">{t.subject}</div>
@@ -147,7 +147,7 @@ export function Outreach() {
             {emailRecords?.slice(0, 10).map((record) => (
               <div key={record.id} className="px-6 py-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-900">{record.to_email}</div>
+                  <div className="text-sm font-medium text-gray-900">{record.recipient_email}</div>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                       record.status === 'sent'
@@ -166,7 +166,7 @@ export function Outreach() {
                 </div>
                 <div className="mt-0.5 text-xs text-gray-500">{record.subject}</div>
                 <div className="mt-0.5 text-xs text-gray-400">
-                  {new Date(record.created_at).toLocaleDateString()}
+                  {record.created_at ? new Date(record.created_at).toLocaleDateString() : '-'}
                 </div>
               </div>
             ))}

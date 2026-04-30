@@ -1,7 +1,6 @@
 # Context — Campaign Manager
 
 **Last updated:** 2026-04-29
-**Last commit:** `1ed601a` — chore: remove dev bypass
 **Status:** Functional, in production use
 
 ---
@@ -16,7 +15,6 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - **Scraper:** Python FastAPI — deployed on Railway
 - **Backend:** Supabase (auth, DB, RLS, edge functions)
 - **Monorepo:** Turborepo + pnpm
-- **Packages:** `apps/dashboard/`, `apps/scraper/`, `packages/shared-types/` (stub)
 
 ---
 
@@ -30,22 +28,40 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - **Campaigns** — CRUD, placements, stream tracking
 - **Financials** — income/expense tracking, charts
 - **Outreach** — curator outreach tracking
-- **Settings** — blocked terms management
+- **Settings** — blocked terms management, Gmail OAuth
 - **Exclude list** — opt-out management
-- **Auth** — Supabase auth configured (dev bypass still active)
+- **Auth** — Supabase auth (dev bypass removed)
 
-### Infrastructure (just added)
+### Infrastructure
 
 - `lib/env.ts` — Zod validation for environment variables
+- `lib/supabase.ts` — typed with `createClient<Database>()`
 - `types/supabase.ts` — generated from Supabase schema
 - `.env.example` — template for environment setup
 - Pre-commit hooks (husky + lint-staged) — tsc check and file size enforcement
+- Barrel exports in all component + hook folders
 
 ---
 
 ## Recently Completed
 
-- **Lead vs client separation** — Added `status` column (`'lead' | 'client'`) to `artists` table. Artists page now shows only clients. Pipeline leads stay as leads until "Move to Campaign" promotes them. Manual adds in Artists page create clients directly with no pipeline entry. Migration: `00008_artist_status.sql`.
+### Codebase Audit & Cleanup (2026-04-29)
+
+**Phase 1 — Split oversized files:**
+- `LeadGeneratorModal.tsx` (1,189 lines) → 7 files: types, actions, hook, config step, results step, review step, modal shell
+- `Campaigns.tsx` (677 lines) → 4 files: constants, drawer, new campaign modal, main page
+- `ScraperModal.tsx` (604 lines) → 4 files: types, hook, results table, modal shell
+
+**Phase 3 — Type safety:**
+- Wired `createClient<Database>()` for type-safe Supabase operations
+- Removed all `as any` casts (3 instances eliminated)
+- Fixed type mismatches in Curators, Outreach, Artists, Pipeline, Financials, EmailTemplates
+- Aligned manual `Artist` interface with actual DB nullability
+
+**Phase 4 — Organization:**
+- Added barrel exports to: pipeline/, curators/, layout/, exclude/, hooks/
+- Deleted empty `packages/shared-types/` stub
+- Extracted magic numbers to named constants in Settings.tsx
 
 ## In Progress
 
@@ -55,16 +71,14 @@ Nothing actively in progress.
 
 ## Known Issues
 
-| Issue | Severity | File(s) |
+| Issue | Severity | Notes |
 |---|---|---|
-| Zero test files exist | High | — |
-| `LeadGeneratorModal.tsx` is 1192 lines | Medium | `apps/dashboard/src/components/pipeline/` |
-| `Campaigns.tsx` is 720 lines | Medium | `apps/dashboard/src/pages/` |
-| `ScraperModal.tsx` is 602 lines | Medium | `apps/dashboard/src/components/pipeline/` |
-| Dev auth bypass removed (commit `1ed601a`) | Resolved | — |
-| Supabase types generated but not wired into `createClient<Database>()` | Medium | `apps/dashboard/src/lib/supabase.ts` |
-| `shared-types` package is an empty stub | Low | `packages/shared-types/` |
-| Hardcoded SoundCloud `client_id` will break on rotation | Medium | `apps/scraper/` |
+| Zero test files exist | High | Vitest installed, infrastructure ready |
+| 5 files between 300-366 lines | Low | Artists (366), Settings (329), Pipeline (302), LeadGeneratorModal (302), Campaigns (289) |
+| `gmail-send` edge function is 473 lines | Medium | Supabase function, not covered by dashboard lint |
+| Supabase types may need regeneration | Low | `status` column was manually added; re-run `supabase gen types` when linked |
+| Raw `fetch()` calls in hooks | Low | 10 fetch calls live in dedicated hooks — acceptable pattern, could centralize later |
+| Chunk size warning on build | Low | Vite suggests code-splitting for bundle > 500kB |
 
 ---
 
@@ -76,8 +90,7 @@ Nothing currently blocked.
 
 ## What's Next (not started)
 
-1. Wire generated Supabase types into `createClient<Database>()` and remove `as` casts
-2. Break up oversized files (LeadGeneratorModal, Campaigns, ScraperModal)
-3. Write tests for pipeline transitions, dedup logic, exclude flow
-4. Remove dev auth bypass once auth is confirmed working
-5. Add scraper health check / connection status to dashboard
+1. Write tests for pipeline transitions, dedup logic, exclude flow, auth, financial mutations
+2. Centralize fetch calls into `lib/api/` if adding retry/error handling logic
+3. Add scraper health check / connection status to dashboard
+4. Code-split large routes with React.lazy for smaller bundles

@@ -6,6 +6,9 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { useBlockedTerms, useAddBlockedTerm, useDeleteBlockedTerm } from '@/hooks/useBlockedTerms'
 import { Select, Input, Button } from '@/components/ui'
 
+const GMAIL_POPUP_DIMENSIONS = 'width=600,height=700'
+const GMAIL_POPUP_CHECK_INTERVAL_MS = 500
+
 const BLOCKED_TERM_TYPE_OPTIONS = [
   { value: 'email_domain', label: 'Email Domain' },
   { value: 'profile_name', label: 'Profile Name' },
@@ -59,7 +62,7 @@ export function Settings() {
     const { authUrl } = await res.json()
 
     // Open OAuth popup
-    const popup = window.open(authUrl, 'gmail-auth', 'width=600,height=700')
+    const popup = window.open(authUrl, 'gmail-auth', GMAIL_POPUP_DIMENSIONS)
     // Listen for the OAuth redirect to send the code back
     const interval = setInterval(() => {
       try {
@@ -79,7 +82,7 @@ export function Settings() {
       } catch {
         // Cross-origin — popup hasn't redirected back yet
       }
-    }, 500)
+    }, GMAIL_POPUP_CHECK_INTERVAL_MS)
   }
 
   async function exchangeGmailCode(code: string): Promise<void> {

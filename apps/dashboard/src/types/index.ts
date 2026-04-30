@@ -37,19 +37,20 @@ export interface Artist {
   spotify_artist_id: string | null
   soundcloud_url: string | null
   instagram_handle: string | null
-  other_socials: Record<string, string>
-  genres: string[]
+  other_socials: Record<string, string> | null
+  genres: string[] | null
   track_count: number | null
   follower_count: number | null
   location: string | null
   bio: string | null
   image_url: string | null
-  source: string
-  status: ArtistStatus
+  source: string | null
+  status: string
   notes: string | null
-  tags: string[]
-  created_at: string
-  updated_at: string
+  tags: string[] | null
+  created_at: string | null
+  created_by: string | null
+  updated_at: string | null
 }
 
 export interface PipelineEntry {

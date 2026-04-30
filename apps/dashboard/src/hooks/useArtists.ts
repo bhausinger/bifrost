@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/supabase'
 import type { Artist } from '@/types'
 
 /** Fetches confirmed clients only (status = 'client'). Leads live in the pipeline. */
@@ -21,7 +22,7 @@ export function useArtists() {
 export function useCreateArtist() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (artist: Partial<Artist>) => {
+    mutationFn: async (artist: Database['public']['Tables']['artists']['Insert']) => {
       const { data, error } = await supabase
         .from('artists')
         .insert(artist)

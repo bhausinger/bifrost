@@ -46,7 +46,7 @@ export function Artists() {
 
   const sources = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const a of artists ?? []) counts.set(a.source, (counts.get(a.source) ?? 0) + 1)
+    for (const a of artists ?? []) counts.set(a.source ?? 'unknown', (counts.get(a.source ?? 'unknown') ?? 0) + 1)
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
   }, [artists])
 
@@ -58,7 +58,7 @@ export function Artists() {
       return (
         a.name.toLowerCase().includes(term) ||
         a.email?.toLowerCase().includes(term) ||
-        a.genres.some((g) => g.toLowerCase().includes(term))
+        (a.genres ?? []).some((g) => g.toLowerCase().includes(term))
       )
     })
   }, [artists, search, sourceFilter])
@@ -249,15 +249,15 @@ export function Artists() {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        {artist.genres.length > 0 ? (
+                        {(artist.genres ?? []).length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {artist.genres.slice(0, 2).map((g) => (
+                            {(artist.genres ?? []).slice(0, 2).map((g) => (
                               <span key={g} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
                                 {g}
                               </span>
                             ))}
-                            {artist.genres.length > 2 && (
-                              <span className="text-xs text-gray-400">+{artist.genres.length - 2}</span>
+                            {(artist.genres ?? []).length > 2 && (
+                              <span className="text-xs text-gray-400">+{(artist.genres ?? []).length - 2}</span>
                             )}
                           </div>
                         ) : (

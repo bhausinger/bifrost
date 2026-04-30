@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Music, Plus, Send, Users } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
 import type { CuratorOutreach } from '@/types'
 import { type CuratorWithPlaylists, type ProgressField } from '@/components/curators/curatorUtils'
@@ -60,7 +61,7 @@ export function Curators() {
   })
 
   const addOutreach = useMutation({
-    mutationFn: async (entry: Partial<CuratorOutreach>) => {
+    mutationFn: async (entry: Database['public']['Tables']['curator_outreach']['Insert']) => {
       const { data, error } = await supabase.from('curator_outreach').insert(entry).select().single()
       if (error) throw error
       return data

@@ -37,15 +37,21 @@ export async function fetchDedupData(): Promise<DedupData> {
   }
 
   const pipelineUrls = new Set<string>()
-  for (const pe of (pipelineRes.data ?? []) as any[]) {
-    if (pe.artist?.soundcloud_url) pipelineUrls.add(pe.artist.soundcloud_url.toLowerCase())
-    if (pe.artist?.email) emails.add(pe.artist.email.toLowerCase())
+  for (const pe of pipelineRes.data ?? []) {
+    const artist = pe.artist
+    if (artist && !Array.isArray(artist)) {
+      if (artist.soundcloud_url) pipelineUrls.add(artist.soundcloud_url.toLowerCase())
+      if (artist.email) emails.add(artist.email.toLowerCase())
+    }
   }
 
   const campaignUrls = new Set<string>()
-  for (const c of (campaignsRes.data ?? []) as any[]) {
-    if (c.artist?.soundcloud_url) campaignUrls.add(c.artist.soundcloud_url.toLowerCase())
-    if (c.artist?.email) emails.add(c.artist.email.toLowerCase())
+  for (const c of campaignsRes.data ?? []) {
+    const artist = c.artist
+    if (artist && !Array.isArray(artist)) {
+      if (artist.soundcloud_url) campaignUrls.add(artist.soundcloud_url.toLowerCase())
+      if (artist.email) emails.add(artist.email.toLowerCase())
+    }
   }
 
   const excludedEmails = new Set<string>(

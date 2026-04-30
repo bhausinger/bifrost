@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { DollarSign, Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button, Input, Label, Modal, Select } from '@/components/ui'
 import type { Transaction } from '@/types'
@@ -46,7 +47,7 @@ export function Financials() {
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
 
   const addTransaction = useMutation({
-    mutationFn: async (tx: Partial<Transaction> & { type: string; amount: number; transaction_date: string }) => {
+    mutationFn: async (tx: Database['public']['Tables']['transactions']['Insert']) => {
       const { data, error } = await supabase.from('transactions').insert(tx).select().single()
       if (error) throw error
       return data
@@ -189,7 +190,7 @@ export function Financials() {
             <Button variant="secondary" onClick={() => setShowAddTransaction(false)}>Cancel</Button>
             <Button
               variant="primary"
-              onClick={() => addTransaction.mutate({ type: formType, amount: parseFloat(formAmount), description: formDescription || null, category: formCategory || null, payment_method: formPaymentMethod || null, transaction_date: formDate } as any)}
+              onClick={() => addTransaction.mutate({ type: formType, amount: parseFloat(formAmount), description: formDescription || null, category: formCategory || null, payment_method: formPaymentMethod || null, transaction_date: formDate || new Date().toISOString().split('T')[0]! })}
               disabled={!formAmount}
             >
               Add {formType === 'income' ? 'Income' : 'Expense'}

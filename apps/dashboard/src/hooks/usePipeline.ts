@@ -58,7 +58,7 @@ export function useMoveStage() {
       const { error: rpcError } = await supabase.rpc('move_pipeline_stage', {
         entry_id: entryId,
         new_stage: newStage,
-        note: note ?? null,
+        note,
       })
 
       if (rpcError) {
@@ -68,10 +68,10 @@ export function useMoveStage() {
           .update({
             stage: newStage,
             stage_entered_at: new Date().toISOString(),
-            contacted_at: newStage === 'contacted' ? new Date().toISOString() : undefined,
-            responded_at: newStage === 'responded' ? new Date().toISOString() : undefined,
-            paid_at: newStage === 'paid' ? new Date().toISOString() : undefined,
-            completed_at: newStage === 'completed' ? new Date().toISOString() : undefined,
+            contacted_at: newStage === 'contacted' ? new Date().toISOString() : null,
+            responded_at: newStage === 'responded' ? new Date().toISOString() : null,
+            paid_at: newStage === 'paid' ? new Date().toISOString() : null,
+            completed_at: newStage === 'completed' ? new Date().toISOString() : null,
           })
           .eq('id', entryId)
         if (updateError) throw updateError

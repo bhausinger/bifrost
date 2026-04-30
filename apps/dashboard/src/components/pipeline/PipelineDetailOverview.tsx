@@ -62,11 +62,11 @@ export function PipelineDetailOverview({
 
       <SoundCloudStats entry={entry} />
 
-      {entry.artist.genres.length > 0 && (
+      {(entry.artist.genres ?? []).length > 0 && (
         <div>
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Genres</h3>
           <div className="flex flex-wrap gap-1.5">
-            {entry.artist.genres.map((g) => (
+            {(entry.artist.genres ?? []).map((g) => (
               <span key={g} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">{g}</span>
             ))}
           </div>
