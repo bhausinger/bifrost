@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
+import { gmailSyncTokens } from '@/lib/api/gmail'
 import { Layout } from '@/components/layout/Layout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Dashboard } from '@/pages/Dashboard'
@@ -23,18 +23,9 @@ export function App() {
   const syncGmailTokens = useCallback(async (session: Session) => {
     if (!session.provider_token) return
     try {
-      await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/callback`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          apikey: env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          // Pass the Google tokens directly — the edge function stores them
-          provider_token: session.provider_token,
-          provider_refresh_token: session.provider_refresh_token,
-        }),
+      await gmailSyncTokens({
+        provider_token: session.provider_token,
+        provider_refresh_token: session.provider_refresh_token ?? null,
       })
     } catch {
       // Non-critical — Gmail features just won't work until manually connected

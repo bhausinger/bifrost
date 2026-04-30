@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
+import { scrapeArtist } from '@/lib/api/scraper'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import { fetchDedupData, checkDuplicate } from '@/lib/dedup'
 import type {
@@ -11,8 +11,6 @@ import type {
   ImportResults,
   PipelineStage,
 } from './scraperTypes'
-
-const SCRAPER_URL = env.VITE_SCRAPER_URL
 
 export function useScraperImport() {
   const createEntry = useCreatePipelineEntry()
@@ -93,15 +91,7 @@ export function useScraperImport() {
           : `~${remaining}s`
 
       try {
-        const response = await fetch(`${SCRAPER_URL}/scrape/soundcloud`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-        })
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-        const data = await response.json()
+        const data = await scrapeArtist(url)
 
         const reason = checkDuplicate(
           dedup,

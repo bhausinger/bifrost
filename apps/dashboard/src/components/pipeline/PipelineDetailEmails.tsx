@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
+import { gmailSendSingle } from '@/lib/api/gmail'
 import { useEmailTemplates, renderTemplate, stripEmojis } from '@/hooks/useEmailTemplates'
 import { Select } from '@/components/ui'
 import type { PipelineEntry, Artist } from '@/types'
@@ -51,25 +51,11 @@ export function PipelineDetailEmails({ entry, sentEmails }: PipelineDetailEmails
     setEmailSending(true)
     setEmailResult(null)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
-
-      const res = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-send/single`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          apikey: env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          to: entry.artist.email,
-          subject: emailSubject,
-          htmlBody: stripEmojis(emailBody).replace(/\n/g, '<br>'),
-        }),
+      const data = await gmailSendSingle({
+        to: entry.artist.email,
+        subject: emailSubject,
+        htmlBody: stripEmojis(emailBody).replace(/\n/g, '<br>'),
       })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Send failed')
 
       await supabase.from('email_records').insert({
         artist_id: entry.artist_id,

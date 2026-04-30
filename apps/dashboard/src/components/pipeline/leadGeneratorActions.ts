@@ -1,10 +1,8 @@
 import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
+import { discoverArtists as discoverRaw, scrapeArtist } from '@/lib/api/scraper'
 import { fetchDedupData, checkDuplicate, type DedupData } from '@/lib/dedup'
 import type { PipelineStage } from '@/types'
 import type { DiscoveredLead, ScrapedLead } from './leadGeneratorTypes'
-
-const SCRAPER_URL = env.VITE_SCRAPER_URL
 
 type DiscoverParams = {
   seedUrl: string
@@ -24,25 +22,17 @@ type DiscoverResult = {
 }
 
 export async function discoverArtists(params: DiscoverParams): Promise<DiscoverResult> {
-  const res = await fetch(`${SCRAPER_URL}/discover`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      seed_url: params.seedUrl,
-      min_followers: params.minFollowers,
-      max_followers: params.maxFollowers,
-      genres: params.selectedGenres.length > 0 ? params.selectedGenres : undefined,
-      uploaded_within_days: params.uploadRecency || undefined,
-      max_results: params.maxResults,
-    }),
+  const data = await discoverRaw({
+    seed_url: params.seedUrl,
+    min_followers: params.minFollowers,
+    max_followers: params.maxFollowers,
+    genres: params.selectedGenres.length > 0 ? params.selectedGenres : undefined,
+    uploaded_within_days: params.uploadRecency || undefined,
+    max_results: params.maxResults,
   })
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-  const data = await res.json()
-  const results = data.results || []
-  const totalFound = data.total_found ?? results.length
-  const filterStats = data.filter_stats ?? null
+  const results = data.results
+  const totalFound = data.total_found
+  const filterStats = data.filter_stats
 
   const dedup = await fetchDedupData()
 
@@ -111,15 +101,7 @@ export async function scrapeArtists(
         : `~${remaining}s`
 
     try {
-      const response = await fetch(`${SCRAPER_URL}/scrape/soundcloud`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: lead.url }),
-      })
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-      const data = await response.json()
+      const data = await scrapeArtist(lead.url)
 
       const reason = checkDuplicate(dedupData, lead.url, data.email, data.name ?? lead.name, data.bio)
       const isFlagged = !!reason

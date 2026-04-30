@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { env } from '@/lib/env'
 import { useEffect, useState, useCallback } from 'react'
+import { gmailStatus as fetchGmailStatus, gmailAuthUrl, gmailCallback, gmailDisconnect as apiGmailDisconnect } from '@/lib/api/gmail'
 import { Settings as SettingsIcon } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useBlockedTerms, useAddBlockedTerm, useDeleteBlockedTerm } from '@/hooks/useBlockedTerms'
@@ -28,18 +28,8 @@ export function Settings() {
 
   const checkGmailStatus = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const res = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/status`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: env.VITE_SUPABASE_ANON_KEY,
-        },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setGmailStatus(data.connected ? { connected: true, email: data.email } : { connected: false })
-      }
+      const data = await fetchGmailStatus()
+      setGmailStatus(data.connected ? { connected: true, email: data.email ?? '' } : { connected: false })
     } catch { /* ignore */ }
     setGmailLoading(false)
   }, [])
@@ -50,66 +40,41 @@ export function Settings() {
   }, [checkGmailStatus])
 
   async function connectGmail(): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    const res = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/auth-url`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: env.VITE_SUPABASE_ANON_KEY,
-      },
-    })
-    if (!res.ok) return
-    const { authUrl } = await res.json()
+    try {
+      const { authUrl } = await gmailAuthUrl()
 
-    // Open OAuth popup
-    const popup = window.open(authUrl, 'gmail-auth', GMAIL_POPUP_DIMENSIONS)
-    // Listen for the OAuth redirect to send the code back
-    const interval = setInterval(() => {
-      try {
-        if (!popup || popup.closed) {
-          clearInterval(interval)
-          checkGmailStatus()
-          return
+      // Open OAuth popup
+      const popup = window.open(authUrl, 'gmail-auth', GMAIL_POPUP_DIMENSIONS)
+      // Listen for the OAuth redirect to send the code back
+      const interval = setInterval(() => {
+        try {
+          if (!popup || popup.closed) {
+            clearInterval(interval)
+            checkGmailStatus()
+            return
+          }
+          const popupUrl = popup.location.href
+          if (popupUrl.includes('code=')) {
+            const url = new URL(popupUrl)
+            const code = url.searchParams.get('code')
+            popup.close()
+            clearInterval(interval)
+            if (code) exchangeGmailCode(code)
+          }
+        } catch {
+          // Cross-origin — popup hasn't redirected back yet
         }
-        const popupUrl = popup.location.href
-        if (popupUrl.includes('code=')) {
-          const url = new URL(popupUrl)
-          const code = url.searchParams.get('code')
-          popup.close()
-          clearInterval(interval)
-          if (code) exchangeGmailCode(code)
-        }
-      } catch {
-        // Cross-origin — popup hasn't redirected back yet
-      }
-    }, GMAIL_POPUP_CHECK_INTERVAL_MS)
+      }, GMAIL_POPUP_CHECK_INTERVAL_MS)
+    } catch { /* auth url fetch failed */ }
   }
 
   async function exchangeGmailCode(code: string): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/callback`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: env.VITE_SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ code }),
-    })
+    await gmailCallback(code)
     checkGmailStatus()
   }
 
   async function disconnectGmail(): Promise<void> {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-    await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-auth/disconnect`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: env.VITE_SUPABASE_ANON_KEY,
-      },
-    })
+    await apiGmailDisconnect()
     setGmailStatus({ connected: false })
   }
 
