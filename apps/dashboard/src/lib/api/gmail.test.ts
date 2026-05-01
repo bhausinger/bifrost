@@ -22,6 +22,8 @@ import {
   gmailCallback,
   gmailSendSingle,
   gmailDisconnect,
+  gmailSyncTokens,
+  gmailAuthUrl,
 } from '@/lib/api/gmail'
 
 const FUNCTIONS_URL = 'http://test-supabase/functions/v1'
@@ -163,6 +165,61 @@ describe('gmailSendSingle', () => {
         htmlBody: '<p>Hi</p>',
       }),
     ).rejects.toThrow('Gmail send failed: 500')
+  })
+})
+
+describe('gmailSyncTokens', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    mockGetSession.mockReset()
+  })
+
+  it('sends provider tokens in POST body', async () => {
+    mockAuthenticated()
+    mockFetch.mockResolvedValueOnce({ ok: true })
+
+    await gmailSyncTokens({
+      provider_token: 'access-tok-xyz',
+      provider_refresh_token: 'refresh-tok-abc',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(`${FUNCTIONS_URL}/gmail-auth/callback`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake-token-123',
+        apikey: 'test-anon-key',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider_token: 'access-tok-xyz',
+        provider_refresh_token: 'refresh-tok-abc',
+      }),
+    })
+  })
+})
+
+describe('gmailAuthUrl', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    mockGetSession.mockReset()
+  })
+
+  it('calls correct URL and returns { authUrl }', async () => {
+    mockAuthenticated()
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ authUrl: 'https://accounts.google.com/o/oauth2/auth?...' }),
+    })
+
+    const result = await gmailAuthUrl()
+
+    expect(mockFetch).toHaveBeenCalledWith(`${FUNCTIONS_URL}/gmail-auth/auth-url`, {
+      headers: {
+        Authorization: 'Bearer fake-token-123',
+        apikey: 'test-anon-key',
+      },
+    })
+    expect(result).toEqual({ authUrl: 'https://accounts.google.com/o/oauth2/auth?...' })
   })
 })
 

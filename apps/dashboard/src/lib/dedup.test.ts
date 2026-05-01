@@ -222,4 +222,42 @@ describe('fetchDedupData', () => {
     expect(result.excludedEmails.has('excluded@test.com')).toBe(true)
     expect(result.blockedTerms).toEqual([{ term: 'spam', type: 'name' }])
   })
+
+  it('handles Supabase errors gracefully with null data fallback', async () => {
+    const { supabase } = await import('@/lib/supabase')
+    const mockFrom = supabase.from as ReturnType<typeof vi.fn>
+
+    // Artists query fails
+    const artistsSelect = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: 'connection timeout' },
+    })
+
+    // Other queries succeed but return empty
+    const emptyNot = vi.fn().mockResolvedValue({ data: [], error: null })
+    const emptySelect = vi.fn().mockReturnValue({ not: emptyNot })
+    const plainEmpty = vi.fn().mockResolvedValue({ data: [], error: null })
+
+    mockFrom.mockImplementation((table: string) => {
+      switch (table) {
+        case 'artists':
+          return { select: artistsSelect }
+        case 'pipeline_entries':
+        case 'campaigns':
+          return { select: emptySelect }
+        case 'excluded_artists':
+        case 'blocked_terms':
+          return { select: plainEmpty }
+        default:
+          return { select: plainEmpty }
+      }
+    })
+
+    // Should not throw — falls back to empty sets via ?? []
+    const result = await fetchDedupData()
+
+    expect(result.urls.size).toBe(0)
+    expect(result.emails.size).toBe(0)
+    expect(result.blockedTerms).toEqual([])
+  })
 })

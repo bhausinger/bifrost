@@ -4,7 +4,7 @@ vi.mock('@/lib/env', () => ({
   env: { VITE_SCRAPER_URL: 'http://test-scraper' },
 }))
 
-import { discoverArtists, scrapeArtist } from '@/lib/api/scraper'
+import { discoverArtists, scrapeArtist, scraperHealthCheck } from '@/lib/api/scraper'
 import type { DiscoverParams } from '@/lib/api/scraper'
 
 const mockFetch = vi.fn()
@@ -76,6 +76,42 @@ describe('discoverArtists', () => {
     expect(result.results).toEqual([])
     expect(result.filter_stats).toBeNull()
     expect(result.total_found).toBe(0)
+  })
+})
+
+describe('scraperHealthCheck', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  it('returns { ok: true, latencyMs } on success', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true })
+
+    const result = await scraperHealthCheck()
+
+    expect(mockFetch).toHaveBeenCalledWith('http://test-scraper', expect.objectContaining({
+      signal: expect.any(AbortSignal),
+    }))
+    expect(result.ok).toBe(true)
+    expect(result.latencyMs).toBeGreaterThanOrEqual(0)
+  })
+
+  it('returns { ok: false, latencyMs: 0 } on network failure', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('fetch failed'))
+
+    const result = await scraperHealthCheck()
+
+    expect(result.ok).toBe(false)
+    expect(result.latencyMs).toBe(0)
+  })
+
+  it('returns { ok: false, latencyMs: 0 } on abort/timeout', async () => {
+    mockFetch.mockRejectedValueOnce(new DOMException('The operation was aborted', 'AbortError'))
+
+    const result = await scraperHealthCheck()
+
+    expect(result.ok).toBe(false)
+    expect(result.latencyMs).toBe(0)
   })
 })
 
