@@ -52,7 +52,29 @@ type ScrapedData = {
   genres: string[]
 }
 
-export type { DiscoverParams, DiscoverResultItem, FilterStats, DiscoverResponse, ScrapedData }
+type HealthCheckResult = {
+  ok: boolean
+  latencyMs: number
+}
+
+export type { DiscoverParams, DiscoverResultItem, FilterStats, DiscoverResponse, ScrapedData, HealthCheckResult }
+
+const HEALTH_CHECK_TIMEOUT_MS = 5000
+
+export async function scraperHealthCheck(): Promise<HealthCheckResult> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS)
+  const start = performance.now()
+  try {
+    const res = await fetch(SCRAPER_URL, { signal: controller.signal })
+    const latencyMs = Math.round(performance.now() - start)
+    return { ok: res.ok, latencyMs }
+  } catch {
+    return { ok: false, latencyMs: 0 }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
 export async function discoverArtists(params: DiscoverParams): Promise<DiscoverResponse> {
   const res = await fetch(`${SCRAPER_URL}/discover`, {
