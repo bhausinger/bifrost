@@ -38,7 +38,7 @@ export function useCreateCampaign() {
         .insert({
           ...rest,
           pipeline_entry_id,
-          status: 'active',
+          status: 'placing',
           actual_streams: 0,
         })
         .select()

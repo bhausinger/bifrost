@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ExternalLink, Music2, RefreshCw } from 'lucide-react'
+import { ExternalLink, Music2, Plus, RefreshCw } from 'lucide-react'
 import { useCampaignPlacements } from '@/hooks/usePlacements'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
 import { fetchSpotifyPlaycount } from '@/lib/api/scraper'
@@ -17,6 +17,7 @@ import {
   getAvatarGradient,
   type CampaignWithArtist,
 } from './campaignConstants'
+import { AddPlacementModal } from './AddPlacementModal'
 
 function CampaignCardContent({
   selected,
@@ -26,6 +27,7 @@ function CampaignCardContent({
   updateCampaign: ReturnType<typeof useUpdateCampaign>
 }): JSX.Element {
   const { data: placements, isLoading: placementsLoading } = useCampaignPlacements(selected.id)
+  const [showAddPlacement, setShowAddPlacement] = useState(false)
   const [notes, setNotes] = useState(selected.notes ?? '')
   const [notesDirty, setNotesDirty] = useState(false)
   const [isFetchingStreams, setIsFetchingStreams] = useState(false)
@@ -76,6 +78,7 @@ function CampaignCardContent({
           onChange={(value) => updateCampaign.mutate({ id: selected.id, status: value })}
           options={[
             { value: 'active', label: 'Active' },
+            { value: 'placing', label: 'Placing' },
             { value: 'pitching', label: 'Pitching' },
             { value: 'paused', label: 'Paused' },
             { value: 'completed', label: 'Completed' },
@@ -117,10 +120,19 @@ function CampaignCardContent({
             </p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-xs font-medium text-gray-400">Spent on Curators</p>
-            <p className="mt-1 font-mono text-lg font-bold text-gray-900">
-              ${cost.toLocaleString()}
-            </p>
+            <Label htmlFor="curator-cost" className="text-xs text-gray-400">
+              Spent on Curators
+            </Label>
+            <Input
+              id="curator-cost"
+              type="number"
+              step="0.01"
+              value={selected.total_cost ?? 0}
+              onChange={(e) =>
+                updateCampaign.mutate({ id: selected.id, total_cost: Number(e.target.value) })
+              }
+              className="font-mono text-lg font-bold"
+            />
           </div>
         </div>
         {budget > 0 && (
@@ -297,6 +309,19 @@ function CampaignCardContent({
             })}
           </div>
         )}
+        <Button
+          variant="secondary"
+          onClick={() => setShowAddPlacement(true)}
+          className="mt-3 flex w-full items-center justify-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Placement
+        </Button>
+        <AddPlacementModal
+          open={showAddPlacement}
+          onClose={() => setShowAddPlacement(false)}
+          campaignId={selected.id}
+        />
       </div>
 
       <div>
