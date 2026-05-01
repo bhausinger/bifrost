@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Music2, Users, ExternalLink, Mail, Instagram, Pencil } from 'lucide-react'
 import { useCreateCampaign } from '@/hooks/useCampaigns'
+import { Select } from '@/components/ui'
 import { PIPELINE_BOARD_STAGES } from '@/types'
 import type { PipelineEntry, Artist, PipelineStage } from '@/types'
 import type { Tab } from './pipelineDetailTypes'
@@ -83,23 +84,16 @@ export function PipelineDetailOverview({
       )}
 
       <div>
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Move to stage</h3>
-        <div className="flex flex-wrap gap-1">
-          {PIPELINE_BOARD_STAGES.map((stage) => (
-            <button
-              key={stage}
-              onClick={() => onMoveStage(entry.id, stage)}
-              disabled={stage === entry.stage}
-              className={`rounded px-2.5 py-1 text-xs capitalize ${
-                stage === entry.stage
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900'
-              }`}
-            >
-              {stage.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Stage</h3>
+        <Select
+          value={entry.stage}
+          onChange={(value) => onMoveStage(entry.id, value as PipelineStage)}
+          options={PIPELINE_BOARD_STAGES.map((stage) => ({
+            value: stage,
+            label: stage.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          }))}
+          fullWidth
+        />
       </div>
 
       {canMoveToCampaign && !showCreateCampaign && (

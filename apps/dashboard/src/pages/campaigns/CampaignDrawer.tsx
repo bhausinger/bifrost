@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { ExternalLink, Music2 } from 'lucide-react'
 import { useCampaignPlacements } from '@/hooks/usePlacements'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { DetailCard, DetailCardHeader, Textarea } from '@/components/ui'
+import { DetailCard, DetailCardHeader, Textarea, Select } from '@/components/ui'
 import type { CampaignWithArtist } from './campaignConstants'
-import { STATUS_CONFIG, getPacingLabel, PLACEMENT_STATUS_ICON, getAvatarGradient } from './campaignConstants'
+import { getPacingLabel, PLACEMENT_STATUS_ICON, getAvatarGradient } from './campaignConstants'
 
 function CampaignCardContent({
   selected,
@@ -55,24 +55,18 @@ function CampaignCardContent({
     <div className="space-y-6">
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Status</h3>
-        <div className="flex flex-wrap gap-2">
-          {['active', 'pitching', 'paused', 'completed', 'cancelled'].map((status) => {
-            const sc = STATUS_CONFIG[status]!
-            return (
-              <button
-                key={status}
-                onClick={() => updateCampaign.mutate({ id: selected.id, status })}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                  selected.status === status
-                    ? 'bg-amber-500 text-gray-900 shadow-sm'
-                    : `${sc.bg} ${sc.text} hover:opacity-80`
-                }`}
-              >
-                {sc.label}
-              </button>
-            )
-          })}
-        </div>
+        <Select
+          value={selected.status}
+          onChange={(value) => updateCampaign.mutate({ id: selected.id, status: value })}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'pitching', label: 'Pitching' },
+            { value: 'paused', label: 'Paused' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'cancelled', label: 'Cancelled' },
+          ]}
+          fullWidth
+        />
       </div>
 
       {selected.track_name && (
