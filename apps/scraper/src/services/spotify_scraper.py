@@ -56,11 +56,17 @@ class SpotifyClient:
 
     async def __aenter__(self) -> "SpotifyClient":
         self._client = httpx.AsyncClient(
-            timeout=httpx.Timeout(20.0, connect=10.0),
+            timeout=httpx.Timeout(15.0, connect=5.0),
             follow_redirects=True,
             headers={
                 "User-Agent": USER_AGENT,
-                "Accept": "application/json",
+                "Accept": "text/html,application/json",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
             },
         )
         return self
