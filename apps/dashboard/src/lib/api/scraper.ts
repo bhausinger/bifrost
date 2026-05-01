@@ -57,7 +57,14 @@ type HealthCheckResult = {
   latencyMs: number
 }
 
-export type { DiscoverParams, DiscoverResultItem, FilterStats, DiscoverResponse, ScrapedData, HealthCheckResult }
+export type {
+  DiscoverParams,
+  DiscoverResultItem,
+  FilterStats,
+  DiscoverResponse,
+  ScrapedData,
+  HealthCheckResult,
+}
 
 const HEALTH_CHECK_TIMEOUT_MS = 5000
 
@@ -89,6 +96,32 @@ export async function discoverArtists(params: DiscoverParams): Promise<DiscoverR
     total_found: data.total_found ?? (data.results || []).length,
     filter_stats: data.filter_stats ?? null,
   }
+}
+
+type SpotifyPlaycountResult = {
+  trackId: string
+  title: string
+  artist: string
+  album: string
+  playCount: number | null
+  popularity?: number
+  source: string
+  note?: string
+}
+
+export type { SpotifyPlaycountResult }
+
+export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycountResult> {
+  const res = await fetch(`${SCRAPER_URL}/spotify/playcount`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }))
+    throw new Error(body.detail ?? `HTTP ${res.status}`)
+  }
+  return res.json()
 }
 
 export async function scrapeArtist(url: string): Promise<ScrapedData> {

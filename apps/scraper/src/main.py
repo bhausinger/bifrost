@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from services.soundcloud_scraper import SoundCloudScraper
 from services.multi_tap import multi_tap_discover
 from services.deep_scrape import deep_scrape_batch
+from services.spotify_scraper import SpotifyClient, extract_track_id
 
 # ── Shared scraper instance ───────────────────────────────────────────
 
@@ -72,6 +73,10 @@ class MultiTapDiscoverRequest(BaseModel):
 
 class DeepScrapeRequest(BaseModel):
     candidates: list[dict[str, Any]]
+
+
+class SpotifyPlaycountRequest(BaseModel):
+    url: str
 
 
 # ── Routes ────────────────────────────────────────────────────────────
@@ -175,3 +180,21 @@ async def deep_scrape_endpoint(req: DeepScrapeRequest):
         return {"results": results, "total": len(results), "emails_found": emails_found}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Deep scrape failed: {e}")
+
+
+@app.post("/spotify/playcount")
+async def spotify_playcount(req: SpotifyPlaycountRequest):
+    """Fetch play count for a Spotify track URL."""
+    track_id = extract_track_id(req.url)
+    if not track_id:
+        raise HTTPException(status_code=400, detail="Invalid Spotify track URL")
+
+    try:
+        async with SpotifyClient() as client:
+            return await client.get_playcount(req.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Spotify scrape failed: {e}")
