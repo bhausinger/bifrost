@@ -1,6 +1,11 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { encode } from 'https://deno.land/std@0.177.0/encoding/base64.ts'
+import {
+  buildMimeMessage as buildMimeMessageRaw,
+  cleanArtistName,
+  htmlToText,
+} from './helpers.ts'
 
 const GOOGLE_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID')!
 const GOOGLE_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET')!
@@ -71,7 +76,7 @@ async function refreshToken(userId: string, refreshTokenStr: string): Promise<st
 
 // ── Gmail API helpers ───────────────────────────────────────────────
 
-function buildMimeMessage(opts: {
+function buildMimeMessageEncoded(opts: {
   to: string
   from: string
   subject: string
@@ -79,33 +84,10 @@ function buildMimeMessage(opts: {
   textBody: string
 }): string {
   const boundary = '----Bifrost' + crypto.randomUUID().replace(/-/g, '').slice(0, 16)
-
-  const headers = [
-    `To: ${opts.to}`,
-    `From: ${opts.from}`,
-    `Subject: ${opts.subject}`,
-    'MIME-Version: 1.0',
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-  ]
-
-  const message = [
-    ...headers,
-    '',
-    `--${boundary}`,
-    'Content-Type: text/plain; charset="UTF-8"',
-    '',
-    opts.textBody,
-    '',
-    `--${boundary}`,
-    'Content-Type: text/html; charset="UTF-8"',
-    '',
-    opts.htmlBody,
-    '',
-    `--${boundary}--`,
-  ].join('\r\n')
+  const rawMessage = buildMimeMessageRaw({ ...opts, boundary })
 
   // Gmail API needs base64url encoding (replace +/ with -_, strip =)
-  return encode(new TextEncoder().encode(message))
+  return encode(new TextEncoder().encode(rawMessage))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '')

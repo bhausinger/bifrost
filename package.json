@@ -10,7 +10,9 @@
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "restart:force": "lsof -ti:5173,9999 | xargs kill -9 2>/dev/null; sleep 1; (cd apps/scraper && ./venv/bin/python run.py &); turbo run dev",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:scraper": "cd apps/scraper && PYTHONPATH=src python -m pytest tests/ -v",
+    "test:db": "bash supabase/tests/run-db-tests.sh"
   },
   "devDependencies": {
     "husky": "^9.1.7",
