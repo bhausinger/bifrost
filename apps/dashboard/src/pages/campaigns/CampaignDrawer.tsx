@@ -12,12 +12,9 @@ import {
   Label,
   Button,
 } from '@/components/ui'
-import {
-  PLACEMENT_STATUS_ICON,
-  getAvatarGradient,
-  type CampaignWithArtist,
-} from './campaignConstants'
+import { getAvatarGradient, type CampaignWithArtist } from './campaignConstants'
 import { AddPlacementModal } from './AddPlacementModal'
+import { PlacementCard } from './PlacementCard'
 
 function CampaignCardContent({
   selected,
@@ -270,32 +267,13 @@ function CampaignCardContent({
         )}
         {!placementsLoading && placements && placements.length > 0 && (
           <div className="space-y-2">
-            {placements.map((p) => {
-              const statusCfg = PLACEMENT_STATUS_ICON[p.status] ?? PLACEMENT_STATUS_ICON.pending!
-              const Icon = statusCfg.icon
-              return (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
-                >
-                  <Icon className={`h-4 w-4 flex-shrink-0 ${statusCfg.color}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
-                      {p.playlist?.name ?? 'Unknown playlist'}
-                    </p>
-                    <p className="truncate text-xs text-gray-400">
-                      {p.playlist?.curator?.name ?? 'Unknown curator'}
-                      {p.cost !== null && ` · $${p.cost.toLocaleString()}`}
-                    </p>
-                  </div>
-                  <span
-                    className={`flex-shrink-0 text-xs font-medium capitalize ${statusCfg.color}`}
-                  >
-                    {p.status}
-                  </span>
-                </div>
-              )
-            })}
+            {placements.map((p) => (
+              <PlacementCard
+                key={p.id}
+                placement={p}
+                trackSpotifyUrl={selected.track_spotify_url}
+              />
+            ))}
           </div>
         )}
         <Button
@@ -310,6 +288,7 @@ function CampaignCardContent({
           open={showAddPlacement}
           onClose={() => setShowAddPlacement(false)}
           campaignId={selected.id}
+          trackSpotifyUrl={selected.track_spotify_url}
         />
       </div>
 

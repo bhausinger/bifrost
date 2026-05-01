@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useCreatePlacement, useCreatePlaylist } from '@/hooks/usePlacements'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
 import { fetchPlaylistMeta, extractSpotifyPlaylistId } from '@/lib/api/spotify'
+import { fetchSpotifyTrackData } from '@/lib/api/scraper'
 import { Modal, Input, Label, Button, SearchSelect } from '@/components/ui'
 import type { Curator } from '@/types'
 
@@ -14,12 +15,14 @@ type AddPlacementModalProps = {
   open: boolean
   onClose: () => void
   campaignId: string
+  trackSpotifyUrl?: string | null
 }
 
 export function AddPlacementModal({
   open,
   onClose,
   campaignId,
+  trackSpotifyUrl,
 }: AddPlacementModalProps): JSX.Element {
   const [playlistUrl, setPlaylistUrl] = useState('')
   const [playlistName, setPlaylistName] = useState('')
@@ -100,10 +103,22 @@ export function AddPlacementModal({
         curator_id: curatorId,
       })
 
+      // Snapshot current play count for stream attribution
+      let streamsAtPlacement: number | undefined
+      if (trackSpotifyUrl) {
+        try {
+          const trackData = await fetchSpotifyTrackData(trackSpotifyUrl)
+          streamsAtPlacement = trackData.playCount ?? undefined
+        } catch {
+          // Non-blocking — placement still created without snapshot
+        }
+      }
+
       await createPlacement.mutateAsync({
         campaign_id: campaignId,
         playlist_id: playlist.id,
         cost: cost ? Number(cost) : undefined,
+        streams_at_placement: streamsAtPlacement,
       })
 
       await recalculateTotalCost()

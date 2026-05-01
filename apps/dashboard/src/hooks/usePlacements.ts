@@ -31,6 +31,7 @@ export function useCreatePlacement() {
       cost?: number
       status?: string
       notes?: string
+      streams_at_placement?: number
     }) => {
       const { data, error } = await supabase
         .from('placements')
@@ -46,6 +47,19 @@ export function useCreatePlacement() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['placements', variables.campaign_id] })
+    },
+  })
+}
+
+export function useUpdatePlacement() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Placement> & { id: string }) => {
+      const { error } = await supabase.from('placements').update(updates).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['placements'] })
     },
   })
 }

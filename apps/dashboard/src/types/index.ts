@@ -168,6 +168,8 @@ export interface Placement {
   placed_at: string | null
   removed_at: string | null
   streams_attributed: number
+  streams_at_placement: number | null
+  streams_at_removal: number | null
   notes: string | null
   created_at: string
   updated_at: string

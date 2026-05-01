@@ -626,6 +626,8 @@ export type Database = {
           playlist_id: string
           removed_at: string | null
           status: string | null
+          streams_at_placement: number | null
+          streams_at_removal: number | null
           streams_attributed: number | null
           updated_at: string | null
         }
@@ -639,6 +641,8 @@ export type Database = {
           playlist_id: string
           removed_at?: string | null
           status?: string | null
+          streams_at_placement?: number | null
+          streams_at_removal?: number | null
           streams_attributed?: number | null
           updated_at?: string | null
         }
@@ -652,6 +656,8 @@ export type Database = {
           playlist_id?: string
           removed_at?: string | null
           status?: string | null
+          streams_at_placement?: number | null
+          streams_at_removal?: number | null
           streams_attributed?: number | null
           updated_at?: string | null
         }
