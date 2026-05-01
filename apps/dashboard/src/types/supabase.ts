@@ -146,6 +146,7 @@ export type Database = {
           notes: string | null
           pipeline_entry_id: string | null
           start_date: string | null
+          starting_streams: number | null
           status: string | null
           target_streams: number | null
           total_budget: number | null
@@ -165,6 +166,7 @@ export type Database = {
           notes?: string | null
           pipeline_entry_id?: string | null
           start_date?: string | null
+          starting_streams?: number | null
           status?: string | null
           target_streams?: number | null
           total_budget?: number | null
@@ -184,6 +186,7 @@ export type Database = {
           notes?: string | null
           pipeline_entry_id?: string | null
           start_date?: string | null
+          starting_streams?: number | null
           status?: string | null
           target_streams?: number | null
           total_budget?: number | null

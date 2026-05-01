@@ -42,7 +42,8 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - `.env.example` — template for environment setup
 - Pre-commit hooks (husky + lint-staged) — tsc check and file size enforcement
 - Barrel exports in all component + hook folders
-- Vitest configured — 26 tests covering dedup, Gmail API, scraper API
+- Vitest — 97 unit tests across 11 files (all hooks, API clients, dedup, pure functions)
+- Playwright — 11 E2E tests (smoke, auth, navigation)
 - Supabase linked (project ref: nrkibvanlykqkiycpcrv)
 
 ---
@@ -86,7 +87,9 @@ Nothing actively in progress.
 
 | Issue | Severity | Notes |
 |---|---|---|
-| Test coverage is partial (49 tests, logic only) | Low | Core business logic covered, no component/e2e tests |
+| Edge function tests missing | Medium | gmail-send (474 lines), stripe-webhook, create-invoice, gmail-auth — need Deno test runner |
+| DB function tests missing | Medium | move_pipeline_stage, exclude_artist, is_excluded, get_dashboard_stats — need test DB |
+| Python scraper tests missing | Medium | 5 service modules, 0 tests — needs pytest setup |
 | 5 files between 300-366 lines | Low | Artists (366), Settings (329), Pipeline (302), LeadGeneratorModal (302), Campaigns (289) |
 | `gmail-send` edge function is 473 lines | Medium | Supabase function, not covered by dashboard lint |
 | `useBulkEmailSend` still has raw fetch | Low | Uses NDJSON streaming — can't easily wrap in API client |

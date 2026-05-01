@@ -28,6 +28,8 @@ export function useCreateCampaign() {
       track_name?: string
       track_spotify_url?: string
       total_budget?: number
+      target_streams?: number
+      starting_streams?: number
       notes?: string
     }) => {
       const { pipeline_entry_id, ...rest } = campaign
