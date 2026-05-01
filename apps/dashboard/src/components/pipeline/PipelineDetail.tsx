@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { usePipelineActivities } from '@/hooks/usePipeline'
 import { getFollowUpStatus } from '@/hooks/useFollowUpStatus'
+import { DetailCard } from '@/components/ui'
 import { PipelineDetailHeader } from './PipelineDetailHeader'
 import { PipelineDetailOverview } from './PipelineDetailOverview'
 import { PipelineDetailEmails } from './PipelineDetailEmails'
@@ -18,46 +19,43 @@ export function PipelineDetail({ entry, onClose, onMoveStage }: PipelineDetailPr
   )
 
   return (
-    <>
-      <div className="modal-overlay" onClick={onClose} />
-      <div className="fixed inset-0 left-60 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="pointer-events-auto flex h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-modal">
-          <PipelineDetailHeader entry={entry} tab={tab} onTabChange={setTab} onClose={onClose} />
-
-          <div className="flex-1 overflow-y-auto p-6">
-            {followUp.urgency !== 'none' && (
-              <div
-                className={`mb-4 rounded-md p-3 text-sm font-medium ${
-                  followUp.urgency === 'critical'
-                    ? 'bg-red-50 text-red-600'
-                    : followUp.urgency === 'urgent'
-                      ? 'bg-orange-50 text-orange-600'
-                      : followUp.urgency === 'overdue'
-                        ? 'bg-amber-50 text-amber-600'
-                        : 'bg-blue-50 text-blue-600'
-                }`}
-              >
-                {followUp.label}
-              </div>
-            )}
-
-            {tab === 'overview' && (
-              <PipelineDetailOverview
-                entry={entry}
-                activities={activities}
-                daysInStage={daysInStage}
-                onMoveStage={onMoveStage}
-                onTabChange={setTab}
-                onClose={onClose}
-              />
-            )}
-
-            {tab === 'emails' && <PipelineDetailEmails entry={entry} sentEmails={sentEmails} />}
-
-            {tab === 'edit' && <PipelineDetailEdit entry={entry} onClose={onClose} />}
-          </div>
+    <DetailCard
+      open
+      onClose={onClose}
+      header={
+        <PipelineDetailHeader entry={entry} tab={tab} onTabChange={setTab} onClose={onClose} />
+      }
+    >
+      {followUp.urgency !== 'none' && (
+        <div
+          className={`mb-4 rounded-md p-3 text-sm font-medium ${
+            followUp.urgency === 'critical'
+              ? 'bg-red-50 text-red-600'
+              : followUp.urgency === 'urgent'
+                ? 'bg-orange-50 text-orange-600'
+                : followUp.urgency === 'overdue'
+                  ? 'bg-amber-50 text-amber-600'
+                  : 'bg-blue-50 text-blue-600'
+          }`}
+        >
+          {followUp.label}
         </div>
-      </div>
-    </>
+      )}
+
+      {tab === 'overview' && (
+        <PipelineDetailOverview
+          entry={entry}
+          activities={activities}
+          daysInStage={daysInStage}
+          onMoveStage={onMoveStage}
+          onTabChange={setTab}
+          onClose={onClose}
+        />
+      )}
+
+      {tab === 'emails' && <PipelineDetailEmails entry={entry} sentEmails={sentEmails} />}
+
+      {tab === 'edit' && <PipelineDetailEdit entry={entry} onClose={onClose} />}
+    </DetailCard>
   )
 }
