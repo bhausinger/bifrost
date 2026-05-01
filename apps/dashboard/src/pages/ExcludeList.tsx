@@ -20,7 +20,7 @@ export function ExcludeList() {
     (e) =>
       e.artist_name?.toLowerCase().includes(search.toLowerCase()) ||
       e.email?.toLowerCase().includes(search.toLowerCase()) ||
-      e.reason.toLowerCase().includes(search.toLowerCase())
+      e.reason.toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
@@ -60,11 +60,21 @@ export function ExcludeList() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-white">
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Artist</th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Reason</th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Notes</th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Date</th>
+                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Artist
+                </th>
+                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Email
+                </th>
+                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Reason
+                </th>
+                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Notes
+                </th>
+                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Date
+                </th>
                 <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400"></th>
               </tr>
             </thead>

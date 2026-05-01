@@ -1,23 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // vi.mock is hoisted — all mock fns must be created via vi.hoisted
-const {
-  mockSingle,
-  mockEq,
-  mockSelect,
-  mockUpdate,
-  mockInsert,
-  mockRpc,
-  mockFrom,
-} = vi.hoisted(() => ({
-  mockSingle: vi.fn(),
-  mockEq: vi.fn(),
-  mockSelect: vi.fn(),
-  mockUpdate: vi.fn(),
-  mockInsert: vi.fn(),
-  mockRpc: vi.fn(),
-  mockFrom: vi.fn(),
-}))
+const { mockSingle, mockEq, mockSelect, mockUpdate, mockInsert, mockRpc, mockFrom } = vi.hoisted(
+  () => ({
+    mockSingle: vi.fn(),
+    mockEq: vi.fn(),
+    mockSelect: vi.fn(),
+    mockUpdate: vi.fn(),
+    mockInsert: vi.fn(),
+    mockRpc: vi.fn(),
+    mockFrom: vi.fn(),
+  }),
+)
 
 function resetChains(): void {
   mockSingle.mockReturnValue({ data: null, error: null })
@@ -51,11 +45,7 @@ const ENTRY_ID = 'entry-123'
 const ARTIST_ID = 'artist-456'
 
 /** Replicate the mutationFn from useMoveStage to test it directly. */
-async function moveStage(
-  entryId: string,
-  newStage: string,
-  note?: string,
-): Promise<void> {
+async function moveStage(entryId: string, newStage: string, note?: string): Promise<void> {
   const { data: entry } = await supabase
     .from('pipeline_entries')
     .select('stage')

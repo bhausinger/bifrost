@@ -30,7 +30,9 @@ export function useTeamUsers() {
       // Fetch user profiles from auth (via Supabase admin, but since we're
       // client-side we'll use the current user's info + any cached mapping)
       // For a 2-person team, we just use the current user's session
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
       // Build the map — for now, include the current user
       const users: TeamUser[] = []
@@ -48,10 +50,7 @@ export function useTeamUsers() {
   })
 }
 
-export function getOwnerName(
-  userId: string | null,
-  teamUsers: TeamUser[] | undefined,
-): string {
+export function getOwnerName(userId: string | null, teamUsers: TeamUser[] | undefined): string {
   if (!userId || !teamUsers) return ''
   const user = teamUsers.find((u) => u.id === userId)
   return user?.displayName ?? userId.slice(0, 6)

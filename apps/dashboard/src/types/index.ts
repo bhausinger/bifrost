@@ -23,9 +23,7 @@ export const PIPELINE_BOARD_STAGES: PipelineStage[] = [
 ]
 
 /** Legacy: all non-terminal stages */
-export const ACTIVE_STAGES = PIPELINE_STAGES.filter(
-  (s) => s !== 'completed' && s !== 'lost'
-)
+export const ACTIVE_STAGES = PIPELINE_STAGES.filter((s) => s !== 'completed' && s !== 'lost')
 
 export type ArtistStatus = 'lead' | 'client'
 

@@ -8,11 +8,11 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 )
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://bifrost-eta.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -31,9 +31,10 @@ serve(async (req) => {
       })
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -52,13 +53,10 @@ serve(async (req) => {
     } = await req.json()
 
     if (!artist_email || !amount) {
-      return new Response(
-        JSON.stringify({ error: 'artist_email and amount are required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+      return new Response(JSON.stringify({ error: 'artist_email and amount are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     // Find or create Stripe customer
@@ -127,7 +125,7 @@ serve(async (req) => {
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      },
     )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'

@@ -90,11 +90,7 @@ describe('createEmailTemplate', () => {
     }
 
     const { supabase } = await import('@/lib/supabase')
-    const { data, error } = await supabase
-      .from('email_templates')
-      .insert(input)
-      .select()
-      .single()
+    const { data, error } = await supabase.from('email_templates').insert(input).select().single()
 
     expect(mockFrom).toHaveBeenCalledWith('email_templates')
     expect(mockInsert).toHaveBeenCalledWith(input)

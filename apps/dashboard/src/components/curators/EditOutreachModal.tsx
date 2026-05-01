@@ -13,23 +13,41 @@ export function EditOutreachModal({ entry, onClose, onSave }: EditOutreachModalP
   const [url, setUrl] = useState(entry.playlist_url ?? '')
   const [email, setEmail] = useState(entry.email ?? '')
   const [genre, setGenre] = useState(entry.genre ?? '')
-  const [organic, setOrganic] = useState(entry.is_organic === true ? 'yes' : entry.is_organic === false ? 'no' : '')
+  const [organic, setOrganic] = useState(
+    entry.is_organic === true ? 'yes' : entry.is_organic === false ? 'no' : '',
+  )
   const [price, setPrice] = useState(entry.price_per_10k?.toString() ?? '')
   const [notes, setNotes] = useState(entry.notes ?? '')
 
   return (
-    <Modal open onClose={onClose} title="Edit Playlist" footer={<>
-      <Button variant="secondary" onClick={onClose}>Cancel</Button>
-      <Button variant="primary" onClick={() => onSave({
-        playlist_name: name,
-        playlist_url: url || null,
-        email: email || null,
-        genre: genre || null,
-        is_organic: organic === '' ? null : organic === 'yes',
-        price_per_10k: price ? Number(price) : null,
-        notes: notes || null,
-      })}>Save Changes</Button>
-    </>}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Edit Playlist"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() =>
+              onSave({
+                playlist_name: name,
+                playlist_url: url || null,
+                email: email || null,
+                genre: genre || null,
+                is_organic: organic === '' ? null : organic === 'yes',
+                price_per_10k: price ? Number(price) : null,
+                notes: notes || null,
+              })
+            }
+          >
+            Save Changes
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <div>
           <Label>Playlist Name *</Label>
@@ -37,7 +55,12 @@ export function EditOutreachModal({ entry, onClose, onSave }: EditOutreachModalP
         </div>
         <div>
           <Label>Playlist URL</Label>
-          <Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/..." />
+          <Input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://open.spotify.com/playlist/..."
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -65,7 +88,12 @@ export function EditOutreachModal({ entry, onClose, onSave }: EditOutreachModalP
           </div>
           <div>
             <Label>Price per 10K</Label>
-            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} step="0.01" />
+            <Input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              step="0.01"
+            />
           </div>
         </div>
         <div>

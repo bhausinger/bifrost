@@ -59,15 +59,13 @@ export function useExcludeArtist() {
             .update({ reason, notes: notes ?? null })
             .eq('id', existing.id)
         } else {
-          const { error: insertError } = await supabase
-            .from('excluded_artists')
-            .insert({
-              email,
-              artist_name: artist?.name ?? 'Unknown',
-              artist_id: artistId,
-              reason,
-              notes: notes ?? null,
-            })
+          const { error: insertError } = await supabase.from('excluded_artists').insert({
+            email,
+            artist_name: artist?.name ?? 'Unknown',
+            artist_id: artistId,
+            reason,
+            notes: notes ?? null,
+          })
           if (insertError) throw insertError
         }
 
@@ -92,10 +90,7 @@ export function useRestoreArtist() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (excludedId: string) => {
-      const { error } = await supabase
-        .from('excluded_artists')
-        .delete()
-        .eq('id', excludedId)
+      const { error } = await supabase.from('excluded_artists').delete().eq('id', excludedId)
       if (error) throw error
     },
     onSuccess: () => {

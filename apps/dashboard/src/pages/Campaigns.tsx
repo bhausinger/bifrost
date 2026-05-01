@@ -1,11 +1,25 @@
 import { useState, useMemo } from 'react'
-import { BarChart3, Search, Plus, MoreHorizontal, ExternalLink, DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react'
+import {
+  BarChart3,
+  Search,
+  Plus,
+  MoreHorizontal,
+  ExternalLink,
+  DollarSign,
+  TrendingUp,
+  CheckCircle2,
+} from 'lucide-react'
 import { useCampaigns, useCreateCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import { useArtists } from '@/hooks/useArtists'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Select, Input, Button } from '@/components/ui'
-import { STATUS_FILTER_OPTIONS, STATUS_CONFIG, getAvatarGradient, formatNumber } from './campaigns/campaignConstants'
-import type { CampaignWithArtist } from './campaigns/campaignConstants'
+import {
+  STATUS_FILTER_OPTIONS,
+  STATUS_CONFIG,
+  getAvatarGradient,
+  formatNumber,
+  type CampaignWithArtist,
+} from './campaigns/campaignConstants'
 import { CampaignDrawer } from './campaigns/CampaignDrawer'
 import { NewCampaignModal } from './campaigns/NewCampaignModal'
 
@@ -46,7 +60,11 @@ export function Campaigns() {
         title="Campaigns"
         description="Manage your playlist placement campaigns"
         actions={
-          <Button variant="primary" onClick={() => setShowNewCampaign(true)} className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => setShowNewCampaign(true)}
+            className="flex items-center gap-2"
+          >
             <Plus className="h-4 w-4" />
             New Campaign
           </Button>
@@ -88,7 +106,9 @@ export function Campaigns() {
 
           <div className="card flex items-center justify-between p-5">
             <div>
-              <p className="font-mono text-2xl font-bold text-emerald-600">${formatNumber(totalPaid)}</p>
+              <p className="font-mono text-2xl font-bold text-emerald-600">
+                ${formatNumber(totalPaid)}
+              </p>
               <p className="mt-0.5 text-sm font-medium text-gray-400">Paid</p>
               <p className="text-xs text-gray-400">${formatNumber(totalSpent)} to curators</p>
             </div>
@@ -120,7 +140,10 @@ export function Campaigns() {
 
             {(search || statusFilter !== 'all') && (
               <button
-                onClick={() => { setSearch(''); setStatusFilter('all') }}
+                onClick={() => {
+                  setSearch('')
+                  setStatusFilter('all')
+                }}
                 className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors"
               >
                 Clear
@@ -158,13 +181,27 @@ export function Campaigns() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-white">
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Artist</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Track</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Paid</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Streams</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Status</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Start Date</th>
-                  <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Actions</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Artist
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Track
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Paid
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Streams
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Status
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Start Date
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -187,7 +224,9 @@ export function Campaigns() {
                               className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-200 shadow-sm"
                             />
                           ) : (
-                            <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${gradient} shadow-sm ring-2 ring-gray-200`}>
+                            <div
+                              className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${gradient} shadow-sm ring-2 ring-gray-200`}
+                            >
                               <span className="text-xs font-bold text-white">
                                 {(campaign.artist?.name ?? campaign.name).charAt(0).toUpperCase()}
                               </span>
@@ -232,16 +271,19 @@ export function Campaigns() {
                           <span className="font-mono text-sm font-medium text-gray-900">
                             {formatNumber(campaign.actual_streams)}
                           </span>
-                          {campaign.target_streams != null && campaign.target_streams > 0 && (
+                          {campaign.target_streams !== null && campaign.target_streams > 0 && (
                             <span className="text-xs text-gray-400">
-                              {' '}/ {formatNumber(campaign.target_streams)}
+                              {' '}
+                              / {formatNumber(campaign.target_streams)}
                             </span>
                           )}
                         </div>
                       </td>
 
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.bg} ${config.text} ring-1 ring-inset ${config.ring}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.bg} ${config.text} ring-1 ring-inset ${config.ring}`}
+                        >
                           <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
                           {config.label}
                         </span>
@@ -249,13 +291,20 @@ export function Campaigns() {
 
                       <td className="px-5 py-3.5 text-sm text-gray-400">
                         {campaign.start_date
-                          ? new Date(campaign.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          ? new Date(campaign.start_date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
                           : '-'}
                       </td>
 
                       <td className="px-5 py-3.5 text-right">
                         <button
-                          onClick={(e) => { e.stopPropagation(); setSelected(campaign) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelected(campaign)
+                          }}
                           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                         >
                           <MoreHorizontal className="h-4 w-4" />

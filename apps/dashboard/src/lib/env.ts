@@ -3,11 +3,14 @@ import { z } from 'zod'
 const envSchema = z.object({
   VITE_SUPABASE_URL: z.string().url('VITE_SUPABASE_URL must be a valid URL'),
   VITE_SUPABASE_ANON_KEY: z.string().min(1, 'VITE_SUPABASE_ANON_KEY is required'),
-  VITE_SCRAPER_URL: z.string().optional().default(
-    typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-      ? '/api/scraper'
-      : 'http://localhost:9999'
-  ),
+  VITE_SCRAPER_URL: z
+    .string()
+    .optional()
+    .default(
+      typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? '/api/scraper'
+        : 'http://localhost:9999',
+    ),
 })
 
 type Env = z.infer<typeof envSchema>
@@ -31,7 +34,7 @@ function getEnv(): Env {
       .join('\n')
     throw new Error(
       `Missing or invalid environment variables:\n${message}\n\n` +
-      'Copy .env.example to .env and fill in the values.'
+        'Copy .env.example to .env and fill in the values.',
     )
   }
 

@@ -1,6 +1,5 @@
 import { Select } from '@/components/ui'
-import { IMPORT_STAGE_OPTIONS } from './leadGeneratorTypes'
-import type { ScrapedLead } from './leadGeneratorTypes'
+import { IMPORT_STAGE_OPTIONS, type ScrapedLead } from './leadGeneratorTypes'
 import type { PipelineStage } from '@/types'
 
 type LeadGeneratorReviewProps = {
@@ -46,8 +45,18 @@ export function LeadGeneratorReview({
             onClick={downloadCsv}
             className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
           >
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            <svg
+              className="h-3 w-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+              />
             </svg>
             CSV
           </button>
@@ -88,9 +97,7 @@ export function LeadGeneratorReview({
               <tr
                 key={i}
                 className={`group border-b border-gray-50 transition-colors ${
-                  artist.isDuplicate
-                    ? 'bg-amber-50/50'
-                    : 'hover:bg-gray-50/80'
+                  artist.isDuplicate ? 'bg-amber-50/50' : 'hover:bg-gray-50/80'
                 }`}
               >
                 <td className="px-4 py-2.5">
@@ -104,7 +111,7 @@ export function LeadGeneratorReview({
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
-                    {(artist.image_url || artist.avatar_url) ? (
+                    {artist.image_url || artist.avatar_url ? (
                       <img
                         src={artist.image_url || artist.avatar_url || ''}
                         alt=""
@@ -126,9 +133,7 @@ export function LeadGeneratorReview({
                         </span>
                       )}
                       {!artist.isDuplicate && artist.genre && (
-                        <span className="text-[11px] text-gray-400">
-                          {artist.genre}
-                        </span>
+                        <span className="text-[11px] text-gray-400">{artist.genre}</span>
                       )}
                     </div>
                   </div>

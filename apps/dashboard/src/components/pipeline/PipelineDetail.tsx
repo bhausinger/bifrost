@@ -13,7 +13,9 @@ export function PipelineDetail({ entry, onClose, onMoveStage }: PipelineDetailPr
   const [tab, setTab] = useState<Tab>('overview')
 
   const followUp = getFollowUpStatus(entry)
-  const daysInStage = Math.floor((Date.now() - new Date(entry.stage_entered_at).getTime()) / 86_400_000)
+  const daysInStage = Math.floor(
+    (Date.now() - new Date(entry.stage_entered_at).getTime()) / 86_400_000,
+  )
   const sentEmails = (activities ?? []).filter(
     (a) => a.type === 'email_sent' || a.description.toLowerCase().includes('email'),
   )

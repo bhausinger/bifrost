@@ -9,7 +9,10 @@ interface PipelineColumnProps {
   getOwnerName?: (userId: string | null) => string
 }
 
-const STAGE_CONFIG: Record<string, { label: string; accent: string; dot: string; countBg: string; countText: string }> = {
+const STAGE_CONFIG: Record<
+  string,
+  { label: string; accent: string; dot: string; countBg: string; countText: string }
+> = {
   discovered: {
     label: 'Discovered',
     accent: 'text-gray-700',
@@ -40,14 +43,15 @@ const STAGE_CONFIG: Record<string, { label: string; accent: string; dot: string;
   },
 }
 
-const DEFAULT_CONFIG = { label: 'Unknown', accent: 'text-gray-700', dot: 'bg-gray-400', countBg: 'bg-gray-100', countText: 'text-gray-500' }
+const DEFAULT_CONFIG = {
+  label: 'Unknown',
+  accent: 'text-gray-700',
+  dot: 'bg-gray-400',
+  countBg: 'bg-gray-100',
+  countText: 'text-gray-500',
+}
 
-export function PipelineColumn({
-  stage,
-  entries,
-  onCardClick,
-  getOwnerName,
-}: PipelineColumnProps) {
+export function PipelineColumn({ stage, entries, onCardClick, getOwnerName }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const config = STAGE_CONFIG[stage] ?? DEFAULT_CONFIG
 
@@ -63,10 +67,10 @@ export function PipelineColumn({
       {/* Column Header */}
       <div className="border-b border-gray-100 rounded-t-xl px-4 py-3.5">
         <div className="flex items-center justify-between">
-          <h3 className={`text-[15px] font-bold ${config.accent}`}>
-            {config.label}
-          </h3>
-          <span className={`inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-xs font-bold ${config.countBg} ${config.countText}`}>
+          <h3 className={`text-[15px] font-bold ${config.accent}`}>{config.label}</h3>
+          <span
+            className={`inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-xs font-bold ${config.countBg} ${config.countText}`}
+          >
             {entries.length}
           </span>
         </div>
@@ -76,9 +80,7 @@ export function PipelineColumn({
       <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
         {entries.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-10 text-center">
-            <div className="text-3xl mb-2 opacity-30">
-              {stage === 'follow_up' ? '🔔' : '📭'}
-            </div>
+            <div className="text-3xl mb-2 opacity-30">{stage === 'follow_up' ? '🔔' : '📭'}</div>
             <p className="text-xs font-medium text-gray-300">
               {isOver ? 'Drop here' : 'No artists yet'}
             </p>

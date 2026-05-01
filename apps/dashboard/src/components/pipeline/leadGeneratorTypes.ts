@@ -54,10 +54,30 @@ export type LeadGeneratorModalProps = {
 }
 
 export const GENRES = [
-  'Electronic', 'Hip-Hop', 'Pop', 'R&B', 'Rock', 'Indie', 'House', 'Techno',
-  'Drum & Bass', 'Dubstep', 'Trap', 'Lo-Fi', 'Ambient', 'Soul', 'Funk',
-  'Latin', 'UKG', 'Jungle', 'Grime', 'Afrobeats', 'Amapiano', 'Jersey Club',
-  'Drill', 'Phonk',
+  'Electronic',
+  'Hip-Hop',
+  'Pop',
+  'R&B',
+  'Rock',
+  'Indie',
+  'House',
+  'Techno',
+  'Drum & Bass',
+  'Dubstep',
+  'Trap',
+  'Lo-Fi',
+  'Ambient',
+  'Soul',
+  'Funk',
+  'Latin',
+  'UKG',
+  'Jungle',
+  'Grime',
+  'Afrobeats',
+  'Amapiano',
+  'Jersey Club',
+  'Drill',
+  'Phonk',
 ]
 
 export const UPLOAD_RECENCY = [

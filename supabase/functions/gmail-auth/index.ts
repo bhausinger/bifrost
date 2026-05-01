@@ -20,7 +20,7 @@ const supabase = createClient(
 )
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://bifrost-eta.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -34,9 +34,10 @@ function jsonResponse(data: unknown, status = 200): Response {
 async function getUser(req: Request): Promise<{ id: string; email: string } | null> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) return null
-  const { data: { user }, error } = await supabase.auth.getUser(
-    authHeader.replace('Bearer ', ''),
-  )
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
   if (error || !user) return null
   return { id: user.id, email: user.email ?? '' }
 }
@@ -121,18 +122,23 @@ serve(async (req) => {
         const profile = await profileRes.json()
         gmailEmail = profile.email ?? ''
       }
-    } catch { /* non-critical */ }
+    } catch {
+      /* non-critical */
+    }
 
     // Upsert tokens
-    const { error: dbError } = await supabase.from('user_google_tokens').upsert({
-      user_id: user.id,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_expiry: new Date(Date.now() + expiresIn * 1000).toISOString(),
-      scopes: SCOPES,
-      gmail_email: gmailEmail,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
+    const { error: dbError } = await supabase.from('user_google_tokens').upsert(
+      {
+        user_id: user.id,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        token_expiry: new Date(Date.now() + expiresIn * 1000).toISOString(),
+        scopes: SCOPES,
+        gmail_email: gmailEmail,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    )
 
     if (dbError) {
       return jsonResponse({ error: 'Failed to store tokens', detail: dbError.message }, 500)

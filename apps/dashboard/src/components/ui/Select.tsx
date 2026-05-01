@@ -49,9 +49,7 @@ export function Select({
         onClick={() => setOpen(!open)}
         className={`flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm transition-all duration-200 hover:border-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${fullWidth ? 'w-full' : ''} ${className}`}
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-400'}>
-          {selectedLabel}
-        </span>
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>{selectedLabel}</span>
         <svg
           className={`ml-2 h-4 w-4 text-gray-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
           fill="none"
@@ -80,7 +78,13 @@ export function Select({
               }`}
             >
               {opt.value === value && (
-                <svg className="mr-2 h-3.5 w-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <svg
+                  className="mr-2 h-3.5 w-3.5 text-teal-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               )}

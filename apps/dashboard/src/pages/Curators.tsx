@@ -49,7 +49,17 @@ export function Curators() {
   })
 
   const addCurator = useMutation({
-    mutationFn: async (curator: { name: string; contact_name?: string; email?: string; genres?: string[]; price_per_10k?: number; payment_method?: string; payment_handle?: string; payment_code?: string; notes?: string }) => {
+    mutationFn: async (curator: {
+      name: string
+      contact_name?: string
+      email?: string
+      genres?: string[]
+      price_per_10k?: number
+      payment_method?: string
+      payment_handle?: string
+      payment_code?: string
+      notes?: string
+    }) => {
       const { data, error } = await supabase.from('curators').insert(curator).select().single()
       if (error) throw error
       return data
@@ -62,7 +72,11 @@ export function Curators() {
 
   const addOutreach = useMutation({
     mutationFn: async (entry: Database['public']['Tables']['curator_outreach']['Insert']) => {
-      const { data, error } = await supabase.from('curator_outreach').insert(entry).select().single()
+      const { data, error } = await supabase
+        .from('curator_outreach')
+        .insert(entry)
+        .select()
+        .single()
       if (error) throw error
       return data
     },
@@ -113,7 +127,9 @@ export function Curators() {
         description="Your playlist curator network"
         actions={
           <button
-            onClick={() => tab === 'outreach' ? setShowAddOutreach(true) : setShowAddCurator(true)}
+            onClick={() =>
+              tab === 'outreach' ? setShowAddOutreach(true) : setShowAddCurator(true)
+            }
             className="btn-primary flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -125,10 +141,10 @@ export function Curators() {
       {/* Tabs */}
       <div className="border-b border-gray-200 bg-white/80 px-6">
         <div className="flex gap-1">
-          {([
+          {[
             { id: 'outreach' as Tab, label: 'Outreach Tracker', icon: Send },
             { id: 'directory' as Tab, label: 'Curator Directory', icon: Users },
-          ]).map((t) => (
+          ].map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -152,7 +168,10 @@ export function Curators() {
             isLoading={outreachLoading}
             onToggleField={toggleOutreachField}
             onEdit={setEditingOutreach}
-            onDelete={(entry) => { if (confirm(`Remove "${entry.playlist_name}" from tracking?`)) deleteOutreach.mutate(entry.id) }}
+            onDelete={(entry) => {
+              if (confirm(`Remove "${entry.playlist_name}" from tracking?`))
+                deleteOutreach.mutate(entry.id)
+            }}
           />
         )}
         {tab === 'directory' && (

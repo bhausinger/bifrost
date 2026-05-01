@@ -1,5 +1,4 @@
-import { Component } from 'react'
-import type { ReactNode, ErrorInfo } from 'react'
+import { Component, type ReactNode, type ErrorInfo } from 'react'
 import { AlertTriangle } from 'lucide-react'
 
 interface Props {

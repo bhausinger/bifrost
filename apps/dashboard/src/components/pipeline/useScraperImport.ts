@@ -52,11 +52,7 @@ export function useScraperImport() {
     return urls
       .split('\n')
       .map((u) => u.trim())
-      .filter(
-        (u) =>
-          u.length > 0 &&
-          (u.startsWith('http') || u.includes('soundcloud.com'))
-      )
+      .filter((u) => u.length > 0 && (u.startsWith('http') || u.includes('soundcloud.com')))
   }
 
   async function handleScrape(): Promise<void> {
@@ -82,24 +78,13 @@ export function useScraperImport() {
       const url = urlList[i]!
       const elapsed = Date.now() - startTime
       const perItem = elapsed / (i + 1)
-      const remaining = Math.round(
-        (perItem * (urlList.length - i - 1)) / 1000
-      )
-      const eta =
-        remaining > 60
-          ? `~${Math.round(remaining / 60)}m`
-          : `~${remaining}s`
+      const remaining = Math.round((perItem * (urlList.length - i - 1)) / 1000)
+      const eta = remaining > 60 ? `~${Math.round(remaining / 60)}m` : `~${remaining}s`
 
       try {
         const data = await scrapeArtist(url)
 
-        const reason = checkDuplicate(
-          dedup,
-          url,
-          data.email,
-          data.name,
-          data.bio
-        )
+        const reason = checkDuplicate(dedup, url, data.email, data.name, data.bio)
         const isFlagged = !!reason
 
         scraped.push({
@@ -142,17 +127,13 @@ export function useScraperImport() {
 
   function toggleSelect(index: number): void {
     setResults((prev) =>
-      prev.map((r, i) =>
-        i === index && !r.isDuplicate ? { ...r, selected: !r.selected } : r
-      )
+      prev.map((r, i) => (i === index && !r.isDuplicate ? { ...r, selected: !r.selected } : r)),
     )
   }
 
   function selectAllWithEmails(): void {
     setResults((prev) =>
-      prev.map((r) =>
-        !r.isDuplicate && r.editedEmail ? { ...r, selected: true } : r
-      )
+      prev.map((r) => (!r.isDuplicate && r.editedEmail ? { ...r, selected: true } : r)),
     )
   }
 
@@ -161,9 +142,7 @@ export function useScraperImport() {
   }
 
   function updateEmail(index: number, email: string): void {
-    setResults((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, editedEmail: email } : r))
-    )
+    setResults((prev) => prev.map((r, i) => (i === index ? { ...r, editedEmail: email } : r)))
   }
 
   async function handleImport(): Promise<void> {
@@ -238,9 +217,7 @@ export function useScraperImport() {
       r.genres.join('; '),
       String(r.follower_count ?? ''),
     ])
-    const csv = [headers, ...rows]
-      .map((row) => row.map((c) => `"${c}"`).join(','))
-      .join('\n')
+    const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

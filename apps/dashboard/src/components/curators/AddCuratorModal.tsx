@@ -31,7 +31,12 @@ export function AddCuratorModal({ open, onClose, onSubmit, isSubmitting }: AddCu
 
   function handleSubmit(): void {
     if (!name) return
-    const parsedGenres = genres ? genres.split(/[,\/]/).map((g) => g.trim()).filter(Boolean) : undefined
+    const parsedGenres = genres
+      ? genres
+          .split(/[,/]/)
+          .map((g) => g.trim())
+          .filter(Boolean)
+      : undefined
     onSubmit({
       name,
       contact_name: contactName || undefined,
@@ -43,7 +48,15 @@ export function AddCuratorModal({ open, onClose, onSubmit, isSubmitting }: AddCu
       payment_code: paymentCode || undefined,
       notes: notes || undefined,
     })
-    setName(''); setContactName(''); setEmail(''); setGenres(''); setPrice(''); setPaymentMethod(''); setPaymentHandle(''); setPaymentCode(''); setNotes('')
+    setName('')
+    setContactName('')
+    setEmail('')
+    setGenres('')
+    setPrice('')
+    setPaymentMethod('')
+    setPaymentHandle('')
+    setPaymentCode('')
+    setNotes('')
   }
 
   return (
@@ -53,8 +66,12 @@ export function AddCuratorModal({ open, onClose, onSubmit, isSubmitting }: AddCu
       title="Add Curator"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={!name || isSubmitting}>Add Curator</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={!name || isSubmitting}>
+            Add Curator
+          </Button>
         </>
       }
     >
@@ -62,26 +79,52 @@ export function AddCuratorModal({ open, onClose, onSubmit, isSubmitting }: AddCu
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Client / Business Name *</Label>
-            <Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Golden Nuggets Records" />
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Golden Nuggets Records"
+            />
           </div>
           <div>
             <Label optional>Contact Name</Label>
-            <Input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="e.g., Alan Maurer" />
+            <Input
+              type="text"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder="e.g., Alan Maurer"
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label optional>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="curator@email.com" />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="curator@email.com"
+            />
           </div>
           <div>
             <Label optional>Price per 10K</Label>
-            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="120" step="1" />
+            <Input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="120"
+              step="1"
+            />
           </div>
         </div>
         <div>
           <Label optional>Genres</Label>
-          <Input type="text" value={genres} onChange={(e) => setGenres(e.target.value)} placeholder="Bass, Dubstep, Riddim, Trap (comma or slash separated)" />
+          <Input
+            type="text"
+            value={genres}
+            onChange={(e) => setGenres(e.target.value)}
+            placeholder="Bass, Dubstep, Riddim, Trap (comma or slash separated)"
+          />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -105,16 +148,31 @@ export function AddCuratorModal({ open, onClose, onSubmit, isSubmitting }: AddCu
           </div>
           <div>
             <Label optional>Payment Address</Label>
-            <Input type="text" value={paymentHandle} onChange={(e) => setPaymentHandle(e.target.value)} placeholder="Address, email, or URL" />
+            <Input
+              type="text"
+              value={paymentHandle}
+              onChange={(e) => setPaymentHandle(e.target.value)}
+              placeholder="Address, email, or URL"
+            />
           </div>
           <div>
             <Label optional>Code / Memo</Label>
-            <Input type="text" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} placeholder="e.g., XRP tag" />
+            <Input
+              type="text"
+              value={paymentCode}
+              onChange={(e) => setPaymentCode(e.target.value)}
+              placeholder="e.g., XRP tag"
+            />
           </div>
         </div>
         <div>
           <Label optional>Notes</Label>
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Any notes about this curator" />
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="Any notes about this curator"
+          />
         </div>
       </div>
     </Modal>

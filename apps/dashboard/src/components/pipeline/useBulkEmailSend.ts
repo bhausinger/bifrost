@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { env } from '@/lib/env'
 import type { PipelineEntry, Artist } from '@/types'
-import type { SendStatus, SendProgress } from './bulkEmailTypes'
-import { INITIAL_PROGRESS } from './bulkEmailTypes'
+import { INITIAL_PROGRESS, type SendStatus, type SendProgress } from './bulkEmailTypes'
 
 type BulkEmailPayload = {
   entries: (PipelineEntry & { artist: Artist })[]
@@ -34,7 +33,9 @@ export function useBulkEmailSend(payload: BulkEmailPayload): BulkEmailSendResult
     setProgress(newProgress)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (!session?.access_token) {
         newProgress.errors.push({ artist: '', error: 'Not authenticated' })
         setProgress({ ...newProgress })
@@ -44,25 +45,22 @@ export function useBulkEmailSend(payload: BulkEmailPayload): BulkEmailSendResult
 
       const entryIds = withEmail.map((e) => e.id)
 
-      const response = await fetch(
-        `${env.VITE_SUPABASE_URL}/functions/v1/gmail-send/bulk`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            apikey: env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            entryIds,
-            subject: payload.subject,
-            bodyTemplate: payload.body,
-            senderName: payload.senderName || 'The Team',
-            deckLinkUrl: payload.deckLinkUrl || undefined,
-            deckLinkText: payload.deckLinkText || undefined,
-          }),
+      const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-send/bulk`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          apikey: env.VITE_SUPABASE_ANON_KEY,
         },
-      )
+        body: JSON.stringify({
+          entryIds,
+          subject: payload.subject,
+          bodyTemplate: payload.body,
+          senderName: payload.senderName || 'The Team',
+          deckLinkUrl: payload.deckLinkUrl || undefined,
+          deckLinkText: payload.deckLinkText || undefined,
+        }),
+      })
 
       if (!response.ok) {
         const err = await response.json()

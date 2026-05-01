@@ -203,7 +203,7 @@ function CampaignCardContent({
                 setFetchError(null)
                 try {
                   const result = await fetchSpotifyPlaycount(selected.track_spotify_url!)
-                  if (result.playCount != null) {
+                  if (result.playCount !== null && result.playCount !== undefined) {
                     updateCampaign.mutate({ id: selected.id, actual_streams: result.playCount })
                   } else {
                     setFetchError(result.note ?? 'Play count unavailable')

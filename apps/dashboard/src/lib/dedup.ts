@@ -12,20 +12,19 @@ export interface DedupData {
 
 /** Fetch all dedup data in parallel (artists, pipeline, campaigns, excluded, blocked terms). */
 export async function fetchDedupData(): Promise<DedupData> {
-  const [artistsRes, pipelineRes, campaignsRes, excludedRes, blockedRes] =
-    await Promise.all([
-      supabase.from('artists').select('soundcloud_url, spotify_url, email'),
-      supabase
-        .from('pipeline_entries')
-        .select('artist:artists(soundcloud_url, email)')
-        .not('stage', 'in', '("completed","lost")'),
-      supabase
-        .from('campaigns')
-        .select('artist:artists(soundcloud_url, email)')
-        .not('status', 'in', '("cancelled")'),
-      supabase.from('excluded_artists').select('email'),
-      supabase.from('blocked_terms').select('term, type'),
-    ])
+  const [artistsRes, pipelineRes, campaignsRes, excludedRes, blockedRes] = await Promise.all([
+    supabase.from('artists').select('soundcloud_url, spotify_url, email'),
+    supabase
+      .from('pipeline_entries')
+      .select('artist:artists(soundcloud_url, email)')
+      .not('stage', 'in', '("completed","lost")'),
+    supabase
+      .from('campaigns')
+      .select('artist:artists(soundcloud_url, email)')
+      .not('status', 'in', '("cancelled")'),
+    supabase.from('excluded_artists').select('email'),
+    supabase.from('blocked_terms').select('term, type'),
+  ])
 
   const artists = artistsRes.data ?? []
   const urls = new Set<string>()
@@ -55,7 +54,7 @@ export async function fetchDedupData(): Promise<DedupData> {
   }
 
   const excludedEmails = new Set<string>(
-    (excludedRes.data ?? []).map((e) => e.email?.toLowerCase()).filter(Boolean) as string[]
+    (excludedRes.data ?? []).map((e) => e.email?.toLowerCase()).filter(Boolean) as string[],
   )
 
   return {

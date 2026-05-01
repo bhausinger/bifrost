@@ -18,7 +18,10 @@ type PipelineDetailEmailsProps = {
   sentEmails: Activity[]
 }
 
-export function PipelineDetailEmails({ entry, sentEmails }: PipelineDetailEmailsProps): JSX.Element {
+export function PipelineDetailEmails({
+  entry,
+  sentEmails,
+}: PipelineDetailEmailsProps): JSX.Element {
   const { data: templates } = useEmailTemplates()
 
   const [emailSubject, setEmailSubject] = useState('')
@@ -80,7 +83,10 @@ export function PipelineDetailEmails({ entry, sentEmails }: PipelineDetailEmails
 
       setEmailResult({ success: true })
     } catch (err) {
-      setEmailResult({ success: false, error: err instanceof Error ? err.message : 'Unknown error' })
+      setEmailResult({
+        success: false,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
     }
     setEmailSending(false)
   }
@@ -128,7 +134,9 @@ export function PipelineDetailEmails({ entry, sentEmails }: PipelineDetailEmails
             />
 
             {emailResult && (
-              <div className={`rounded px-2 py-1.5 text-xs ${emailResult.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+              <div
+                className={`rounded px-2 py-1.5 text-xs ${emailResult.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}
+              >
                 {emailResult.success ? 'Email sent!' : emailResult.error}
               </div>
             )}
@@ -145,12 +153,16 @@ export function PipelineDetailEmails({ entry, sentEmails }: PipelineDetailEmails
 
           {sentEmails.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Email History</h3>
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                Email History
+              </h3>
               <div className="space-y-2">
                 {sentEmails.map((a) => (
                   <div key={a.id} className="border-l-2 border-teal-200 pl-3">
                     <div className="text-sm text-gray-700">{a.description}</div>
-                    <div className="text-xs text-gray-400">{new Date(a.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(a.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 ))}
               </div>

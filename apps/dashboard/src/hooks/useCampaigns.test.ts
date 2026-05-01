@@ -47,10 +47,7 @@ async function simulateCreateCampaign(campaign: {
       .eq('id', pipeline_entry_id)
   }
 
-  await supabase
-    .from('artists')
-    .update({ status: 'client' })
-    .eq('id', campaign.artist_id)
+  await supabase.from('artists').update({ status: 'client' }).eq('id', campaign.artist_id)
 
   return { data, error: null }
 }
@@ -177,9 +174,9 @@ describe('createCampaign', () => {
 
     mockFrom.mockImplementation(() => ({ insert: mockInsert }))
 
-    await expect(
-      simulateCreateCampaign({ artist_id: 'a-1', name: 'Fail' }),
-    ).rejects.toEqual(dbError)
+    await expect(simulateCreateCampaign({ artist_id: 'a-1', name: 'Fail' })).rejects.toEqual(
+      dbError,
+    )
   })
 })
 
@@ -207,10 +204,7 @@ describe('updateCampaign', () => {
     mockFrom.mockReturnValue({ update: mockUpdate })
 
     const { supabase } = await import('@/lib/supabase')
-    const { error } = await supabase
-      .from('campaigns')
-      .update({ name: 'X' })
-      .eq('id', 'missing')
+    const { error } = await supabase.from('campaigns').update({ name: 'X' }).eq('id', 'missing')
 
     expect(error).toEqual(dbError)
   })

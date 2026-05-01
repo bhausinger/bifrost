@@ -35,8 +35,10 @@ function formatListeners(n: number): string {
 }
 
 export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: entry.id, data: { entry } })
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: entry.id,
+    data: { entry },
+  })
 
   const style: React.CSSProperties | undefined = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
@@ -48,7 +50,7 @@ export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
 
   // Days in current stage
   const daysInStage = Math.floor(
-    (Date.now() - new Date(entry.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - new Date(entry.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24),
   )
 
   return (
@@ -60,11 +62,7 @@ export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
       onClick={onClick}
       className={`group cursor-grab rounded-lg border bg-white border-gray-200 p-3 transition-[box-shadow,border-color,transform,opacity] duration-200 ease-out hover:border-gray-300 active:cursor-grabbing active:scale-[0.98] ${
         isDragging ? 'opacity-30 ring-2 ring-teal-500/30' : ''
-      } ${
-        hasFollowUp
-          ? `${followUp.borderColor} border-l-[3px] ${followUp.bgColor}`
-          : ''
-      }`}
+      } ${hasFollowUp ? `${followUp.borderColor} border-l-[3px] ${followUp.bgColor}` : ''}`}
     >
       <div className="flex items-start gap-2.5">
         {/* Avatar */}
@@ -76,7 +74,9 @@ export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
               className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-200 shadow-sm"
             />
           ) : (
-            <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${gradient} shadow-sm ring-2 ring-gray-200`}>
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${gradient} shadow-sm ring-2 ring-gray-200`}
+            >
               <span className="text-xs font-bold text-white">
                 {entry.artist.name.charAt(0).toUpperCase()}
               </span>
@@ -90,20 +90,18 @@ export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
             <h3 className="truncate text-sm font-semibold text-gray-900 leading-tight">
               {entry.artist.name}
             </h3>
-            {entry.artist.email && (
-              <Mail className="h-3 w-3 flex-shrink-0 text-gray-400" />
-            )}
+            {entry.artist.email && <Mail className="h-3 w-3 flex-shrink-0 text-gray-400" />}
           </div>
 
           {/* Stats row: followers, tracks, days */}
           <div className="mt-1 flex items-center gap-2.5 text-[11px] text-gray-400">
-            {entry.artist.follower_count != null && entry.artist.follower_count > 0 && (
+            {entry.artist.follower_count !== null && entry.artist.follower_count > 0 && (
               <span className="flex items-center gap-0.5 font-data">
                 <Users className="h-3 w-3" />
                 {formatListeners(entry.artist.follower_count)}
               </span>
             )}
-            {entry.artist.track_count != null && entry.artist.track_count > 0 && (
+            {entry.artist.track_count !== null && entry.artist.track_count > 0 && (
               <span className="flex items-center gap-0.5 font-data">
                 <Music2 className="h-3 w-3" />
                 {entry.artist.track_count}
@@ -135,11 +133,7 @@ export function PipelineCard({ entry, ownerName, onClick }: PipelineCardProps) {
           )}
 
           {/* Owner name */}
-          {ownerName && (
-            <div className="mt-1 text-[11px] text-gray-500">
-              {ownerName}
-            </div>
-          )}
+          {ownerName && <div className="mt-1 text-[11px] text-gray-500">{ownerName}</div>}
         </div>
       </div>
     </div>

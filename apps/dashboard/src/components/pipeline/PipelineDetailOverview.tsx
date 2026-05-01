@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { Music2, Users, ExternalLink, Mail, Instagram, Pencil } from 'lucide-react'
 import { useCreateCampaign } from '@/hooks/useCampaigns'
 import { Select } from '@/components/ui'
-import { PIPELINE_BOARD_STAGES } from '@/types'
-import type { PipelineEntry, Artist, PipelineStage } from '@/types'
-import type { Tab } from './pipelineDetailTypes'
-import { formatNumber } from './pipelineDetailTypes'
+import { PIPELINE_BOARD_STAGES, type PipelineEntry, type Artist, type PipelineStage } from '@/types'
+import { formatNumber, type Tab } from './pipelineDetailTypes'
 
 type Activity = {
   id: string
@@ -68,7 +66,9 @@ export function PipelineDetailOverview({
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Genres</h3>
           <div className="flex flex-wrap gap-1.5">
             {(entry.artist.genres ?? []).map((g) => (
-              <span key={g} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">{g}</span>
+              <span key={g} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">
+                {g}
+              </span>
             ))}
           </div>
         </div>
@@ -108,14 +108,39 @@ export function PipelineDetailOverview({
       {showCreateCampaign && (
         <div className="rounded-md border border-emerald-500/20 bg-emerald-50 p-3 space-y-2">
           <h3 className="text-sm font-medium text-emerald-700">New Campaign</h3>
-          <input type="text" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} placeholder="Campaign name" className="input-field w-full text-sm" />
-          <input type="text" value={trackName} onChange={(e) => setTrackName(e.target.value)} placeholder="Track name" className="input-field w-full text-sm" />
-          <input type="url" value={trackUrl} onChange={(e) => setTrackUrl(e.target.value)} placeholder="Spotify track URL" className="input-field w-full text-sm" />
+          <input
+            type="text"
+            value={campaignName}
+            onChange={(e) => setCampaignName(e.target.value)}
+            placeholder="Campaign name"
+            className="input-field w-full text-sm"
+          />
+          <input
+            type="text"
+            value={trackName}
+            onChange={(e) => setTrackName(e.target.value)}
+            placeholder="Track name"
+            className="input-field w-full text-sm"
+          />
+          <input
+            type="url"
+            value={trackUrl}
+            onChange={(e) => setTrackUrl(e.target.value)}
+            placeholder="Spotify track URL"
+            className="input-field w-full text-sm"
+          />
           <div className="flex gap-2">
-            <button onClick={handleCreateCampaign} disabled={!campaignName} className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+            <button
+              onClick={handleCreateCampaign}
+              disabled={!campaignName}
+              className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
               Create
             </button>
-            <button onClick={() => setShowCreateCampaign(false)} className="rounded bg-gray-100 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-200">
+            <button
+              onClick={() => setShowCreateCampaign(false)}
+              className="rounded bg-gray-100 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-200"
+            >
               Cancel
             </button>
           </div>
@@ -124,12 +149,16 @@ export function PipelineDetailOverview({
 
       {activities && activities.length > 0 && (
         <div>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Activity</h3>
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+            Activity
+          </h3>
           <div className="space-y-2">
             {activities.slice(0, 5).map((a) => (
               <div key={a.id} className="border-l-2 border-gray-200 pl-3">
                 <div className="text-sm text-gray-700">{a.description}</div>
-                <div className="text-xs text-gray-400">{new Date(a.created_at).toLocaleDateString()}</div>
+                <div className="text-xs text-gray-400">
+                  {new Date(a.created_at).toLocaleDateString()}
+                </div>
               </div>
             ))}
           </div>
@@ -142,16 +171,22 @@ export function PipelineDetailOverview({
 function SoundCloudStats({ entry }: { entry: PipelineEntry & { artist: Artist } }): JSX.Element {
   return (
     <div>
-      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">SoundCloud</h3>
+      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-orange-600">
+        SoundCloud
+      </h3>
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg bg-orange-50 p-4">
           <Users className="mb-1 h-5 w-5 text-orange-600" />
-          <div className="font-display text-2xl font-bold text-gray-900">{formatNumber(entry.artist.follower_count)}</div>
+          <div className="font-display text-2xl font-bold text-gray-900">
+            {formatNumber(entry.artist.follower_count)}
+          </div>
           <div className="text-xs text-gray-500">Followers</div>
         </div>
         <div className="rounded-lg bg-orange-50 p-4">
           <Music2 className="mb-1 h-5 w-5 text-orange-600" />
-          <div className="font-display text-2xl font-bold text-gray-900">{formatNumber(entry.artist.track_count)}</div>
+          <div className="font-display text-2xl font-bold text-gray-900">
+            {formatNumber(entry.artist.track_count)}
+          </div>
           <div className="text-xs text-gray-500">Tracks</div>
         </div>
         {entry.artist.soundcloud_url ? (
@@ -183,7 +218,8 @@ function ContactSection({
   entry: PipelineEntry & { artist: Artist }
   onTabChange: (tab: Tab) => void
 }): JSX.Element | null {
-  if (!entry.artist.email && !entry.artist.instagram_handle && !entry.artist.spotify_url) return null
+  if (!entry.artist.email && !entry.artist.instagram_handle && !entry.artist.spotify_url)
+    return null
 
   return (
     <div>
@@ -192,8 +228,13 @@ function ContactSection({
         {entry.artist.email && (
           <div className="group flex items-center gap-2 text-sm text-gray-700">
             <Mail className="h-4 w-4 text-gray-400" />
-            <a href={`mailto:${entry.artist.email}`} className="hover:text-teal-600">{entry.artist.email}</a>
-            <button onClick={() => onTabChange('edit')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity">
+            <a href={`mailto:${entry.artist.email}`} className="hover:text-teal-600">
+              {entry.artist.email}
+            </a>
+            <button
+              onClick={() => onTabChange('edit')}
+              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity"
+            >
               <Pencil className="h-3 w-3" />
             </button>
           </div>
@@ -207,9 +248,14 @@ function ContactSection({
               rel="noopener noreferrer"
               className="hover:text-teal-600"
             >
-              {entry.artist.instagram_handle.startsWith('@') ? entry.artist.instagram_handle : `@${entry.artist.instagram_handle}`}
+              {entry.artist.instagram_handle.startsWith('@')
+                ? entry.artist.instagram_handle
+                : `@${entry.artist.instagram_handle}`}
             </a>
-            <button onClick={() => onTabChange('edit')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity">
+            <button
+              onClick={() => onTabChange('edit')}
+              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity"
+            >
               <Pencil className="h-3 w-3" />
             </button>
           </div>
@@ -217,10 +263,18 @@ function ContactSection({
         {entry.artist.spotify_url && (
           <div className="group flex items-center gap-2 text-sm text-gray-700">
             <ExternalLink className="h-4 w-4 text-gray-400" />
-            <a href={entry.artist.spotify_url} target="_blank" rel="noopener noreferrer" className="text-[#1DB954] hover:underline">
+            <a
+              href={entry.artist.spotify_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1DB954] hover:underline"
+            >
               Spotify
             </a>
-            <button onClick={() => onTabChange('edit')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity">
+            <button
+              onClick={() => onTabChange('edit')}
+              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-700 transition-opacity"
+            >
               <Pencil className="h-3 w-3" />
             </button>
           </div>

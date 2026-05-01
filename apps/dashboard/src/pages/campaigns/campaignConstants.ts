@@ -31,12 +31,45 @@ export function getAvatarGradient(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!
 }
 
-export const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string; ring: string }> = {
-  active: { label: 'Active', bg: 'bg-emerald-50', text: 'text-emerald-600', dot: 'bg-emerald-500', ring: 'ring-emerald-600/20' },
-  pitching: { label: 'Pitching', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500', ring: 'ring-blue-600/20' },
-  paused: { label: 'Paused', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-500', ring: 'ring-amber-600/20' },
-  completed: { label: 'Completed', bg: 'bg-gray-50', text: 'text-gray-500', dot: 'bg-gray-400', ring: 'ring-gray-500/10' },
-  cancelled: { label: 'Cancelled', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', ring: 'ring-red-600/20' },
+export const STATUS_CONFIG: Record<
+  string,
+  { label: string; bg: string; text: string; dot: string; ring: string }
+> = {
+  active: {
+    label: 'Active',
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-600',
+    dot: 'bg-emerald-500',
+    ring: 'ring-emerald-600/20',
+  },
+  pitching: {
+    label: 'Pitching',
+    bg: 'bg-blue-50',
+    text: 'text-blue-600',
+    dot: 'bg-blue-500',
+    ring: 'ring-blue-600/20',
+  },
+  paused: {
+    label: 'Paused',
+    bg: 'bg-amber-50',
+    text: 'text-amber-600',
+    dot: 'bg-amber-500',
+    ring: 'ring-amber-600/20',
+  },
+  completed: {
+    label: 'Completed',
+    bg: 'bg-gray-50',
+    text: 'text-gray-500',
+    dot: 'bg-gray-400',
+    ring: 'ring-gray-500/10',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bg: 'bg-red-50',
+    text: 'text-red-600',
+    dot: 'bg-red-400',
+    ring: 'ring-red-600/20',
+  },
 }
 
 export function formatNumber(n: number): string {
@@ -51,7 +84,9 @@ export const PLACEMENT_STATUS_ICON: Record<string, { icon: typeof CheckCircle; c
   removed: { icon: AlertTriangle, color: 'text-red-400' },
 }
 
-export function getPacingLabel(selected: CampaignWithArtist): { label: string; color: string } | null {
+export function getPacingLabel(
+  selected: CampaignWithArtist,
+): { label: string; color: string } | null {
   if (!selected.start_date || !selected.target_streams || selected.target_streams === 0) return null
   const start = new Date(selected.start_date).getTime()
   const now = Date.now()

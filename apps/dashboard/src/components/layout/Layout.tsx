@@ -37,8 +37,12 @@ export function Layout({ children }: { children: ReactNode }) {
             className="h-11 w-11 rounded-xl object-cover shadow-lg ring-1 ring-gray-200"
           />
           <div>
-            <div className="font-display text-sm font-bold tracking-widest text-gray-900">BIFROST</div>
-            <div className="text-[11px] font-medium tracking-wide text-gray-400">Campaign Manager</div>
+            <div className="font-display text-sm font-bold tracking-widest text-gray-900">
+              BIFROST
+            </div>
+            <div className="text-[11px] font-medium tracking-wide text-gray-400">
+              Campaign Manager
+            </div>
           </div>
         </div>
 
@@ -61,9 +65,7 @@ export function Layout({ children }: { children: ReactNode }) {
                   <>
                     <item.icon
                       className={`h-[18px] w-[18px] flex-shrink-0 transition-all duration-200 ${
-                        isActive
-                          ? 'text-white'
-                          : 'text-gray-400 group-hover:text-gray-600'
+                        isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
                       }`}
                     />
                     <span>{item.label}</span>
@@ -77,7 +79,10 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Sign out */}
         <div className="border-t border-gray-200 p-3">
           <button
-            onClick={() => { localStorage.removeItem('bifrost_dev_bypass'); supabase.auth.signOut() }}
+            onClick={() => {
+              localStorage.removeItem('bifrost_dev_bypass')
+              supabase.auth.signOut()
+            }}
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="h-[18px] w-[18px] text-gray-400 transition-colors group-hover:text-red-500" />

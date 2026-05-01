@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react'
-import type { BulkEmailModalProps, StageFilter } from './bulkEmailTypes'
-import { DEFAULT_SUBJECT, DEFAULT_BODY } from './bulkEmailTypes'
+import {
+  DEFAULT_SUBJECT,
+  DEFAULT_BODY,
+  type BulkEmailModalProps,
+  type StageFilter,
+} from './bulkEmailTypes'
 import { useBulkEmailSend } from './useBulkEmailSend'
 import { BulkEmailCompose } from './BulkEmailCompose'
 import { BulkEmailSending, BulkEmailDone } from './BulkEmailProgress'

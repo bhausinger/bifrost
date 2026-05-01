@@ -17,7 +17,14 @@ type DiscoverResult = {
   leads: DiscoveredLead[]
   totalFound: number
   excluded: number
-  filterStats: { total_raw: number; below_min: number; above_max: number; no_tracks: number; too_old: number; passed: number } | null
+  filterStats: {
+    total_raw: number
+    below_min: number
+    above_max: number
+    no_tracks: number
+    too_old: number
+    passed: number
+  } | null
   dedup: DedupData
 }
 
@@ -85,25 +92,26 @@ export async function scrapeArtists(
 ): Promise<ScrapedLead[]> {
   const scraped: ScrapedLead[] = []
   const startTime = Date.now()
-  const dedupData = dedup ?? await fetchDedupData()
+  const dedupData = dedup ?? (await fetchDedupData())
   let emailsFound = 0
 
   for (let i = 0; i < selected.length; i++) {
     const lead = selected[i]!
     const elapsed = Date.now() - startTime
     const perItem = elapsed / (i + 1)
-    const remaining = Math.round(
-      (perItem * (selected.length - i - 1)) / 1000
-    )
-    const eta =
-      remaining > 60
-        ? `~${Math.round(remaining / 60)}m`
-        : `~${remaining}s`
+    const remaining = Math.round((perItem * (selected.length - i - 1)) / 1000)
+    const eta = remaining > 60 ? `~${Math.round(remaining / 60)}m` : `~${remaining}s`
 
     try {
       const data = await scrapeArtist(lead.url)
 
-      const reason = checkDuplicate(dedupData, lead.url, data.email, data.name ?? lead.name, data.bio)
+      const reason = checkDuplicate(
+        dedupData,
+        lead.url,
+        data.email,
+        data.name ?? lead.name,
+        data.bio,
+      )
       const isFlagged = !!reason
 
       scraped.push({
@@ -163,7 +171,9 @@ type ImportResult = {
 export async function importArtists(
   selected: ScrapedLead[],
   importStage: PipelineStage,
-  createEntry: { mutateAsync: (params: { artistId: string; stage: PipelineStage }) => Promise<unknown> },
+  createEntry: {
+    mutateAsync: (params: { artistId: string; stage: PipelineStage }) => Promise<unknown>
+  },
   callbacks: ImportCallbacks,
 ): Promise<ImportResult> {
   let imported = 0
@@ -185,9 +195,7 @@ export async function importArtists(
           track_count: artist.track_count || null,
           follower_count: artist.followers || null,
           image_url: artist.image_url,
-          location: [artist.city, artist.country]
-            .filter(Boolean)
-            .join(', ') || null,
+          location: [artist.city, artist.country].filter(Boolean).join(', ') || null,
           bio: artist.bio,
           source: 'lead_generator',
           other_socials: artist.social_links || {},
@@ -246,9 +254,7 @@ export function downloadLeadsCsv(scrapedLeads: ScrapedLead[]): void {
     r.instagram_handle || '',
     r.spotify_url || '',
   ])
-  const csv = [headers, ...rows]
-    .map((row) => row.map((c) => `"${c}"`).join(','))
-    .join('\n')
+  const csv = [headers, ...rows].map((row) => row.map((c) => `"${c}"`).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

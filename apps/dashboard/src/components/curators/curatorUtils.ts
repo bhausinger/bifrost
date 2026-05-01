@@ -19,7 +19,12 @@ export function getCuratorGradient(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!
 }
 
-export const PROGRESS_STEPS = ['emailed_at', 'followed_up_at', 'replied_at', 'confirmed_at'] as const
+export const PROGRESS_STEPS = [
+  'emailed_at',
+  'followed_up_at',
+  'replied_at',
+  'confirmed_at',
+] as const
 export const PROGRESS_LABELS = ['Emailed', 'Followed up', 'Replied', 'Confirmed']
 
-export type ProgressField = typeof PROGRESS_STEPS[number]
+export type ProgressField = (typeof PROGRESS_STEPS)[number]

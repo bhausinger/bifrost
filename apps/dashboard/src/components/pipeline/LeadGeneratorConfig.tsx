@@ -36,8 +36,18 @@ export function LeadGeneratorConfig({
     <div className="p-6">
       {discoveryError && (
         <div className="mb-5 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          <svg
+            className="h-4 w-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+            />
           </svg>
           {discoveryError}
         </div>
@@ -50,7 +60,7 @@ export function LeadGeneratorConfig({
         <div className="relative">
           <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
             <svg className="h-5 w-5 text-[#ff5500]" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.56 3.637c.28-.067.574-.1.878-.1h.003c4.116.012 7.559 3.97 7.559 8.898 0 .118-.003.237-.008.355-.026.597-.51 1.06-1.106 1.06h-.002c-.597-.001-1.08-.49-1.056-1.088.004-.109.006-.218.006-.327 0-3.714-2.378-6.74-5.396-6.895v7.22c0 2.69-2.242 4.924-5.117 5.229a5.32 5.32 0 01-.57.031c-2.857 0-5.207-2.171-5.383-4.935A5.045 5.045 0 011.36 13c0-2.793 2.306-5.064 5.145-5.064.447 0 .882.057 1.295.163v5.148c0 .268.1.51.264.69a.964.964 0 00.718.315c.057 0 .114-.005.169-.015a2.86 2.86 0 001.933-1.087c.41-.523.657-1.175.657-1.88V3.637h.02z"/>
+              <path d="M11.56 3.637c.28-.067.574-.1.878-.1h.003c4.116.012 7.559 3.97 7.559 8.898 0 .118-.003.237-.008.355-.026.597-.51 1.06-1.106 1.06h-.002c-.597-.001-1.08-.49-1.056-1.088.004-.109.006-.218.006-.327 0-3.714-2.378-6.74-5.396-6.895v7.22c0 2.69-2.242 4.924-5.117 5.229a5.32 5.32 0 01-.57.031c-2.857 0-5.207-2.171-5.383-4.935A5.045 5.045 0 011.36 13c0-2.793 2.306-5.064 5.145-5.064.447 0 .882.057 1.295.163v5.148c0 .268.1.51.264.69a.964.964 0 00.718.315c.057 0 .114-.005.169-.015a2.86 2.86 0 001.933-1.087c.41-.523.657-1.175.657-1.88V3.637h.02z" />
             </svg>
           </div>
           <input

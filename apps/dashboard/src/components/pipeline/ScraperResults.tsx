@@ -1,6 +1,5 @@
 import { Select } from '@/components/ui'
-import { IMPORT_STAGE_OPTIONS } from './scraperTypes'
-import type { ScrapedArtist, PipelineStage } from './scraperTypes'
+import { IMPORT_STAGE_OPTIONS, type ScrapedArtist, type PipelineStage } from './scraperTypes'
 
 type ScraperResultsProps = {
   results: ScrapedArtist[]
@@ -48,9 +47,7 @@ export function ScraperResults({
             Download CSV
           </button>
         </div>
-        <span className="text-sm text-gray-400">
-          {selectedCount} selected
-        </span>
+        <span className="text-sm text-gray-400">{selectedCount} selected</span>
       </div>
 
       <div className="flex items-center gap-3 rounded-md bg-gray-50 p-3">
@@ -85,9 +82,7 @@ export function ScraperResults({
             {results.map((artist, i) => (
               <tr
                 key={i}
-                className={`border-t border-gray-100 ${
-                  artist.isDuplicate ? 'bg-amber-500/5' : ''
-                }`}
+                className={`border-t border-gray-100 ${artist.isDuplicate ? 'bg-amber-500/5' : ''}`}
               >
                 <td className="px-3 py-2">
                   <input
@@ -99,13 +94,9 @@ export function ScraperResults({
                   />
                 </td>
                 <td className="px-3 py-2">
-                  <div className="font-medium text-gray-900">
-                    {artist.name}
-                  </div>
+                  <div className="font-medium text-gray-900">{artist.name}</div>
                   {artist.isDuplicate && (
-                    <div className="text-xs text-amber-600">
-                      {artist.duplicateNote}
-                    </div>
+                    <div className="text-xs text-amber-600">{artist.duplicateNote}</div>
                   )}
                   {artist.genres.length > 0 && (
                     <div className="text-xs text-gray-400">
@@ -137,9 +128,7 @@ export function ScraperResults({
                         SC
                       </a>
                     )}
-                    {artist.instagram_handle && (
-                      <span className="text-xs text-pink-400">IG</span>
-                    )}
+                    {artist.instagram_handle && <span className="text-xs text-pink-400">IG</span>}
                   </div>
                 </td>
               </tr>

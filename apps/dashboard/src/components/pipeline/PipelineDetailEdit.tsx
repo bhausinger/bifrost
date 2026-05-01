@@ -34,7 +34,10 @@ export function PipelineDetailEdit({ entry, onClose }: PipelineDetailEditProps):
         spotify_url: editSpotify || null,
         instagram_handle: editInstagram || null,
       })
-      await supabase.from('pipeline_entries').update({ notes: editNotes || null }).eq('id', entry.id)
+      await supabase
+        .from('pipeline_entries')
+        .update({ notes: editNotes || null })
+        .eq('id', entry.id)
       setEditSavedAt(new Date())
     } finally {
       setEditSaving(false)
@@ -51,24 +54,59 @@ export function PipelineDetailEdit({ entry, onClose }: PipelineDetailEditProps):
     <>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Email Address</label>
-          <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="input-field w-full text-sm" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={editEmail}
+            onChange={(e) => setEditEmail(e.target.value)}
+            className="input-field w-full text-sm"
+          />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">SoundCloud URL</label>
-          <input type="url" value={editSoundcloud} onChange={(e) => setEditSoundcloud(e.target.value)} className="input-field w-full text-sm" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            SoundCloud URL
+          </label>
+          <input
+            type="url"
+            value={editSoundcloud}
+            onChange={(e) => setEditSoundcloud(e.target.value)}
+            className="input-field w-full text-sm"
+          />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Spotify URL</label>
-          <input type="url" value={editSpotify} onChange={(e) => setEditSpotify(e.target.value)} className="input-field w-full text-sm" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            Spotify URL
+          </label>
+          <input
+            type="url"
+            value={editSpotify}
+            onChange={(e) => setEditSpotify(e.target.value)}
+            className="input-field w-full text-sm"
+          />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Instagram Handle</label>
-          <input type="text" value={editInstagram} onChange={(e) => setEditInstagram(e.target.value)} className="input-field w-full text-sm" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            Instagram Handle
+          </label>
+          <input
+            type="text"
+            value={editInstagram}
+            onChange={(e) => setEditInstagram(e.target.value)}
+            className="input-field w-full text-sm"
+          />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Notes</label>
-          <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={4} className="input-field w-full text-sm" />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+            Notes
+          </label>
+          <textarea
+            value={editNotes}
+            onChange={(e) => setEditNotes(e.target.value)}
+            rows={4}
+            className="input-field w-full text-sm"
+          />
         </div>
         <div className="flex items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
@@ -80,7 +118,9 @@ export function PipelineDetailEdit({ entry, onClose }: PipelineDetailEditProps):
               {editSaving ? 'Saving...' : 'Save Changes'}
             </button>
             {editSavedAt && (
-              <span className="text-xs text-emerald-600">Saved {editSavedAt.toLocaleTimeString()}</span>
+              <span className="text-xs text-emerald-600">
+                Saved {editSavedAt.toLocaleTimeString()}
+              </span>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -90,10 +130,7 @@ export function PipelineDetailEdit({ entry, onClose }: PipelineDetailEditProps):
             >
               Exclude
             </button>
-            <button
-              onClick={handleDelete}
-              className="text-sm text-red-600 hover:text-red-700"
-            >
+            <button onClick={handleDelete} className="text-sm text-red-600 hover:text-red-700">
               Delete
             </button>
           </div>

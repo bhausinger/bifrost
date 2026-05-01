@@ -109,8 +109,7 @@ describe('gmailSendSingle', () => {
     mockAuthenticated()
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve({ messageId: 'msg-1', threadId: 'thread-1' }),
+      json: () => Promise.resolve({ messageId: 'msg-1', threadId: 'thread-1' }),
     })
 
     const payload = {

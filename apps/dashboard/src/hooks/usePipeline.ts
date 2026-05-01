@@ -95,8 +95,8 @@ export function useMoveStage() {
         old?.map((entry) =>
           entry.id === entryId
             ? { ...entry, stage: newStage, stage_entered_at: new Date().toISOString() }
-            : entry
-        )
+            : entry,
+        ),
       )
       return { previous }
     },
@@ -151,14 +151,8 @@ export function useCreatePipelineEntry() {
 export function useUpdatePipelineEntry() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: Partial<PipelineEntry> & { id: string }) => {
-      const { error } = await supabase
-        .from('pipeline_entries')
-        .update(updates)
-        .eq('id', id)
+    mutationFn: async ({ id, ...updates }: Partial<PipelineEntry> & { id: string }) => {
+      const { error } = await supabase.from('pipeline_entries').update(updates).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {

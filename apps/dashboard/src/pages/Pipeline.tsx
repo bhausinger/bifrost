@@ -17,8 +17,7 @@ import { BulkEmailModal } from '@/components/pipeline/BulkEmailModal'
 import { ScraperModal } from '@/components/pipeline/ScraperModal'
 import { LeadGeneratorModal } from '@/components/pipeline/LeadGeneratorModal'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { PIPELINE_BOARD_STAGES } from '@/types'
-import type { PipelineEntry, Artist, PipelineStage } from '@/types'
+import { PIPELINE_BOARD_STAGES, type PipelineEntry, type Artist, type PipelineStage } from '@/types'
 import { useTeamUsers, getOwnerName } from '@/hooks/useTeamUsers'
 import { Select, Input, Button } from '@/components/ui'
 
@@ -26,9 +25,9 @@ export function Pipeline() {
   const { data: entries, isLoading, error } = usePipelineEntries()
   const { data: teamUsers } = useTeamUsers()
   const moveStage = useMoveStage()
-  const [selectedEntry, setSelectedEntry] = useState<
-    (PipelineEntry & { artist: Artist }) | null
-  >(null)
+  const [selectedEntry, setSelectedEntry] = useState<(PipelineEntry & { artist: Artist }) | null>(
+    null,
+  )
   const [activeEntry, setActiveEntry] = useState<(PipelineEntry & { artist: Artist }) | null>(null)
   const [showBulkEmail, setShowBulkEmail] = useState(false)
   const [showScraper, setShowScraper] = useState(false)
@@ -37,9 +36,7 @@ export function Pipeline() {
   const [genreFilter, setGenreFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  )
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const allGenres = useMemo(() => {
     const genres = new Set<string>()
@@ -49,7 +46,9 @@ export function Pipeline() {
 
   const allSources = useMemo(() => {
     const sources = new Set<string>()
-    entries?.forEach((e) => { if (e.artist?.source) sources.add(e.artist.source) })
+    entries?.forEach((e) => {
+      if (e.artist?.source) sources.add(e.artist.source)
+    })
     return Array.from(sources).sort()
   }, [entries])
 
@@ -73,7 +72,9 @@ export function Pipeline() {
   }, [entries, search, genreFilter, sourceFilter])
 
   function handleDragStart(event: DragStartEvent) {
-    const entry = event.active.data.current?.entry as (PipelineEntry & { artist: Artist }) | undefined
+    const entry = event.active.data.current?.entry as
+      | (PipelineEntry & { artist: Artist })
+      | undefined
     setActiveEntry(entry ?? null)
   }
 
@@ -112,13 +113,14 @@ export function Pipeline() {
       acc[stage] = filtered.filter((e) => e.stage === stage)
       return acc
     },
-    {} as Record<string, (PipelineEntry & { artist: Artist })[]>
+    {} as Record<string, (PipelineEntry & { artist: Artist })[]>,
   )
 
   const totalEntries = entries?.length ?? 0
   const withEmail = entries?.filter((e) => e.artist?.email).length ?? 0
   const contactedCount = entries?.filter((e) => e.stage === 'contacted').length ?? 0
-  const respondedCount = entries?.filter((e) => ['responded', 'follow_up'].includes(e.stage)).length ?? 0
+  const respondedCount =
+    entries?.filter((e) => ['responded', 'follow_up'].includes(e.stage)).length ?? 0
   const responseRate = contactedCount > 0 ? Math.round((respondedCount / contactedCount) * 100) : 0
 
   return (
@@ -131,54 +133,55 @@ export function Pipeline() {
 
       {/* Stats & Filters */}
       <div className="border-b border-gray-200 bg-white/80 px-6 py-5">
-
         {/* Stats Cards */}
         <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {/* Total Artists */}
-            <div className="kpi-card flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold font-data text-gray-900">{totalEntries}</p>
-                <p className="mt-0.5 text-sm font-medium text-gray-500">Total Artists</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
-                <Users className="h-6 w-6 text-teal-500" />
-              </div>
+          {/* Total Artists */}
+          <div className="kpi-card flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold font-data text-gray-900">{totalEntries}</p>
+              <p className="mt-0.5 text-sm font-medium text-gray-500">Total Artists</p>
             </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+              <Users className="h-6 w-6 text-teal-500" />
+            </div>
+          </div>
 
-            {/* Response Rate */}
-            <div className="kpi-card flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold font-data text-gray-900">{responseRate}%</p>
-                <p className="mt-0.5 text-sm font-medium text-gray-500">Response Rate</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
-                <TrendingUp className="h-6 w-6 text-emerald-600" />
-              </div>
+          {/* Response Rate */}
+          <div className="kpi-card flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold font-data text-gray-900">{responseRate}%</p>
+              <p className="mt-0.5 text-sm font-medium text-gray-500">Response Rate</p>
             </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+              <TrendingUp className="h-6 w-6 text-emerald-600" />
+            </div>
+          </div>
 
-            {/* Have Email */}
-            <div className="kpi-card flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold font-data text-gray-900">{withEmail}</p>
-                <p className="mt-0.5 text-sm font-medium text-gray-500">Have Email</p>
-                <p className="text-xs text-gray-400">{totalEntries > 0 ? Math.round((withEmail / totalEntries) * 100) : 0}% of leads</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
-                <Mail className="h-6 w-6 text-violet-600" />
-              </div>
+          {/* Have Email */}
+          <div className="kpi-card flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold font-data text-gray-900">{withEmail}</p>
+              <p className="mt-0.5 text-sm font-medium text-gray-500">Have Email</p>
+              <p className="text-xs text-gray-400">
+                {totalEntries > 0 ? Math.round((withEmail / totalEntries) * 100) : 0}% of leads
+              </p>
             </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+              <Mail className="h-6 w-6 text-violet-600" />
+            </div>
+          </div>
 
-            {/* Contacted */}
-            <div className="kpi-card flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold font-data text-gray-900">{contactedCount}</p>
-                <p className="mt-0.5 text-sm font-medium text-gray-500">Contacted</p>
-                <p className="text-xs text-gray-400">awaiting response</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
+          {/* Contacted */}
+          <div className="kpi-card flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold font-data text-gray-900">{contactedCount}</p>
+              <p className="mt-0.5 text-sm font-medium text-gray-500">Contacted</p>
+              <p className="text-xs text-gray-400">awaiting response</p>
             </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white">
+              <BarChart3 className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
         </div>
 
         {/* Search, Filters & Action Buttons */}
@@ -200,20 +203,30 @@ export function Pipeline() {
             <Select
               value={genreFilter}
               onChange={setGenreFilter}
-              options={[{ value: 'all', label: 'All genres' }, ...allGenres.map((g) => ({ value: g, label: g }))]}
+              options={[
+                { value: 'all', label: 'All genres' },
+                ...allGenres.map((g) => ({ value: g, label: g })),
+              ]}
             />
 
             {/* Source filter */}
             <Select
               value={sourceFilter}
               onChange={setSourceFilter}
-              options={[{ value: 'all', label: 'All sources' }, ...allSources.map((s) => ({ value: s, label: s }))]}
+              options={[
+                { value: 'all', label: 'All sources' },
+                ...allSources.map((s) => ({ value: s, label: s })),
+              ]}
             />
 
             {(search || genreFilter !== 'all' || sourceFilter !== 'all') && (
               <Button
                 variant="ghost"
-                onClick={() => { setSearch(''); setGenreFilter('all'); setSourceFilter('all') }}
+                onClick={() => {
+                  setSearch('')
+                  setGenreFilter('all')
+                  setSourceFilter('all')
+                }}
               >
                 Clear
               </Button>
@@ -282,21 +295,14 @@ export function Pipeline() {
 
       {/* Bulk Email Modal */}
       {showBulkEmail && entries && (
-        <BulkEmailModal
-          entries={entries}
-          onClose={() => setShowBulkEmail(false)}
-        />
+        <BulkEmailModal entries={entries} onClose={() => setShowBulkEmail(false)} />
       )}
 
       {/* Scraper Modal */}
-      {showScraper && (
-        <ScraperModal onClose={() => setShowScraper(false)} />
-      )}
+      {showScraper && <ScraperModal onClose={() => setShowScraper(false)} />}
 
       {/* Lead Generator Modal */}
-      {showLeadGen && (
-        <LeadGeneratorModal onClose={() => setShowLeadGen(false)} />
-      )}
+      {showLeadGen && <LeadGeneratorModal onClose={() => setShowLeadGen(false)} />}
     </div>
   )
 }

@@ -35,9 +35,7 @@ export function SearchSelect({
   const filtered = useMemo(() => {
     if (!query) return options.slice(0, MAX_VISIBLE_OPTIONS)
     const term = query.toLowerCase()
-    return options
-      .filter((o) => o.label.toLowerCase().includes(term))
-      .slice(0, MAX_VISIBLE_OPTIONS)
+    return options.filter((o) => o.label.toLowerCase().includes(term)).slice(0, MAX_VISIBLE_OPTIONS)
   }, [options, query])
 
   useEffect(() => {
@@ -97,7 +95,13 @@ export function SearchSelect({
                 }`}
               >
                 {opt.value === value && (
-                  <svg className="mr-2 h-3.5 w-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <svg
+                    className="mr-2 h-3.5 w-3.5 text-teal-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 )}

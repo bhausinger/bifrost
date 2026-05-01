@@ -15,11 +15,7 @@ interface ExcludeModalProps {
   onCancel: () => void
 }
 
-export function ExcludeModal({
-  artistName,
-  onConfirm,
-  onCancel,
-}: ExcludeModalProps) {
+export function ExcludeModal({ artistName, onConfirm, onCancel }: ExcludeModalProps) {
   const [reason, setReason] = useState('opt_out')
   const [notes, setNotes] = useState('')
 
@@ -30,8 +26,12 @@ export function ExcludeModal({
       title={`Exclude ${artistName}?`}
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button variant="destructive" onClick={() => onConfirm(reason, notes)}>Exclude</Button>
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={() => onConfirm(reason, notes)}>
+            Exclude
+          </Button>
         </>
       }
     >

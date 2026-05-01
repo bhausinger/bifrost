@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.turbo/
+.vercel/
+.next/
+coverage/
+apps/dashboard/src/types/supabase.ts
+apps/scraper/venv/
+supabase/.temp/

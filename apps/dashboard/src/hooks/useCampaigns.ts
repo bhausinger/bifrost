@@ -54,10 +54,7 @@ export function useCreateCampaign() {
       }
 
       // Promote the artist from lead to client
-      await supabase
-        .from('artists')
-        .update({ status: 'client' })
-        .eq('id', campaign.artist_id)
+      await supabase.from('artists').update({ status: 'client' }).eq('id', campaign.artist_id)
 
       return data
     },
@@ -72,21 +69,15 @@ export function useCreateCampaign() {
 export function useUpdateCampaign() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: Partial<Campaign> & { id: string }) => {
-      const { error } = await supabase
-        .from('campaigns')
-        .update(updates)
-        .eq('id', id)
+    mutationFn: async ({ id, ...updates }: Partial<Campaign> & { id: string }) => {
+      const { error } = await supabase.from('campaigns').update(updates).eq('id', id)
       if (error) throw error
     },
     onMutate: async ({ id, ...updates }) => {
       await queryClient.cancelQueries({ queryKey: ['campaigns'] })
       const previous = queryClient.getQueryData<CampaignWithArtist[]>(['campaigns'])
       queryClient.setQueryData<CampaignWithArtist[]>(['campaigns'], (old) =>
-        old?.map((c) => (c.id === id ? { ...c, ...updates } : c))
+        old?.map((c) => (c.id === id ? { ...c, ...updates } : c)),
       )
       return { previous }
     },

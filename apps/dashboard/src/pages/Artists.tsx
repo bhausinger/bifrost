@@ -23,7 +23,7 @@ function getGradient(name: string): string {
 }
 
 function formatCount(n: number | null | undefined): string {
-  if (n == null) return '-'
+  if (n === null || n === undefined) return '-'
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return String(n)
@@ -39,14 +39,12 @@ export function Artists() {
   const [showAdd, setShowAdd] = useState(false)
   const [excludeTarget, setExcludeTarget] = useState<Artist | null>(null)
 
-  const excludedEmails = useMemo(
-    () => new Set(excluded?.map((e) => e.email) ?? []),
-    [excluded],
-  )
+  const excludedEmails = useMemo(() => new Set(excluded?.map((e) => e.email) ?? []), [excluded])
 
   const sources = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const a of artists ?? []) counts.set(a.source ?? 'unknown', (counts.get(a.source ?? 'unknown') ?? 0) + 1)
+    for (const a of artists ?? [])
+      counts.set(a.source ?? 'unknown', (counts.get(a.source ?? 'unknown') ?? 0) + 1)
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
   }, [artists])
 
@@ -95,7 +93,11 @@ export function Artists() {
         title="Artists"
         description="Artists you've worked with or are currently in a campaign"
         actions={
-          <Button variant="primary" onClick={() => setShowAdd(true)} className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2"
+          >
             <Plus className="h-4 w-4" />
             Add Artist
           </Button>
@@ -106,19 +108,32 @@ export function Artists() {
         {/* Stat strip */}
         <div className="mb-6 grid grid-cols-3 gap-4">
           <div className="card p-5">
-            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">Total Artists</div>
-            <div className="mt-1 font-mono text-2xl font-bold text-gray-900">{totalArtists.toLocaleString()}</div>
-          </div>
-          <div className="card p-5">
-            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">With Email</div>
-            <div className="mt-1 font-mono text-2xl font-bold text-emerald-600">{withEmail.toLocaleString()}</div>
-            <div className="mt-0.5 text-xs text-gray-400">
-              {totalArtists > 0 ? `${Math.round((withEmail / totalArtists) * 100)}%` : '0%'} of total
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">
+              Total Artists
+            </div>
+            <div className="mt-1 font-mono text-2xl font-bold text-gray-900">
+              {totalArtists.toLocaleString()}
             </div>
           </div>
           <div className="card p-5">
-            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">Excluded</div>
-            <div className="mt-1 font-mono text-2xl font-bold text-red-600">{excludedCount.toLocaleString()}</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">
+              With Email
+            </div>
+            <div className="mt-1 font-mono text-2xl font-bold text-emerald-600">
+              {withEmail.toLocaleString()}
+            </div>
+            <div className="mt-0.5 text-xs text-gray-400">
+              {totalArtists > 0 ? `${Math.round((withEmail / totalArtists) * 100)}%` : '0%'} of
+              total
+            </div>
+          </div>
+          <div className="card p-5">
+            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">
+              Excluded
+            </div>
+            <div className="mt-1 font-mono text-2xl font-bold text-red-600">
+              {excludedCount.toLocaleString()}
+            </div>
           </div>
         </div>
 
@@ -180,7 +195,11 @@ export function Artists() {
                 : 'Try adjusting your search or source filter.'}
             </div>
             {totalArtists === 0 && (
-              <Button variant="primary" onClick={() => setShowAdd(true)} className="mt-4 inline-flex items-center gap-2">
+              <Button
+                variant="primary"
+                onClick={() => setShowAdd(true)}
+                className="mt-4 inline-flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Add Artist
               </Button>
@@ -191,12 +210,24 @@ export function Artists() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50/50">
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Artist</th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Genres</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Followers</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Tracks</th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Source</th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Artist
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Email
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Genres
+                  </th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Followers
+                  </th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Tracks
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Source
+                  </th>
                   <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400" />
                 </tr>
               </thead>
@@ -218,7 +249,9 @@ export function Artists() {
                               className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm"
                             />
                           ) : (
-                            <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradient} ring-2 ring-white shadow-sm`}>
+                            <div
+                              className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradient} ring-2 ring-white shadow-sm`}
+                            >
                               <span className="text-xs font-bold text-white">
                                 {artist.name.charAt(0).toUpperCase()}
                               </span>
@@ -226,7 +259,9 @@ export function Artists() {
                           )}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="truncate font-medium text-gray-900">{artist.name}</span>
+                              <span className="truncate font-medium text-gray-900">
+                                {artist.name}
+                              </span>
                               {excluded && (
                                 <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-600 ring-1 ring-inset ring-red-600/20">
                                   Excluded
@@ -234,7 +269,9 @@ export function Artists() {
                               )}
                             </div>
                             {artist.location && (
-                              <div className="truncate text-xs text-gray-400">{artist.location}</div>
+                              <div className="truncate text-xs text-gray-400">
+                                {artist.location}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -252,12 +289,17 @@ export function Artists() {
                         {(artist.genres ?? []).length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {(artist.genres ?? []).slice(0, 2).map((g) => (
-                              <span key={g} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                              <span
+                                key={g}
+                                className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
+                              >
                                 {g}
                               </span>
                             ))}
                             {(artist.genres ?? []).length > 2 && (
-                              <span className="text-xs text-gray-400">+{(artist.genres ?? []).length - 2}</span>
+                              <span className="text-xs text-gray-400">
+                                +{(artist.genres ?? []).length - 2}
+                              </span>
                             )}
                           </div>
                         ) : (
@@ -311,15 +353,21 @@ export function Artists() {
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Artist">
         <form onSubmit={handleAddArtist} className="space-y-5">
           <div>
-            <Label htmlFor="add-name">Artist Name <span className="text-red-500 normal-case">*</span></Label>
+            <Label htmlFor="add-name">
+              Artist Name <span className="text-red-500 normal-case">*</span>
+            </Label>
             <Input id="add-name" name="name" placeholder="e.g. Tame Impala" required />
           </div>
           <div>
-            <Label htmlFor="add-email" optional>Email</Label>
+            <Label htmlFor="add-email" optional>
+              Email
+            </Label>
             <Input id="add-email" name="email" type="email" placeholder="artist@example.com" />
           </div>
           <div>
-            <Label htmlFor="add-spotify" optional>Spotify URL</Label>
+            <Label htmlFor="add-spotify" optional>
+              Spotify URL
+            </Label>
             <Input
               id="add-spotify"
               name="spotify_url"
@@ -330,14 +378,26 @@ export function Artists() {
             />
           </div>
           <div>
-            <Label htmlFor="add-genres" optional>Genres</Label>
+            <Label htmlFor="add-genres" optional>
+              Genres
+            </Label>
             <Input id="add-genres" name="genres" placeholder="indie, electronic, dream pop" />
           </div>
           <div className="flex gap-3 pt-3">
-            <Button type="button" variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowAdd(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={createArtist.isPending} className="flex-1">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={createArtist.isPending}
+              className="flex-1"
+            >
               {createArtist.isPending ? 'Adding...' : 'Add Artist'}
             </Button>
           </div>

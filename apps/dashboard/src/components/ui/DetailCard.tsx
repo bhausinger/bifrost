@@ -63,9 +63,7 @@ export function DetailCardHeader({
     <>
       <div
         className={`relative flex items-center gap-4 px-6 py-5 ${
-          gradient
-            ? `bg-gradient-to-r ${gradient} text-white`
-            : 'border-b border-gray-200'
+          gradient ? `bg-gradient-to-r ${gradient} text-white` : 'border-b border-gray-200'
         }`}
       >
         {avatar ? (
@@ -91,18 +89,12 @@ export function DetailCardHeader({
         )}
         <div className="min-w-0 flex-1">
           <h2
-            className={`font-display text-xl font-bold truncate ${
-              gradient ? '' : 'text-gray-900'
-            }`}
+            className={`font-display text-xl font-bold truncate ${gradient ? '' : 'text-gray-900'}`}
           >
             {title}
           </h2>
           {subtitle && (
-            <p
-              className={`text-sm truncate ${
-                gradient ? 'text-white/80' : 'text-gray-400'
-              }`}
-            >
+            <p className={`text-sm truncate ${gradient ? 'text-white/80' : 'text-gray-400'}`}>
               {subtitle}
             </p>
           )}

@@ -1,7 +1,13 @@
 import type { CuratorOutreach } from '@/types'
 import { PROGRESS_STEPS, PROGRESS_LABELS, type ProgressField } from './curatorUtils'
 
-export function ProgressDots({ entry, onToggle }: { entry: CuratorOutreach; onToggle: (field: ProgressField) => void }) {
+export function ProgressDots({
+  entry,
+  onToggle,
+}: {
+  entry: CuratorOutreach
+  onToggle: (field: ProgressField) => void
+}) {
   const furthestLabel = (() => {
     for (let i = PROGRESS_STEPS.length - 1; i >= 0; i--) {
       if (entry[PROGRESS_STEPS[i]!]) return PROGRESS_LABELS[i]
@@ -15,7 +21,10 @@ export function ProgressDots({ entry, onToggle }: { entry: CuratorOutreach; onTo
         {PROGRESS_STEPS.map((field, i) => (
           <button
             key={field}
-            onClick={(e) => { e.stopPropagation(); onToggle(field) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(field)
+            }}
             title={`${PROGRESS_LABELS[i]}: ${entry[field] ? new Date(entry[field]!).toLocaleDateString() : 'Click to mark'}`}
             className={`h-3 w-3 rounded-full transition-all duration-200 ${
               entry[field]

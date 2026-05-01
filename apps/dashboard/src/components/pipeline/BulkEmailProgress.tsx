@@ -11,14 +11,9 @@ export function BulkEmailSending({ progress }: BulkEmailSendingProps): React.JSX
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <div className="mb-2 text-sm text-gray-500">
-          Sending to {progress.current}...
-        </div>
+        <div className="mb-2 text-sm text-gray-500">Sending to {progress.current}...</div>
         <div className="mx-auto h-2 w-full max-w-md overflow-hidden rounded-full bg-gray-100">
-          <div
-            className="h-full bg-amber-500 transition-all"
-            style={{ width: `${percent}%` }}
-          />
+          <div className="h-full bg-amber-500 transition-all" style={{ width: `${percent}%` }} />
         </div>
         <ProgressCounts progress={progress} />
       </div>
@@ -34,9 +29,7 @@ export function BulkEmailDone({ progress }: BulkEmailDoneProps): React.JSX.Eleme
   return (
     <div className="space-y-4">
       <div className="rounded-md bg-emerald-50 p-4 text-center">
-        <div className="font-display text-lg font-medium text-emerald-600">
-          Bulk email complete
-        </div>
+        <div className="font-display text-lg font-medium text-emerald-600">Bulk email complete</div>
         <ProgressCounts progress={progress} />
       </div>
 

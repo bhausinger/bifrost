@@ -101,15 +101,13 @@ async function excludeArtist(params: {
         .update({ reason, notes: notes ?? null })
         .eq('id', existing.id)
     } else {
-      const { error: insertError } = await supabase
-        .from('excluded_artists')
-        .insert({
-          email,
-          artist_name: artist?.name ?? 'Unknown',
-          artist_id: artistId,
-          reason,
-          notes: notes ?? null,
-        })
+      const { error: insertError } = await supabase.from('excluded_artists').insert({
+        email,
+        artist_name: artist?.name ?? 'Unknown',
+        artist_id: artistId,
+        reason,
+        notes: notes ?? null,
+      })
       if (insertError) throw insertError
     }
 
@@ -124,10 +122,7 @@ async function excludeArtist(params: {
 
 /** Replicate mutationFn from useRestoreArtist. */
 async function restoreArtist(excludedId: string): Promise<void> {
-  const { error } = await supabase
-    .from('excluded_artists')
-    .delete()
-    .eq('id', excludedId)
+  const { error } = await supabase.from('excluded_artists').delete().eq('id', excludedId)
   if (error) throw error
 }
 
@@ -228,9 +223,7 @@ describe('excludeArtist', () => {
 
     await excludeArtist({ artistId: ARTIST_ID, email: EMAIL })
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ artist_name: 'Unknown' }),
-    )
+    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ artist_name: 'Unknown' }))
   })
 })
 

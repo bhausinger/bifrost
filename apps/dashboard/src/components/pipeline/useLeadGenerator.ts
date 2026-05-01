@@ -3,12 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useCreatePipelineEntry } from '@/hooks/usePipeline'
 import type { DedupData } from '@/lib/dedup'
 import type { PipelineStage } from '@/types'
-import type {
-  Step,
-  DiscoveredLead,
-  FilterStats,
-  ScrapedLead,
-} from './leadGeneratorTypes'
+import type { Step, DiscoveredLead, FilterStats, ScrapedLead } from './leadGeneratorTypes'
 import {
   discoverArtists,
   scrapeArtists,
@@ -58,9 +53,7 @@ export function useLeadGenerator() {
 
   function toggleGenre(genre: string): void {
     setSelectedGenres((prev) =>
-      prev.includes(genre)
-        ? prev.filter((g) => g !== genre)
-        : [...prev, genre]
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
     )
   }
 
@@ -85,25 +78,19 @@ export function useLeadGenerator() {
       setFilterStats(result.filterStats)
       setStep('results')
     } catch (err) {
-      setDiscoveryError(
-        err instanceof Error ? err.message : 'Discovery failed'
-      )
+      setDiscoveryError(err instanceof Error ? err.message : 'Discovery failed')
       setStep('config')
     }
   }
 
   function toggleLeadSelect(index: number): void {
     setDiscoveredLeads((prev) =>
-      prev.map((l, i) =>
-        i === index ? { ...l, selected: !l.selected } : l
-      )
+      prev.map((l, i) => (i === index ? { ...l, selected: !l.selected } : l)),
     )
   }
 
   function selectAllLeads(): void {
-    setDiscoveredLeads((prev) =>
-      prev.map((l) => ({ ...l, selected: true }))
-    )
+    setDiscoveredLeads((prev) => prev.map((l) => ({ ...l, selected: true })))
   }
 
   function deselectAllLeads(): void {
@@ -148,18 +135,14 @@ export function useLeadGenerator() {
       eta: 'Calculating...',
     })
 
-    const scraped = await scrapeArtists(
-      selected,
-      dedupRef.current,
-      {
-        onProgress: (done, emailsFound, eta) => {
-          setScrapeProgress({ done, total: selected.length, emailsFound, eta })
-        },
-        onFeedItem: (name, hasEmail) => {
-          setLiveFeed((prev) => [...prev, { name, hasEmail }])
-        },
+    const scraped = await scrapeArtists(selected, dedupRef.current, {
+      onProgress: (done, emailsFound, eta) => {
+        setScrapeProgress({ done, total: selected.length, emailsFound, eta })
       },
-    )
+      onFeedItem: (name, hasEmail) => {
+        setLiveFeed((prev) => [...prev, { name, hasEmail }])
+      },
+    })
 
     setScrapedLeads(scraped)
     setStep('review')
@@ -167,17 +150,13 @@ export function useLeadGenerator() {
 
   function toggleScrapedSelect(index: number): void {
     setScrapedLeads((prev) =>
-      prev.map((r, i) =>
-        i === index && !r.isDuplicate ? { ...r, selected: !r.selected } : r
-      )
+      prev.map((r, i) => (i === index && !r.isDuplicate ? { ...r, selected: !r.selected } : r)),
     )
   }
 
   function selectAllWithEmails(): void {
     setScrapedLeads((prev) =>
-      prev.map((r) =>
-        !r.isDuplicate && r.editedEmail ? { ...r, selected: true } : r
-      )
+      prev.map((r) => (!r.isDuplicate && r.editedEmail ? { ...r, selected: true } : r)),
     )
   }
 
@@ -186,9 +165,7 @@ export function useLeadGenerator() {
   }
 
   function updateEmail(index: number, email: string): void {
-    setScrapedLeads((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, editedEmail: email } : r))
-    )
+    setScrapedLeads((prev) => prev.map((r, i) => (i === index ? { ...r, editedEmail: email } : r)))
   }
 
   const selectedScrapedCount = scrapedLeads.filter((r) => r.selected).length
@@ -204,16 +181,11 @@ export function useLeadGenerator() {
     setStep('importing')
     setImportProgress({ done: 0, total: selected.length })
 
-    const results = await importArtists(
-      selected,
-      importStage,
-      createEntry,
-      {
-        onProgress: (done, total) => {
-          setImportProgress({ done, total })
-        },
+    const results = await importArtists(selected, importStage, createEntry, {
+      onProgress: (done, total) => {
+        setImportProgress({ done, total })
       },
-    )
+    })
 
     setImportResults(results)
     setStep('done')

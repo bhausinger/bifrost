@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { checkDuplicate, fetchDedupData } from '@/lib/dedup'
-import type { DedupData } from '@/lib/dedup'
+import { checkDuplicate, fetchDedupData, type DedupData } from '@/lib/dedup'
 
 // Mock supabase module
 vi.mock('@/lib/supabase', () => ({
@@ -107,13 +106,7 @@ describe('checkDuplicate', () => {
     const dedup = makeDedup({
       urls: new Set(['https://soundcloud.com/artist-lower']),
     })
-    const result = checkDuplicate(
-      dedup,
-      'https://SoundCloud.com/ARTIST-LOWER',
-      null,
-      null,
-      null,
-    )
+    const result = checkDuplicate(dedup, 'https://SoundCloud.com/ARTIST-LOWER', null, null, null)
     expect(result).toBe('Already in database')
   })
 
@@ -162,7 +155,11 @@ describe('fetchDedupData', () => {
     // Artists response (no .not() chaining)
     const artistsSelect = vi.fn().mockResolvedValue({
       data: [
-        { soundcloud_url: 'https://sc.com/a', spotify_url: 'https://spotify.com/a', email: 'a@test.com' },
+        {
+          soundcloud_url: 'https://sc.com/a',
+          spotify_url: 'https://spotify.com/a',
+          email: 'a@test.com',
+        },
         { soundcloud_url: null, spotify_url: null, email: 'b@test.com' },
       ],
       error: null,

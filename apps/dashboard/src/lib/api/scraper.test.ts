@@ -4,8 +4,12 @@ vi.mock('@/lib/env', () => ({
   env: { VITE_SCRAPER_URL: 'http://test-scraper' },
 }))
 
-import { discoverArtists, scrapeArtist, scraperHealthCheck } from '@/lib/api/scraper'
-import type { DiscoverParams } from '@/lib/api/scraper'
+import {
+  discoverArtists,
+  scrapeArtist,
+  scraperHealthCheck,
+  type DiscoverParams,
+} from '@/lib/api/scraper'
 
 const mockFetch = vi.fn()
 globalThis.fetch = mockFetch
@@ -39,7 +43,14 @@ describe('discoverArtists', () => {
         },
       ],
       total_found: 1,
-      filter_stats: { total_raw: 10, below_min: 3, above_max: 2, no_tracks: 1, too_old: 3, passed: 1 },
+      filter_stats: {
+        total_raw: 10,
+        below_min: 3,
+        above_max: 2,
+        no_tracks: 1,
+        too_old: 3,
+        passed: 1,
+      },
     }
 
     mockFetch.mockResolvedValueOnce({
@@ -89,9 +100,12 @@ describe('scraperHealthCheck', () => {
 
     const result = await scraperHealthCheck()
 
-    expect(mockFetch).toHaveBeenCalledWith('http://test-scraper', expect.objectContaining({
-      signal: expect.any(AbortSignal),
-    }))
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://test-scraper',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.ok).toBe(true)
     expect(result.latencyMs).toBeGreaterThanOrEqual(0)
   })

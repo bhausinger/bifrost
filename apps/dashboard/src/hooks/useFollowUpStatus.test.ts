@@ -139,38 +139,48 @@ describe('getFollowUpStatus', () => {
   })
 
   it('returns correct border/bg color classes for each urgency level', () => {
-    const none = getFollowUpStatus(makeEntry({
-      stage: 'contacted',
-      contacted_at: daysAgo(1),
-    }))
+    const none = getFollowUpStatus(
+      makeEntry({
+        stage: 'contacted',
+        contacted_at: daysAgo(1),
+      }),
+    )
     expect(none.borderColor).toBe('')
     expect(none.bgColor).toBe('')
 
-    const due = getFollowUpStatus(makeEntry({
-      stage: 'contacted',
-      contacted_at: daysAgo(3),
-    }))
+    const due = getFollowUpStatus(
+      makeEntry({
+        stage: 'contacted',
+        contacted_at: daysAgo(3),
+      }),
+    )
     expect(due.borderColor).toBe('border-blue-400')
     expect(due.bgColor).toBe('bg-blue-50')
 
-    const overdue = getFollowUpStatus(makeEntry({
-      stage: 'contacted',
-      contacted_at: daysAgo(7),
-    }))
+    const overdue = getFollowUpStatus(
+      makeEntry({
+        stage: 'contacted',
+        contacted_at: daysAgo(7),
+      }),
+    )
     expect(overdue.borderColor).toBe('border-yellow-500')
     expect(overdue.bgColor).toBe('bg-yellow-50')
 
-    const urgent = getFollowUpStatus(makeEntry({
-      stage: 'contacted',
-      contacted_at: daysAgo(14),
-    }))
+    const urgent = getFollowUpStatus(
+      makeEntry({
+        stage: 'contacted',
+        contacted_at: daysAgo(14),
+      }),
+    )
     expect(urgent.borderColor).toBe('border-orange-500')
     expect(urgent.bgColor).toBe('bg-orange-50')
 
-    const critical = getFollowUpStatus(makeEntry({
-      stage: 'contacted',
-      contacted_at: daysAgo(21),
-    }))
+    const critical = getFollowUpStatus(
+      makeEntry({
+        stage: 'contacted',
+        contacted_at: daysAgo(21),
+      }),
+    )
     expect(critical.borderColor).toBe('border-red-500')
     expect(critical.bgColor).toBe('bg-red-50')
   })

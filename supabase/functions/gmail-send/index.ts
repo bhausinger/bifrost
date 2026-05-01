@@ -1,11 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { encode } from 'https://deno.land/std@0.177.0/encoding/base64.ts'
-import {
-  buildMimeMessage as buildMimeMessageRaw,
-  cleanArtistName,
-  htmlToText,
-} from './helpers.ts'
+import { buildMimeMessage as buildMimeMessageRaw, cleanArtistName, htmlToText } from './helpers.ts'
 
 const GOOGLE_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID')!
 const GOOGLE_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET')!
@@ -18,7 +14,7 @@ const supabase = createClient(
 )
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://bifrost-eta.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -65,11 +61,14 @@ async function refreshToken(userId: string, refreshTokenStr: string): Promise<st
   if (!res.ok) return null
 
   const tokens = await res.json()
-  await supabase.from('user_google_tokens').update({
-    access_token: tokens.access_token,
-    token_expiry: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq('user_id', userId)
+  await supabase
+    .from('user_google_tokens')
+    .update({
+      access_token: tokens.access_token,
+      token_expiry: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
 
   return tokens.access_token
 }
@@ -115,10 +114,7 @@ async function sendGmailMessage(
   return { id: data.id, threadId: data.threadId }
 }
 
-async function getGmailSignature(
-  accessToken: string,
-  sendAsEmail: string,
-): Promise<string> {
+async function getGmailSignature(accessToken: string, sendAsEmail: string): Promise<string> {
   try {
     const res = await fetch(
       `${GMAIL_API}/users/me/settings/sendAs/${encodeURIComponent(sendAsEmail)}`,
@@ -161,9 +157,10 @@ function cleanArtistName(name: string): string {
 async function getUser(req: Request): Promise<{ id: string } | null> {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) return null
-  const { data: { user }, error } = await supabase.auth.getUser(
-    authHeader.replace('Bearer ', ''),
-  )
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
   if (error || !user) return null
   return { id: user.id }
 }
@@ -198,7 +195,10 @@ serve(async (req) => {
 
     return jsonResponse({ error: 'Not found' }, 404)
   } catch (err) {
-    return jsonResponse({ error: err instanceof Error ? err.message : 'Internal server error' }, 500)
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : 'Internal server error' },
+      500,
+    )
   }
 })
 
@@ -215,7 +215,10 @@ async function handleSingleSend(userId: string, req: Request): Promise<Response>
 
     const accessToken = await getValidToken(userId)
     if (!accessToken) {
-      return jsonResponse({ error: 'Gmail not connected. Please authenticate first.', requiresAuth: true }, 400)
+      return jsonResponse(
+        { error: 'Gmail not connected. Please authenticate first.', requiresAuth: true },
+        400,
+      )
     }
 
     // Get sender's Gmail email if not provided
@@ -244,23 +247,16 @@ async function handleSingleSend(userId: string, req: Request): Promise<Response>
 
 async function handleBulkSend(userId: string, req: Request): Promise<Response> {
   const body = await req.json()
-  const {
-    entryIds,
-    subject,
-    bodyTemplate,
-    senderName,
-    senderEmail,
-    deckLinkUrl,
-    deckLinkText,
-  } = body as {
-    entryIds: string[]
-    subject: string
-    bodyTemplate: string
-    senderName: string
-    senderEmail?: string
-    deckLinkUrl?: string
-    deckLinkText?: string
-  }
+  const { entryIds, subject, bodyTemplate, senderName, senderEmail, deckLinkUrl, deckLinkText } =
+    body as {
+      entryIds: string[]
+      subject: string
+      bodyTemplate: string
+      senderName: string
+      senderEmail?: string
+      deckLinkUrl?: string
+      deckLinkText?: string
+    }
 
   if (!entryIds?.length || !subject || !bodyTemplate) {
     return jsonResponse({ error: 'Missing required fields' }, 400)
@@ -318,10 +314,23 @@ async function handleBulkSend(userId: string, req: Request): Promise<Response> {
       const total = entries.length
 
       for (const entry of entries) {
-        const artist = entry.artist as { id: string; name: string; email: string | null; spotify_url: string | null } | null
+        const artist = entry.artist as {
+          id: string
+          name: string
+          email: string | null
+          spotify_url: string | null
+        } | null
         if (!artist?.email) {
           skipped++
-          write({ progress: sent + failed + skipped, total, sent, failed, skipped, current: artist?.name ?? 'Unknown', skipReason: 'No email' })
+          write({
+            progress: sent + failed + skipped,
+            total,
+            sent,
+            failed,
+            skipped,
+            current: artist?.name ?? 'Unknown',
+            skipReason: 'No email',
+          })
           continue
         }
 
@@ -329,21 +338,38 @@ async function handleBulkSend(userId: string, req: Request): Promise<Response> {
 
         if (excludedEmails.has(email)) {
           skipped++
-          write({ progress: sent + failed + skipped, total, sent, failed, skipped, current: artist.name, skipReason: 'Excluded' })
+          write({
+            progress: sent + failed + skipped,
+            total,
+            sent,
+            failed,
+            skipped,
+            current: artist.name,
+            skipReason: 'Excluded',
+          })
           continue
         }
 
         if (emailedSet.has(email)) {
           skipped++
-          write({ progress: sent + failed + skipped, total, sent, failed, skipped, current: artist.name, skipReason: 'Already emailed' })
+          write({
+            progress: sent + failed + skipped,
+            total,
+            sent,
+            failed,
+            skipped,
+            current: artist.name,
+            skipReason: 'Already emailed',
+          })
           continue
         }
 
         try {
           const artistName = cleanArtistName(artist.name)
-          const deckLink = deckLinkUrl && deckLinkText
-            ? `<a href="${deckLinkUrl}">${deckLinkText}</a>`
-            : deckLinkText || ''
+          const deckLink =
+            deckLinkUrl && deckLinkText
+              ? `<a href="${deckLinkUrl}">${deckLinkText}</a>`
+              : deckLinkText || ''
 
           const personalizedBody = bodyTemplate
             .replace(/\{\{artistName\}\}/g, artistName)
@@ -363,9 +389,7 @@ async function handleBulkSend(userId: string, req: Request): Promise<Response> {
           const htmlBody = `<div dir="ltr">${bodyHtml}${sigBlock}</div>`
 
           // Build plain text
-          const textSig = signatureHtml
-            ? '\n\n--\n' + htmlToText(signatureHtml)
-            : ''
+          const textSig = signatureHtml ? '\n\n--\n' + htmlToText(signatureHtml) : ''
           const textBody = personalizedBody + textSig
 
           const fromAddr = senderName ? `${senderName} <${gmailAddr}>` : gmailAddr
@@ -405,7 +429,14 @@ async function handleBulkSend(userId: string, req: Request): Promise<Response> {
           }
 
           sent++
-          write({ progress: sent + failed + skipped, total, sent, failed, skipped, current: artist.name })
+          write({
+            progress: sent + failed + skipped,
+            total,
+            sent,
+            failed,
+            skipped,
+            current: artist.name,
+          })
 
           // Rate limit: 500ms between sends
           if (sent + failed + skipped < total) {

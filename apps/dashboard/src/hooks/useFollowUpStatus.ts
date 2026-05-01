@@ -37,11 +37,8 @@ export function getFollowUpStatus(entry: PipelineEntry): FollowUpStatus {
   }
 
   // Use the most recent relevant date
-  const lastDate =
-    entry.responded_at ?? entry.contacted_at ?? entry.stage_entered_at
-  const days = Math.floor(
-    (Date.now() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)
-  )
+  const lastDate = entry.responded_at ?? entry.contacted_at ?? entry.stage_entered_at
+  const days = Math.floor((Date.now() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24))
 
   if (days >= THRESHOLDS.critical) {
     return {

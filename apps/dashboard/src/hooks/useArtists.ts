@@ -23,11 +23,7 @@ export function useCreateArtist() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (artist: Database['public']['Tables']['artists']['Insert']) => {
-      const { data, error } = await supabase
-        .from('artists')
-        .insert(artist)
-        .select()
-        .single()
+      const { data, error } = await supabase.from('artists').insert(artist).select().single()
       if (error) throw error
       return data as Artist
     },
@@ -40,14 +36,8 @@ export function useCreateArtist() {
 export function useUpdateArtist() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: Partial<Artist> & { id: string }) => {
-      const { error } = await supabase
-        .from('artists')
-        .update(updates)
-        .eq('id', id)
+    mutationFn: async ({ id, ...updates }: Partial<Artist> & { id: string }) => {
+      const { error } = await supabase.from('artists').update(updates).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {

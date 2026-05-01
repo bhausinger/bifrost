@@ -17,7 +17,9 @@ type GmailSyncPayload = {
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
   return {
     Authorization: `Bearer ${session.access_token}`,

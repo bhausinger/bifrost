@@ -21,18 +21,17 @@ vi.mock('@/lib/env', () => ({
 }))
 
 /** Simulates the addBlockedTerm mutationFn logic. */
-async function simulateAddBlockedTerm(
-  input: { term: string; type: 'email_domain' | 'profile_name' },
-): Promise<void> {
+async function simulateAddBlockedTerm(input: {
+  term: string
+  type: 'email_domain' | 'profile_name'
+}): Promise<void> {
   const { supabase } = await import('@/lib/supabase')
   const { data: user } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('blocked_terms')
-    .insert({
-      term: input.term.toLowerCase().trim(),
-      type: input.type,
-      created_by: user.user?.id,
-    })
+  const { error } = await supabase.from('blocked_terms').insert({
+    term: input.term.toLowerCase().trim(),
+    type: input.type,
+    created_by: user.user?.id,
+  })
   if (error) throw error
 }
 
@@ -49,9 +48,7 @@ describe('addBlockedTerm', () => {
 
     await simulateAddBlockedTerm({ term: '  SPAM  ', type: 'profile_name' })
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ term: 'spam' }),
-    )
+    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ term: 'spam' }))
   })
 
   it('includes current user ID as created_by', async () => {
@@ -61,9 +58,7 @@ describe('addBlockedTerm', () => {
 
     await simulateAddBlockedTerm({ term: 'test', type: 'email_domain' })
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ created_by: 'user-42' }),
-    )
+    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ created_by: 'user-42' }))
   })
 
   it('throws on insert error', async () => {
@@ -72,9 +67,9 @@ describe('addBlockedTerm', () => {
     const mockInsert = vi.fn().mockResolvedValue({ error: dbError })
     mockFrom.mockReturnValue({ insert: mockInsert })
 
-    await expect(
-      simulateAddBlockedTerm({ term: 'dup', type: 'profile_name' }),
-    ).rejects.toEqual(dbError)
+    await expect(simulateAddBlockedTerm({ term: 'dup', type: 'profile_name' })).rejects.toEqual(
+      dbError,
+    )
   })
 })
 

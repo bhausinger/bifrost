@@ -2,8 +2,7 @@ import { useMemo } from 'react'
 import { useEmailTemplates, renderTemplate, stripEmojis } from '@/hooks/useEmailTemplates'
 import { Select } from '@/components/ui'
 import type { PipelineEntry, Artist } from '@/types'
-import type { StageFilter } from './bulkEmailTypes'
-import { FILTERABLE_STAGES } from './bulkEmailTypes'
+import { FILTERABLE_STAGES, type StageFilter } from './bulkEmailTypes'
 
 type BulkEmailComposeProps = {
   entries: (PipelineEntry & { artist: Artist })[]
@@ -31,9 +30,7 @@ function getTemplateVars(
   deckLinkText: string,
   senderName: string,
 ): Record<string, string> {
-  const deckLink = deckLinkUrl
-    ? `<a href="${deckLinkUrl}">${deckLinkText}</a>`
-    : deckLinkText
+  const deckLink = deckLinkUrl ? `<a href="${deckLinkUrl}">${deckLinkText}</a>` : deckLinkText
 
   return {
     artistName: artist.name,
@@ -97,9 +94,7 @@ export function BulkEmailCompose({
     <>
       {/* Stage Filter */}
       <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Filter by Stage
-        </label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Filter by Stage</label>
         <div className="flex flex-wrap gap-2">
           {FILTERABLE_STAGES.map((stage) => (
             <button
@@ -123,7 +118,8 @@ export function BulkEmailCompose({
         <span className="text-gray-500">recipients with email</span>
         {withoutEmail.length > 0 && (
           <span className="text-gray-400">
-            {' '}({withoutEmail.length} without email will be skipped)
+            {' '}
+            ({withoutEmail.length} without email will be skipped)
           </span>
         )}
       </div>
@@ -131,9 +127,7 @@ export function BulkEmailCompose({
       {/* Template selector */}
       {templates && templates.length > 0 && (
         <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Load Template
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Load Template</label>
           <Select
             fullWidth
             value=""
@@ -146,9 +140,7 @@ export function BulkEmailCompose({
 
       {/* Sender name */}
       <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Sender Name
-        </label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Sender Name</label>
         <input
           type="text"
           value={senderName}
@@ -173,9 +165,7 @@ export function BulkEmailCompose({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Deck Link Text
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Deck Link Text</label>
           <input
             type="text"
             value={deckLinkText}
@@ -187,9 +177,7 @@ export function BulkEmailCompose({
 
       {/* Subject */}
       <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Subject
-        </label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Subject</label>
         <input
           type="text"
           value={subject}
@@ -197,16 +185,13 @@ export function BulkEmailCompose({
           className="input-field w-full"
         />
         <p className="mt-1 text-xs text-gray-400">
-          Variables: {'{{artistName}}'}, {'{{mostRecentTrack}}'},{' '}
-          {'{{senderName}}'}
+          Variables: {'{{artistName}}'}, {'{{mostRecentTrack}}'}, {'{{senderName}}'}
         </p>
       </div>
 
       {/* Body */}
       <div className="mb-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Email Body
-        </label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Email Body</label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -214,9 +199,8 @@ export function BulkEmailCompose({
           className="input-field w-full font-mono"
         />
         <p className="mt-1 text-xs text-gray-400">
-          Variables: {'{{artistName}}'}, {'{{deckLink}}'},{' '}
-          {'{{senderName}}'}, {'{{spotifyUrl}}'}. Gmail signature will
-          be auto-appended.
+          Variables: {'{{artistName}}'}, {'{{deckLink}}'}, {'{{senderName}}'}, {'{{spotifyUrl}}'}.
+          Gmail signature will be auto-appended.
         </p>
       </div>
 
@@ -231,8 +215,7 @@ export function BulkEmailCompose({
         {showPreview && (
           <div className="mt-2 rounded-lg border border-gray-300 bg-gray-50 p-4">
             <div className="mb-2 text-sm font-medium text-gray-400">
-              Preview (first recipient:{' '}
-              {withEmail[0]?.artist.name ?? 'none'})
+              Preview (first recipient: {withEmail[0]?.artist.name ?? 'none'})
             </div>
             <div className="mb-2 text-sm text-gray-700">
               <span className="text-gray-400">Subject: </span>

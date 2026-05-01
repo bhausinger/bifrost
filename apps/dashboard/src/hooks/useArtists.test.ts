@@ -62,11 +62,7 @@ describe('createArtist', () => {
     const artistInput = { name: 'New Artist', status: 'lead' }
 
     const { supabase } = await import('@/lib/supabase')
-    const { data, error } = await supabase
-      .from('artists')
-      .insert(artistInput)
-      .select()
-      .single()
+    const { data, error } = await supabase.from('artists').insert(artistInput).select().single()
 
     expect(mockInsert).toHaveBeenCalledWith(artistInput)
     expect(data).toEqual(created)
@@ -81,11 +77,7 @@ describe('createArtist', () => {
     mockFrom.mockReturnValue({ insert: mockInsert })
 
     const { supabase } = await import('@/lib/supabase')
-    const { error } = await supabase
-      .from('artists')
-      .insert({ name: 'Dup' })
-      .select()
-      .single()
+    const { error } = await supabase.from('artists').insert({ name: 'Dup' }).select().single()
 
     expect(error).toEqual(dbError)
   })
@@ -103,10 +95,7 @@ describe('updateArtist', () => {
 
     const { supabase } = await import('@/lib/supabase')
     const updates = { name: 'Updated Name', email: 'new@test.com' }
-    const { error } = await supabase
-      .from('artists')
-      .update(updates)
-      .eq('id', 'artist-1')
+    const { error } = await supabase.from('artists').update(updates).eq('id', 'artist-1')
 
     expect(mockUpdate).toHaveBeenCalledWith(updates)
     expect(mockEq).toHaveBeenCalledWith('id', 'artist-1')
@@ -120,10 +109,7 @@ describe('updateArtist', () => {
     mockFrom.mockReturnValue({ update: mockUpdate })
 
     const { supabase } = await import('@/lib/supabase')
-    const { error } = await supabase
-      .from('artists')
-      .update({ name: 'X' })
-      .eq('id', 'missing')
+    const { error } = await supabase.from('artists').update({ name: 'X' }).eq('id', 'missing')
 
     expect(error).toEqual(dbError)
   })

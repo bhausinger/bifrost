@@ -77,9 +77,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   className="hidden"
                   onChange={handleFileUpload}
                 />
-                <span className="text-sm text-gray-400">
-                  {parseUrls().length} valid URLs
-                </span>
+                <span className="text-sm text-gray-400">{parseUrls().length} valid URLs</span>
               </div>
             </div>
           )}
@@ -98,9 +96,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                     }}
                   />
                 </div>
-                <div className="mt-2 text-sm text-gray-400">
-                  ETA: {progress.eta}
-                </div>
+                <div className="mt-2 text-sm text-gray-400">ETA: {progress.eta}</div>
               </div>
               <div className="flex justify-center gap-8 text-sm">
                 <div>
@@ -116,9 +112,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   <div className="text-gray-400">Emails Found</div>
                 </div>
                 <div>
-                  <div className="font-mono text-lg font-bold text-red-600">
-                    {progress.failed}
-                  </div>
+                  <div className="font-mono text-lg font-bold text-red-600">{progress.failed}</div>
                   <div className="text-gray-400">Failed</div>
                 </div>
               </div>
@@ -152,9 +146,7 @@ export function ScraperModal({ onClose }: ScraperModalProps) {
                   }}
                 />
               </div>
-              <div className="mt-2 text-sm text-gray-400">
-                Importing artists to pipeline...
-              </div>
+              <div className="mt-2 text-sm text-gray-400">Importing artists to pipeline...</div>
             </div>
           )}
 

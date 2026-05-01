@@ -7,22 +7,26 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Login } from '@/pages/Login'
 import type { Session } from '@supabase/supabase-js'
 
-const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })))
-const Pipeline = lazy(() => import('@/pages/Pipeline').then(m => ({ default: m.Pipeline })))
-const Campaigns = lazy(() => import('@/pages/Campaigns').then(m => ({ default: m.Campaigns })))
-const Artists = lazy(() => import('@/pages/Artists').then(m => ({ default: m.Artists })))
-const Outreach = lazy(() => import('@/pages/Outreach').then(m => ({ default: m.Outreach })))
-const Curators = lazy(() => import('@/pages/Curators').then(m => ({ default: m.Curators })))
-const Financials = lazy(() => import('@/pages/Financials').then(m => ({ default: m.Financials })))
-const Settings = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })))
-const ExcludeList = lazy(() => import('@/pages/ExcludeList').then(m => ({ default: m.ExcludeList })))
+const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Pipeline = lazy(() => import('@/pages/Pipeline').then((m) => ({ default: m.Pipeline })))
+const Campaigns = lazy(() => import('@/pages/Campaigns').then((m) => ({ default: m.Campaigns })))
+const Artists = lazy(() => import('@/pages/Artists').then((m) => ({ default: m.Artists })))
+const Outreach = lazy(() => import('@/pages/Outreach').then((m) => ({ default: m.Outreach })))
+const Curators = lazy(() => import('@/pages/Curators').then((m) => ({ default: m.Curators })))
+const Financials = lazy(() => import('@/pages/Financials').then((m) => ({ default: m.Financials })))
+const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
+const ExcludeList = lazy(() =>
+  import('@/pages/ExcludeList').then((m) => ({ default: m.ExcludeList })),
+)
 
 function PageLoader() {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-teal-600" />
-        <span className="font-display text-sm font-medium tracking-wide text-gray-400">Loading...</span>
+        <span className="font-display text-sm font-medium tracking-wide text-gray-400">
+          Loading...
+        </span>
       </div>
     </div>
   )
@@ -68,7 +72,9 @@ export function App() {
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-teal-600" />
-          <span className="font-display text-sm font-medium tracking-wide text-gray-400">Loading...</span>
+          <span className="font-display text-sm font-medium tracking-wide text-gray-400">
+            Loading...
+          </span>
         </div>
       </div>
     )
@@ -84,15 +90,78 @@ export function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
-            <Route path="/pipeline" element={<ErrorBoundary><Pipeline /></ErrorBoundary>} />
-            <Route path="/campaigns" element={<ErrorBoundary><Campaigns /></ErrorBoundary>} />
-            <Route path="/artists" element={<ErrorBoundary><Artists /></ErrorBoundary>} />
-            <Route path="/outreach" element={<ErrorBoundary><Outreach /></ErrorBoundary>} />
-            <Route path="/curators" element={<ErrorBoundary><Curators /></ErrorBoundary>} />
-            <Route path="/financials" element={<ErrorBoundary><Financials /></ErrorBoundary>} />
-            <Route path="/settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
-            <Route path="/excluded" element={<ErrorBoundary><ExcludeList /></ErrorBoundary>} />
+            <Route
+              path="/dashboard"
+              element={
+                <ErrorBoundary>
+                  <Dashboard />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/pipeline"
+              element={
+                <ErrorBoundary>
+                  <Pipeline />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/campaigns"
+              element={
+                <ErrorBoundary>
+                  <Campaigns />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/artists"
+              element={
+                <ErrorBoundary>
+                  <Artists />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/outreach"
+              element={
+                <ErrorBoundary>
+                  <Outreach />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/curators"
+              element={
+                <ErrorBoundary>
+                  <Curators />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/financials"
+              element={
+                <ErrorBoundary>
+                  <Financials />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ErrorBoundary>
+                  <Settings />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/excluded"
+              element={
+                <ErrorBoundary>
+                  <ExcludeList />
+                </ErrorBoundary>
+              }
+            />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
