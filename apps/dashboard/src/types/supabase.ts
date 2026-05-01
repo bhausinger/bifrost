@@ -39,8 +39,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       artists: {
         Row: {
+          agency_id: string | null
           bio: string | null
           created_at: string | null
           created_by: string | null
@@ -64,6 +95,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          agency_id?: string | null
           bio?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -87,6 +119,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          agency_id?: string | null
           bio?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -109,7 +142,15 @@ export type Database = {
           track_count?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "artists_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blocked_terms: {
         Row: {

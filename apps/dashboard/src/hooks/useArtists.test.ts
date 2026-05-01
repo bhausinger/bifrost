@@ -21,9 +21,9 @@ describe('useArtists — query logic', () => {
     mockFrom.mockReset()
   })
 
-  it('filters by status=client and orders by created_at desc', async () => {
+  it('filters by status=client with agency join and orders by created_at desc', async () => {
     const mockOrder = vi.fn().mockResolvedValue({
-      data: [{ id: '1', name: 'Artist A', status: 'client' }],
+      data: [{ id: '1', name: 'Artist A', status: 'client', agency: null }],
       error: null,
     })
     const mockEq = vi.fn().mockReturnValue({ order: mockOrder })
@@ -34,12 +34,12 @@ describe('useArtists — query logic', () => {
     const { supabase } = await import('@/lib/supabase')
     const { data, error } = await supabase
       .from('artists')
-      .select('*')
+      .select('*, agency:agencies(id, name)')
       .eq('status', 'client')
       .order('created_at', { ascending: false })
 
     expect(mockFrom).toHaveBeenCalledWith('artists')
-    expect(mockSelect).toHaveBeenCalledWith('*')
+    expect(mockSelect).toHaveBeenCalledWith('*, agency:agencies(id, name)')
     expect(mockEq).toHaveBeenCalledWith('status', 'client')
     expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false })
     expect(data).toHaveLength(1)

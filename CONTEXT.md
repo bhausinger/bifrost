@@ -89,6 +89,14 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - Scraper health check on Settings page with 30s polling
 - Code-split all page routes with `React.lazy` + `Suspense` (Login stays eager)
 
+### Agency UI on Artists Page (2026-04-29)
+
+- Extracted Add Artist modal into `pages/artists/AddArtistModal.tsx` with optional agency field (searchable dropdown of existing agencies + "Create New..." option)
+- Extracted artist table into `pages/artists/ArtistTable.tsx` with new Agency column (clickable to open drawer)
+- Created `pages/artists/AgencyDrawer.tsx` — detail panel showing agency info + all artists under that agency with their campaign statuses
+- Artists.tsx reduced from 427 to 268 lines; search now matches agency name; agency filter pills appear when agencies exist
+- `useArtists` hook updated to join `agency:agencies(id, name)`
+
 ## In Progress
 
 Nothing actively in progress.

@@ -10,7 +10,7 @@ export function useArtists() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('artists')
-        .select('*')
+        .select('*, agency:agencies(id, name)')
         .eq('status', 'client')
         .order('created_at', { ascending: false })
       if (error) throw error
