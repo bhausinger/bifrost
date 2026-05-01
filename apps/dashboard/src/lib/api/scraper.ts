@@ -98,18 +98,17 @@ export async function discoverArtists(params: DiscoverParams): Promise<DiscoverR
   }
 }
 
-type SpotifyPlaycountResult = {
+type SpotifyTrackData = {
   trackId: string
   title: string
   artist: string
   album: string
   playCount: number | null
-  popularity?: number
+  artUrl: string | null
   source: string
-  note?: string
 }
 
-export type { SpotifyPlaycountResult }
+export type { SpotifyTrackData }
 
 const SPOTIFY_TOKEN_PATTERN = /"accessToken":"([^"]+)"/
 const GET_TRACK_HASH = '612585ae06ba435ad26369870deaae23b5c8800a256cd8a57e08eddc25a37294'
@@ -119,25 +118,29 @@ function extractSpotifyTrackId(url: string): string | null {
   return match?.[1] ?? null
 }
 
+const EMBED_ART_PATTERN = /"url":"(https:\/\/image-cdn[^"]+ab67616d0000b273[^"]+)"/
+
 /**
- * Fetch Spotify play count client-side via Vercel proxy rewrites.
- * Two calls only — no Spotify API key needed:
- *   1. /api/spotify-embed/:id → anonymous token from embed page
- *   2. /api/spotify-partner/* → getTrack query returns play count directly
+ * Fetch Spotify track data client-side via Vercel proxy rewrites.
+ * Two calls — no Spotify API key needed:
+ *   1. /api/spotify-embed/:id → anonymous token + album art from embed page
+ *   2. /api/spotify-partner/* → getTrack query returns name, artist, play count
  */
-export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycountResult> {
+export async function fetchSpotifyTrackData(url: string): Promise<SpotifyTrackData> {
   const trackId = extractSpotifyTrackId(url)
   if (!trackId) throw new Error('Invalid Spotify track URL')
 
-  // Step 1: Get anonymous token from embed page via Vercel proxy
+  // Step 1: Get token + album art from embed page via Vercel proxy
   const embedRes = await fetch(`/api/spotify-embed/${trackId}`)
   if (!embedRes.ok) throw new Error(`Embed page failed (${embedRes.status})`)
   const embedHtml = await embedRes.text()
   const tokenMatch = embedHtml.match(SPOTIFY_TOKEN_PATTERN)
   if (!tokenMatch) throw new Error('Could not extract Spotify token')
   const token = tokenMatch[1]
+  const artMatch = embedHtml.match(EMBED_ART_PATTERN)
+  const artUrl = artMatch?.[1] ?? null
 
-  // Step 2: Get play count from Partner API via Vercel proxy
+  // Step 2: Get track data from Partner API via Vercel proxy
   const variables = JSON.stringify({ uri: `spotify:track:${trackId}` })
   const extensions = JSON.stringify({
     persistedQuery: { version: 1, sha256Hash: GET_TRACK_HASH },
@@ -167,6 +170,7 @@ export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycou
     artist: albumInfo.artists?.items?.[0]?.profile?.name ?? 'Unknown',
     album: albumInfo.name ?? 'Unknown',
     playCount: track.playcount != null ? parseInt(String(track.playcount), 10) : null,
+    artUrl,
     source: 'spotify_partner_api',
   }
 }

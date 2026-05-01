@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { ExternalLink, Music2, Plus, RefreshCw } from 'lucide-react'
 import { useCampaignPlacements } from '@/hooks/usePlacements'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { fetchSpotifyPlaycount } from '@/lib/api/scraper'
+import { useSpotifyTrack } from '@/hooks/useSpotifyTrack'
 import {
   DetailCard,
   DetailCardHeader,
@@ -30,8 +30,7 @@ function CampaignCardContent({
   const [showAddPlacement, setShowAddPlacement] = useState(false)
   const [notes, setNotes] = useState(selected.notes ?? '')
   const [notesDirty, setNotesDirty] = useState(false)
-  const [isFetchingStreams, setIsFetchingStreams] = useState(false)
-  const [fetchError, setFetchError] = useState<string | null>(null)
+  const spotify = useSpotifyTrack('')
   const notesTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -211,28 +210,18 @@ function CampaignCardContent({
             <Button
               variant="secondary"
               onClick={async () => {
-                setIsFetchingStreams(true)
-                setFetchError(null)
-                try {
-                  const result = await fetchSpotifyPlaycount(selected.track_spotify_url!)
-                  if (result.playCount !== null && result.playCount !== undefined) {
-                    updateCampaign.mutate({ id: selected.id, actual_streams: result.playCount })
-                  } else {
-                    setFetchError(result.note ?? 'Play count unavailable')
-                  }
-                } catch (e) {
-                  setFetchError(e instanceof Error ? e.message : 'Failed to fetch')
-                } finally {
-                  setIsFetchingStreams(false)
+                const result = await spotify.fetchTrack(selected.track_spotify_url!)
+                if (result?.playCount != null) {
+                  updateCampaign.mutate({ id: selected.id, actual_streams: result.playCount })
                 }
               }}
-              disabled={isFetchingStreams}
+              disabled={spotify.isLoading}
               className="flex w-full items-center justify-center gap-2 text-xs"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetchingStreams ? 'animate-spin' : ''}`} />
-              {isFetchingStreams ? 'Fetching from Spotify...' : 'Fetch Current from Spotify'}
+              <RefreshCw className={`h-3.5 w-3.5 ${spotify.isLoading ? 'animate-spin' : ''}`} />
+              {spotify.isLoading ? 'Fetching from Spotify...' : 'Fetch Current from Spotify'}
             </Button>
-            {fetchError && <p className="mt-1 text-xs text-red-500">{fetchError}</p>}
+            {spotify.error && <p className="mt-1 text-xs text-red-500">{spotify.error}</p>}
           </div>
         )}
         {(() => {

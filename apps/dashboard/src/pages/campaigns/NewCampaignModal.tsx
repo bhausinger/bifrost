@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Music2 } from 'lucide-react'
 import { useCreateCampaign } from '@/hooks/useCampaigns'
+import { useSpotifyTrack } from '@/hooks/useSpotifyTrack'
 import { Modal, Input, Label, Button, SearchSelect } from '@/components/ui'
 import type { Artist } from '@/types'
 
@@ -13,18 +15,33 @@ export function NewCampaignModal({
   onClose: () => void
   artists: Artist[] | undefined
   createCampaign: ReturnType<typeof useCreateCampaign>
-}) {
+}): JSX.Element {
   const [artistId, setArtistId] = useState('')
+  const [trackUrl, setTrackUrl] = useState('')
+  const [trackName, setTrackName] = useState('')
+  const [startingStreams, setStartingStreams] = useState('')
 
-  function handleClose() {
+  const spotify = useSpotifyTrack(trackUrl)
+
+  // Auto-fill fields when Spotify data arrives
+  if (spotify.data && !trackName && spotify.data.title !== 'Unknown') {
+    setTrackName(spotify.data.title)
+  }
+  if (spotify.data?.playCount != null && !startingStreams) {
+    setStartingStreams(String(spotify.data.playCount))
+  }
+
+  function handleClose(): void {
     onClose()
     setArtistId('')
+    setTrackUrl('')
+    setTrackName('')
+    setStartingStreams('')
   }
 
   return (
     <Modal open={open} onClose={handleClose} title="New Campaign">
       <form
-        id="new-campaign-form"
         onSubmit={async (e) => {
           e.preventDefault()
           if (!artistId) return
@@ -33,15 +50,13 @@ export function NewCampaignModal({
           await createCampaign.mutateAsync({
             artist_id: artistId,
             name: (form.get('name') as string) || `${artist?.name ?? 'Unknown'} Campaign`,
-            track_name: (form.get('track_name') as string) || undefined,
-            track_spotify_url: (form.get('track_spotify_url') as string) || undefined,
+            track_name: trackName || undefined,
+            track_spotify_url: trackUrl || undefined,
             total_budget: form.get('total_budget') ? Number(form.get('total_budget')) : undefined,
             target_streams: form.get('target_streams')
               ? Number(form.get('target_streams'))
               : undefined,
-            starting_streams: form.get('starting_streams')
-              ? Number(form.get('starting_streams'))
-              : undefined,
+            starting_streams: startingStreams ? Number(startingStreams) : undefined,
           })
           handleClose()
         }}
@@ -66,20 +81,61 @@ export function NewCampaignModal({
           <Input id="nc-name" name="name" placeholder="Auto-generated if left blank" />
         </div>
         <div>
-          <Label htmlFor="nc-track" optional>
-            Track Name
-          </Label>
-          <Input id="nc-track" name="track_name" placeholder="e.g. Midnight Drive" />
-        </div>
-        <div>
           <Label htmlFor="nc-url" optional>
             Track Spotify URL
           </Label>
           <Input
             id="nc-url"
-            name="track_spotify_url"
-            type="url"
+            value={trackUrl}
+            onChange={(e) => {
+              setTrackUrl(e.target.value)
+              setTrackName('')
+              setStartingStreams('')
+            }}
             placeholder="https://open.spotify.com/track/..."
+          />
+          {spotify.isLoading && (
+            <p className="mt-1 text-xs text-teal-600">Fetching track data from Spotify...</p>
+          )}
+          {spotify.error && <p className="mt-1 text-xs text-red-500">{spotify.error}</p>}
+        </div>
+
+        {spotify.data && (
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            {spotify.data.artUrl ? (
+              <img
+                src={spotify.data.artUrl}
+                alt=""
+                className="h-12 w-12 rounded object-cover shadow-sm"
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200">
+                <Music2 className="h-5 w-5 text-gray-400" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-900">{spotify.data.title}</p>
+              <p className="truncate text-xs text-gray-500">
+                {spotify.data.artist} · {spotify.data.album}
+              </p>
+              {spotify.data.playCount != null && (
+                <p className="text-xs text-gray-400">
+                  {spotify.data.playCount.toLocaleString()} plays
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <Label htmlFor="nc-track" optional>
+            Track Name
+          </Label>
+          <Input
+            id="nc-track"
+            value={trackName}
+            onChange={(e) => setTrackName(e.target.value)}
+            placeholder={spotify.isLoading ? 'Auto-filling...' : 'e.g. Midnight Drive'}
           />
         </div>
         <div>
@@ -96,13 +152,14 @@ export function NewCampaignModal({
         </div>
         <div>
           <Label htmlFor="nc-starting" optional>
-            Current Play Count
+            Starting Play Count
           </Label>
           <Input
             id="nc-starting"
-            name="starting_streams"
             type="number"
-            placeholder="Starting stream count on Spotify"
+            value={startingStreams}
+            onChange={(e) => setStartingStreams(e.target.value)}
+            placeholder={spotify.isLoading ? 'Auto-filling...' : 'Current stream count'}
           />
         </div>
         <div className="flex gap-3 pt-3">
