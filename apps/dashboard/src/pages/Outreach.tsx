@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Mail, Plus } from 'lucide-react'
 import { useEmailTemplates, useCreateEmailTemplate } from '@/hooks/useEmailTemplates'
-import { supabase } from '@/lib/supabase'
+import { useEmailRecords } from '@/hooks/useEmailRecords'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Select, Modal, Button, Input, Textarea, Label } from '@/components/ui'
-import { useQuery } from '@tanstack/react-query'
 
 const TEMPLATE_CATEGORIES = [
   { value: 'initial_outreach', label: 'Initial Outreach' },
@@ -26,18 +25,7 @@ export function Outreach() {
   const [newBody, setNewBody] = useState('')
   const [newCategory, setNewCategory] = useState('initial_outreach')
 
-  const { data: emailRecords, error: emailError } = useQuery({
-    queryKey: ['email-records'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('email_records')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50)
-      if (error) throw error
-      return data
-    },
-  })
+  const { data: emailRecords, error: emailError } = useEmailRecords()
 
   const totalSent = emailRecords?.length ?? 0
   const opened = emailRecords?.filter((e) => e.opened_at).length ?? 0

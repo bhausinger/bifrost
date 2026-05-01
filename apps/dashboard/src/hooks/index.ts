@@ -17,5 +17,18 @@ export {
   useCreatePipelineEntry,
   useUpdatePipelineEntry,
 } from './usePipeline'
-export { useCampaignPlacements } from './usePlacements'
+export {
+  useCurators,
+  useCreateCurator,
+  useCuratorOutreach,
+  useCreateOutreach,
+  useUpdateOutreach,
+  useDeleteOutreach,
+} from './useCurators'
+export { useEmailRecords } from './useEmailRecords'
+export { useGmail } from './useGmail'
+export { useCampaignPlacements, useUpdatePlacement } from './usePlacements'
+export { useScraperHealth } from './useScraperHealth'
+export { useSpotifyTrack } from './useSpotifyTrack'
 export { useTeamUsers, getOwnerName } from './useTeamUsers'
+export { useTransactions, useCreateTransaction } from './useTransactions'

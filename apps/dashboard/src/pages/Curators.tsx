@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import { Music, Plus, Send, Users } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { Database } from '@/types/supabase'
+import {
+  useCurators,
+  useCreateCurator,
+  useCuratorOutreach,
+  useCreateOutreach,
+  useUpdateOutreach,
+  useDeleteOutreach,
+} from '@/hooks/useCurators'
 import { PageHeader } from '@/components/layout/PageHeader'
 import type { CuratorOutreach } from '@/types'
 import { type CuratorWithPlaylists, type ProgressField } from '@/components/curators/curatorUtils'
@@ -15,96 +20,19 @@ import { EditOutreachModal } from '@/components/curators/EditOutreachModal'
 
 type Tab = 'directory' | 'outreach'
 
-export function Curators() {
-  const queryClient = useQueryClient()
+export function Curators(): JSX.Element {
   const [tab, setTab] = useState<Tab>('outreach')
   const [selectedCurator, setSelectedCurator] = useState<CuratorWithPlaylists | null>(null)
   const [showAddCurator, setShowAddCurator] = useState(false)
   const [showAddOutreach, setShowAddOutreach] = useState(false)
   const [editingOutreach, setEditingOutreach] = useState<CuratorOutreach | null>(null)
 
-  // ─── Data ───
-  const { data: curators, isLoading } = useQuery({
-    queryKey: ['curators'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('curators')
-        .select('*, playlists(*)')
-        .order('name')
-      if (error) throw error
-      return data as CuratorWithPlaylists[]
-    },
-  })
-
-  const { data: outreachEntries, isLoading: outreachLoading } = useQuery({
-    queryKey: ['curator-outreach'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('curator_outreach')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as CuratorOutreach[]
-    },
-  })
-
-  const addCurator = useMutation({
-    mutationFn: async (curator: {
-      name: string
-      contact_name?: string
-      email?: string
-      genres?: string[]
-      price_per_10k?: number
-      payment_method?: string
-      payment_handle?: string
-      payment_code?: string
-      notes?: string
-    }) => {
-      const { data, error } = await supabase.from('curators').insert(curator).select().single()
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['curators'] })
-      setShowAddCurator(false)
-    },
-  })
-
-  const addOutreach = useMutation({
-    mutationFn: async (entry: Database['public']['Tables']['curator_outreach']['Insert']) => {
-      const { data, error } = await supabase
-        .from('curator_outreach')
-        .insert(entry)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['curator-outreach'] })
-      setShowAddOutreach(false)
-    },
-  })
-
-  const updateOutreach = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<CuratorOutreach> & { id: string }) => {
-      const { error } = await supabase.from('curator_outreach').update(updates).eq('id', id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['curator-outreach'] })
-    },
-  })
-
-  const deleteOutreach = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('curator_outreach').delete().eq('id', id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['curator-outreach'] })
-    },
-  })
+  const { data: curators, isLoading } = useCurators()
+  const { data: outreachEntries, isLoading: outreachLoading } = useCuratorOutreach()
+  const addCurator = useCreateCurator()
+  const addOutreach = useCreateOutreach()
+  const updateOutreach = useUpdateOutreach()
+  const deleteOutreach = useDeleteOutreach()
 
   function toggleOutreachField(entry: CuratorOutreach, field: ProgressField): void {
     updateOutreach.mutate({
@@ -113,12 +41,10 @@ export function Curators() {
     })
   }
 
-  // ─── Profile View ───
   if (selectedCurator) {
     return <CuratorProfile curator={selectedCurator} onBack={() => setSelectedCurator(null)} />
   }
 
-  // ─── Main View with Tabs ───
   return (
     <div className="flex h-full flex-col">
       <PageHeader
@@ -138,7 +64,6 @@ export function Curators() {
         }
       />
 
-      {/* Tabs */}
       <div className="border-b border-gray-200 bg-white/80 px-6">
         <div className="flex gap-1">
           {[

@@ -1,68 +1,14 @@
 import { useState } from 'react'
 import { DollarSign, Plus } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
-import type { Database } from '@/types/supabase'
+import { useTransactions } from '@/hooks/useTransactions'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Button, Input, Label, Modal, Select } from '@/components/ui'
-import type { Transaction } from '@/types'
+import { Button } from '@/components/ui'
+import { AddTransactionModal } from './financials/AddTransactionModal'
 
-const CATEGORY_OPTIONS = [
-  { value: 'client_payment', label: 'Client Payment' },
-  { value: 'curator_payment', label: 'Curator Payment' },
-  { value: 'software', label: 'Software' },
-  { value: 'other', label: 'Other' },
-]
-
-const PAYMENT_METHOD_OPTIONS = [
-  { value: 'stripe', label: 'Stripe' },
-  { value: 'cashapp', label: 'CashApp' },
-  { value: 'paypal', label: 'PayPal' },
-  { value: 'venmo', label: 'Venmo' },
-  { value: 'bank', label: 'Bank Transfer' },
-]
-
-export function Financials() {
-  const queryClient = useQueryClient()
+export function Financials(): JSX.Element {
+  const { data: transactions, isLoading, error } = useTransactions()
   const [showAddTransaction, setShowAddTransaction] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all')
-
-  const {
-    data: transactions,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('transaction_date', { ascending: false })
-      if (error) throw error
-      return data as Transaction[]
-    },
-  })
-
-  const [formType, setFormType] = useState<'income' | 'expense'>('income')
-  const [formAmount, setFormAmount] = useState('')
-  const [formDescription, setFormDescription] = useState('')
-  const [formCategory, setFormCategory] = useState('client_payment')
-  const [formPaymentMethod, setFormPaymentMethod] = useState('')
-  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
-
-  const addTransaction = useMutation({
-    mutationFn: async (tx: Database['public']['Tables']['transactions']['Insert']) => {
-      const { data, error } = await supabase.from('transactions').insert(tx).select().single()
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      setShowAddTransaction(false)
-      setFormAmount('')
-      setFormDescription('')
-    },
-  })
 
   const filtered =
     typeFilter === 'all' ? transactions : transactions?.filter((t) => t.type === typeFilter)
@@ -100,7 +46,6 @@ export function Financials() {
           </div>
         )}
 
-        {/* KPIs */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           <div className="card p-5">
             <div className="text-sm font-medium text-gray-500">Amount Paid</div>
@@ -132,7 +77,6 @@ export function Financials() {
           </div>
         </div>
 
-        {/* Filter */}
         <div className="mb-4 flex gap-2">
           {(['all', 'income', 'expense'] as const).map((t) => (
             <button
@@ -149,7 +93,6 @@ export function Financials() {
           ))}
         </div>
 
-        {/* Transactions Table */}
         <div className="card overflow-hidden">
           {isLoading && <div className="p-6 text-sm text-gray-400">Loading...</div>}
           {filtered?.length === 0 && !isLoading && (
@@ -207,103 +150,10 @@ export function Financials() {
           )}
         </div>
 
-        <Modal
+        <AddTransactionModal
           open={showAddTransaction}
           onClose={() => setShowAddTransaction(false)}
-          title="Add Transaction"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setShowAddTransaction(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() =>
-                  addTransaction.mutate({
-                    type: formType,
-                    amount: parseFloat(formAmount),
-                    description: formDescription || null,
-                    category: formCategory || null,
-                    payment_method: formPaymentMethod || null,
-                    transaction_date: formDate || new Date().toISOString().split('T')[0]!,
-                  })
-                }
-                disabled={!formAmount}
-              >
-                Add {formType === 'income' ? 'Income' : 'Expense'}
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              {(['income', 'expense'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setFormType(t)
-                    setFormCategory(t === 'income' ? 'client_payment' : 'curator_payment')
-                  }}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                    formType === t
-                      ? t === 'income'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-red-500 text-white'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {t === 'income' ? 'Income' : 'Expense'}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Amount *</Label>
-                <Input
-                  type="number"
-                  value={formAmount}
-                  onChange={(e) => setFormAmount(e.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <Label>Date</Label>
-                <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <Label optional>Description</Label>
-              <Input
-                type="text"
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="What's this for?"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Category</Label>
-                <Select
-                  fullWidth
-                  value={formCategory}
-                  onChange={setFormCategory}
-                  options={CATEGORY_OPTIONS}
-                />
-              </div>
-              <div>
-                <Label optional>Payment Method</Label>
-                <Select
-                  fullWidth
-                  value={formPaymentMethod}
-                  onChange={setFormPaymentMethod}
-                  options={PAYMENT_METHOD_OPTIONS}
-                  placeholder="Select..."
-                />
-              </div>
-            </div>
-          </div>
-        </Modal>
+        />
       </div>
     </div>
   )
