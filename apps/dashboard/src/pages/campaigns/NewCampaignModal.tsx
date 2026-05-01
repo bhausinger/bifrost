@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCreateCampaign } from '@/hooks/useCampaigns'
-import { Modal, Input, Label, Button, Select } from '@/components/ui'
+import { Modal, Input, Label, Button, SearchSelect } from '@/components/ui'
 import type { Artist } from '@/types'
 
 export function NewCampaignModal({
@@ -49,12 +49,12 @@ export function NewCampaignModal({
       >
         <div>
           <Label htmlFor="nc-artist">Artist <span className="text-red-500 normal-case">*</span></Label>
-          <Select
+          <SearchSelect
             fullWidth
             value={artistId}
             onChange={setArtistId}
             options={(artists ?? []).map((a) => ({ value: a.id, label: a.name }))}
-            placeholder="Select artist..."
+            placeholder="Search artists..."
           />
         </div>
         <div>
