@@ -112,7 +112,7 @@ type SpotifyPlaycountResult = {
 export type { SpotifyPlaycountResult }
 
 const SPOTIFY_TOKEN_PATTERN = /"accessToken":"([^"]+)"/
-const ALBUM_TRACKS_HASH = '3ea563e1d68f486d8df30f69de9dcedae74c77e684b889ba7408c589d30f7f2e'
+const GET_TRACK_HASH = '612585ae06ba435ad26369870deaae23b5c8800a256cd8a57e08eddc25a37294'
 
 function extractSpotifyTrackId(url: string): string | null {
   const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/)
@@ -120,13 +120,10 @@ function extractSpotifyTrackId(url: string): string | null {
 }
 
 /**
- * Fetch Spotify play count entirely client-side via Vercel proxy rewrites.
- *
- * Spotify blocks cloud IPs (Railway, AWS, etc.) but not Vercel's edge.
- * All three API calls go through Vercel rewrites:
- *   /api/spotify-embed/:id  → open.spotify.com/embed/track/:id  (get token)
- *   /api/spotify-api/:path  → api.spotify.com/:path              (get album ID)
- *   /api/spotify-partner/*  → api-partner.spotify.com/*           (get play count)
+ * Fetch Spotify play count client-side via Vercel proxy rewrites.
+ * Two calls only — no Spotify API key needed:
+ *   1. /api/spotify-embed/:id → anonymous token from embed page
+ *   2. /api/spotify-partner/* → getTrack query returns play count directly
  */
 export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycountResult> {
   const trackId = extractSpotifyTrackId(url)
@@ -140,26 +137,13 @@ export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycou
   if (!tokenMatch) throw new Error('Could not extract Spotify token')
   const token = tokenMatch[1]
 
-  // Step 2: Get track metadata + album ID via Vercel proxy
-  const trackRes = await fetch(`/api/spotify-api/v1/tracks/${trackId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!trackRes.ok) throw new Error(`Spotify API failed (${trackRes.status})`)
-  const trackInfo = await trackRes.json()
-  const albumId = trackInfo.album?.id as string | undefined
-  const trackName = (trackInfo.name as string) ?? 'Unknown'
-  const artistName = (trackInfo.artists?.[0]?.name as string) ?? 'Unknown'
-  const albumName = (trackInfo.album?.name as string) ?? 'Unknown'
-
-  if (!albumId) throw new Error('Could not determine album for track')
-
-  // Step 3: Get play count from Partner API via Vercel proxy
-  const variables = JSON.stringify({ uri: `spotify:album:${albumId}`, offset: 0, limit: 300 })
+  // Step 2: Get play count from Partner API via Vercel proxy
+  const variables = JSON.stringify({ uri: `spotify:track:${trackId}` })
   const extensions = JSON.stringify({
-    persistedQuery: { version: 1, sha256Hash: ALBUM_TRACKS_HASH },
+    persistedQuery: { version: 1, sha256Hash: GET_TRACK_HASH },
   })
   const partnerRes = await fetch(
-    `/api/spotify-partner/pathfinder/v1/query?operationName=queryAlbumTracks&variables=${encodeURIComponent(variables)}&extensions=${encodeURIComponent(extensions)}`,
+    `/api/spotify-partner/pathfinder/v1/query?operationName=getTrack&variables=${encodeURIComponent(variables)}&extensions=${encodeURIComponent(extensions)}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -174,34 +158,16 @@ export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycou
     throw new Error(partnerData.errors[0]?.message ?? 'Partner API error')
   }
 
-  // Parse response — Spotify uses different response shapes
-  const albumData = partnerData.data ?? {}
-  const tracksContainer = albumData.albumUnion?.tracks ?? albumData.album?.tracks ?? {}
-  const items = (tracksContainer.items ?? []) as Array<{
-    track: { uri: string; playcount: string; name: string }
-  }>
-
-  for (const item of items) {
-    if (item.track?.uri === `spotify:track:${trackId}`) {
-      return {
-        trackId,
-        title: trackName,
-        artist: artistName,
-        album: albumName,
-        playCount: parseInt(item.track.playcount ?? '0', 10),
-        source: 'spotify_partner_api',
-      }
-    }
-  }
+  const track = partnerData.data?.trackUnion ?? {}
+  const albumInfo = track.albumOfTrack ?? {}
 
   return {
     trackId,
-    title: trackName,
-    artist: artistName,
-    album: albumName,
-    playCount: null,
-    source: 'spotify_standard_api',
-    note: 'Play count not found in album response',
+    title: (track.name as string) ?? 'Unknown',
+    artist: albumInfo.artists?.items?.[0]?.profile?.name ?? 'Unknown',
+    album: albumInfo.name ?? 'Unknown',
+    playCount: track.playcount != null ? parseInt(String(track.playcount), 10) : null,
+    source: 'spotify_partner_api',
   }
 }
 

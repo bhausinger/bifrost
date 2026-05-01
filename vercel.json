@@ -26,10 +26,6 @@
       "destination": "https://open.spotify.com/embed/track/:trackId"
     },
     {
-      "source": "/api/spotify-api/:path*",
-      "destination": "https://api.spotify.com/:path*"
-    },
-    {
       "source": "/api/spotify-partner/:path*",
       "destination": "https://api-partner.spotify.com/:path*"
     },
