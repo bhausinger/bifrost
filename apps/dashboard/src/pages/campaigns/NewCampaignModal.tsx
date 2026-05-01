@@ -40,6 +40,8 @@ export function NewCampaignModal({
             track_name: (form.get('track_name') as string) || undefined,
             track_spotify_url: (form.get('track_spotify_url') as string) || undefined,
             total_budget: form.get('total_budget') ? Number(form.get('total_budget')) : undefined,
+            target_streams: form.get('target_streams') ? Number(form.get('target_streams')) : undefined,
+            starting_streams: form.get('starting_streams') ? Number(form.get('starting_streams')) : undefined,
           })
           handleClose()
         }}
@@ -70,6 +72,14 @@ export function NewCampaignModal({
         <div>
           <Label htmlFor="nc-budget" optional>Amount Paid</Label>
           <Input id="nc-budget" name="total_budget" type="number" step="0.01" placeholder="0.00" />
+        </div>
+        <div>
+          <Label htmlFor="nc-target" optional>Target Streams</Label>
+          <Input id="nc-target" name="target_streams" type="number" placeholder="e.g. 10000" />
+        </div>
+        <div>
+          <Label htmlFor="nc-starting" optional>Current Play Count</Label>
+          <Input id="nc-starting" name="starting_streams" type="number" placeholder="Starting stream count on Spotify" />
         </div>
         <div className="flex gap-3 pt-3">
           <Button type="button" variant="secondary" onClick={handleClose} className="flex-1">

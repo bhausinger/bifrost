@@ -140,6 +140,7 @@ export interface Campaign {
   total_budget: number | null
   total_cost: number | null
   target_streams: number | null
+  starting_streams: number
   actual_streams: number
   start_date: string | null
   end_date: string | null

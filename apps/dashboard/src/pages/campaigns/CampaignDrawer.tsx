@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { ExternalLink, Music2 } from 'lucide-react'
 import { useCampaignPlacements } from '@/hooks/usePlacements'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { DetailCard, DetailCardHeader, Textarea, Select } from '@/components/ui'
+import { DetailCard, DetailCardHeader, Textarea, Select, Input, Label } from '@/components/ui'
 import type { CampaignWithArtist } from './campaignConstants'
-import { getPacingLabel, PLACEMENT_STATUS_ICON, getAvatarGradient } from './campaignConstants'
+import { PLACEMENT_STATUS_ICON, getAvatarGradient } from './campaignConstants'
 
 function CampaignCardContent({
   selected,
@@ -49,7 +49,6 @@ function CampaignCardContent({
   const streamProgress = selected.target_streams && selected.target_streams > 0
     ? Math.min(100, Math.round((selected.actual_streams / selected.target_streams) * 100))
     : null
-  const pacing = getPacingLabel(selected)
 
   return (
     <div className="space-y-6">
@@ -123,37 +122,62 @@ function CampaignCardContent({
       </div>
 
       <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Performance</h3>
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <div className="flex items-baseline justify-between">
-            <p className="font-mono text-lg font-bold text-gray-900">
-              {selected.actual_streams.toLocaleString()}
-            </p>
-            {selected.target_streams != null && selected.target_streams > 0 && (
-              <p className="text-sm text-gray-400">
-                / {selected.target_streams.toLocaleString()} target
-              </p>
-            )}
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Streams</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <Label htmlFor="starting-streams">Starting</Label>
+            <Input
+              id="starting-streams"
+              type="number"
+              value={selected.starting_streams ?? 0}
+              onChange={(e) => updateCampaign.mutate({ id: selected.id, starting_streams: Number(e.target.value) })}
+              className="font-mono"
+            />
           </div>
-          {streamProgress !== null && (
-            <>
-              <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    streamProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'
-                  }`}
-                  style={{ width: `${streamProgress}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-400">{streamProgress}%</span>
-                {pacing && (
-                  <span className={`text-xs font-medium ${pacing.color}`}>{pacing.label}</span>
-                )}
-              </div>
-            </>
-          )}
+          <div>
+            <Label htmlFor="current-streams">Current</Label>
+            <Input
+              id="current-streams"
+              type="number"
+              value={selected.actual_streams}
+              onChange={(e) => updateCampaign.mutate({ id: selected.id, actual_streams: Number(e.target.value) })}
+              className="font-mono"
+            />
+          </div>
+          <div>
+            <Label htmlFor="target-streams">Target</Label>
+            <Input
+              id="target-streams"
+              type="number"
+              value={selected.target_streams ?? ''}
+              onChange={(e) => updateCampaign.mutate({ id: selected.id, target_streams: e.target.value ? Number(e.target.value) : null })}
+              placeholder="—"
+              className="font-mono"
+            />
+          </div>
         </div>
+        {(() => {
+          const gained = selected.actual_streams - (selected.starting_streams ?? 0)
+          return (
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-400">Streams gained</span>
+                <span className={`font-mono text-sm font-bold ${gained > 0 ? 'text-emerald-600' : 'text-gray-900'}`}>
+                  {gained.toLocaleString()}
+                </span>
+              </div>
+              {streamProgress !== null && (
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  streamProgress >= 100 ? 'bg-emerald-50 text-emerald-600' :
+                  streamProgress >= 50 ? 'bg-amber-50 text-amber-600' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  {streamProgress}% of target
+                </span>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       <div>
