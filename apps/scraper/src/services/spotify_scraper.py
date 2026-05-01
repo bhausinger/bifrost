@@ -11,6 +11,7 @@ Flow:
 No API keys needed — uses anonymous tokens from Spotify's embed pages.
 """
 import re
+import asyncio
 import logging
 from typing import Optional
 
@@ -24,6 +25,7 @@ PARTNER_URL = "https://api-partner.spotify.com/pathfinder/v1/query"
 
 TOKEN_PATTERN = re.compile(r'"accessToken":"([^"]+)"')
 TRACK_ID_PATTERN = re.compile(r"spotify\.com/track/([a-zA-Z0-9]+)")
+NEXT_DATA_PATTERN = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>')
 
 # Spotify Partner API persisted query hashes — these may need updating
 # if Spotify deploys a new web client version.
@@ -67,8 +69,13 @@ class SpotifyClient:
         if self._client:
             await self._client.aclose()
 
-    async def _get_token(self, track_id: str) -> str:
-        """Fetch anonymous access token from Spotify's embed page."""
+    async def _get_token_and_metadata(self, track_id: str) -> dict:
+        """Fetch anonymous token + track metadata from Spotify's embed page.
+
+        Returns dict with 'token' and optionally 'entity' (track metadata from __NEXT_DATA__).
+        """
+        import json as _json
+
         for attempt in range(MAX_TOKEN_RETRIES):
             try:
                 resp = await self._client.get(
@@ -80,25 +87,50 @@ class SpotifyClient:
                         "Embed page returned %d (attempt %d)", resp.status_code, attempt + 1
                     )
                     continue
-                match = TOKEN_PATTERN.search(resp.text)
-                if match:
-                    self._token = match.group(1)
-                    return self._token
-                logger.warning("No token in embed page (attempt %d)", attempt + 1)
+                token_match = TOKEN_PATTERN.search(resp.text)
+                if not token_match:
+                    logger.warning("No token in embed page (attempt %d)", attempt + 1)
+                    continue
+                self._token = token_match.group(1)
+                result: dict = {"token": self._token}
+                # Try to extract entity metadata from __NEXT_DATA__
+                data_match = NEXT_DATA_PATTERN.search(resp.text)
+                if data_match:
+                    try:
+                        next_data = _json.loads(data_match.group(1))
+                        entity = (
+                            next_data.get("props", {})
+                            .get("pageProps", {})
+                            .get("state", {})
+                            .get("data", {})
+                            .get("entity", {})
+                        )
+                        if entity:
+                            result["entity"] = entity
+                    except _json.JSONDecodeError:
+                        pass
+                return result
             except httpx.HTTPError as e:
                 logger.warning("Embed page error: %s (attempt %d)", e, attempt + 1)
         raise RuntimeError("Failed to obtain Spotify access token")
 
     async def _api_get(self, path: str) -> dict:
-        """Call standard Spotify API."""
-        resp = await self._client.get(
-            f"{API_URL}{path}",
-            headers={"Authorization": f"Bearer {self._token}"},
-        )
-        if resp.status_code == 429:
-            raise RuntimeError("Spotify rate limited — try again later")
-        resp.raise_for_status()
-        return resp.json()
+        """Call standard Spotify API with 429 retry."""
+        for attempt in range(3):
+            resp = await self._client.get(
+                f"{API_URL}{path}",
+                headers={"Authorization": f"Bearer {self._token}"},
+            )
+            if resp.status_code == 429:
+                retry_after = int(resp.headers.get("Retry-After", 5))
+                if attempt < 2:
+                    logger.warning("Rate limited, waiting %ds", retry_after)
+                    await asyncio.sleep(retry_after)
+                    continue
+                raise RuntimeError("Spotify rate limited — try again later")
+            resp.raise_for_status()
+            return resp.json()
+        raise RuntimeError("Spotify API failed after retries")
 
     async def _partner_query(
         self, operation: str, variables: dict, sha256_hash: str
@@ -152,48 +184,57 @@ class SpotifyClient:
         if not track_id:
             raise ValueError(f"Invalid Spotify track URL: {spotify_url}")
 
-        # Step 1: Get anonymous token
-        await self._get_token(track_id)
+        # Step 1: Get anonymous token + metadata from embed page
+        embed_data = await self._get_token_and_metadata(track_id)
+        entity = embed_data.get("entity", {})
 
-        # Step 2: Get track info from standard API (for album ID)
-        track_info = await self._api_get(f"/tracks/{track_id}")
-        album_id = track_info.get("album", {}).get("id")
-        track_name = track_info.get("name", "Unknown")
-        artist_name = (track_info.get("artists") or [{}])[0].get("name", "Unknown")
-        album_name = track_info.get("album", {}).get("name", "Unknown")
+        # Extract basic info from embed page (avoids standard API call)
+        track_name = entity.get("name", "Unknown")
+        artists = entity.get("artists", [])
+        artist_name = artists[0].get("name", "Unknown") if artists else "Unknown"
 
-        if not album_id:
-            raise RuntimeError("Could not determine album for track")
+        # Step 2: Get album ID — try standard API first
+        album_id = None
+        album_name = "Unknown"
+        try:
+            track_info = await self._api_get(f"/tracks/{track_id}")
+            album_id = track_info.get("album", {}).get("id")
+            album_name = track_info.get("album", {}).get("name", "Unknown")
+            # Use more complete metadata from API if available
+            track_name = track_info.get("name", track_name)
+            artist_name = (track_info.get("artists") or [{}])[0].get("name", artist_name)
+        except RuntimeError as e:
+            logger.warning("Standard API failed: %s — skipping album lookup", e)
 
         # Step 3: Query Partner API for album tracks (includes play counts)
-        try:
-            data = await self._partner_query(
-                operation="queryAlbumTracks",
-                variables={
-                    "uri": f"spotify:album:{album_id}",
-                    "offset": 0,
-                    "limit": 300,
-                },
-                sha256_hash=ALBUM_TRACKS_HASH,
-            )
-            # Navigate response to find our track
-            album_data = data.get("data", {}).get("albumUnion", {})
-            tracks_data = album_data.get("tracks", {}).get("items", [])
-            for item in tracks_data:
-                track = item.get("track", {})
-                uri = track.get("uri", "")
-                if uri == f"spotify:track:{track_id}":
-                    playcount_str = track.get("playcount", "0")
-                    return {
-                        "trackId": track_id,
-                        "title": track_name,
-                        "artist": artist_name,
-                        "album": album_name,
-                        "playCount": int(playcount_str),
-                        "source": "spotify_partner_album",
-                    }
-        except RuntimeError as e:
-            logger.warning("Album tracks query failed: %s — trying track query", e)
+        if album_id:
+            try:
+                data = await self._partner_query(
+                    operation="queryAlbumTracks",
+                    variables={
+                        "uri": f"spotify:album:{album_id}",
+                        "offset": 0,
+                        "limit": 300,
+                    },
+                    sha256_hash=ALBUM_TRACKS_HASH,
+                )
+                album_data = data.get("data", {}).get("albumUnion", {})
+                tracks_data = album_data.get("tracks", {}).get("items", [])
+                for item in tracks_data:
+                    track = item.get("track", {})
+                    uri = track.get("uri", "")
+                    if uri == f"spotify:track:{track_id}":
+                        playcount_str = track.get("playcount", "0")
+                        return {
+                            "trackId": track_id,
+                            "title": track_name,
+                            "artist": artist_name,
+                            "album": album_name,
+                            "playCount": int(playcount_str),
+                            "source": "spotify_partner_album",
+                        }
+            except RuntimeError as e:
+                logger.warning("Album tracks query failed: %s — trying track query", e)
 
         # Step 4: Fallback — try direct track query
         try:
