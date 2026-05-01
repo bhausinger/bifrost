@@ -112,43 +112,97 @@ type SpotifyPlaycountResult = {
 export type { SpotifyPlaycountResult }
 
 const SPOTIFY_TOKEN_PATTERN = /"accessToken":"([^"]+)"/
+const ALBUM_TRACKS_HASH = '3ea563e1d68f486d8df30f69de9dcedae74c77e684b889ba7408c589d30f7f2e'
 
-/** Extract track ID from a Spotify URL. */
 function extractSpotifyTrackId(url: string): string | null {
   const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/)
   return match?.[1] ?? null
 }
 
 /**
- * Fetch Spotify play count for a track URL.
+ * Fetch Spotify play count entirely client-side via Vercel proxy rewrites.
  *
- * Flow: browser fetches embed page via Vercel proxy (not blocked by Spotify)
- * → extracts anonymous token → sends token to scraper → scraper calls
- * Partner API (API endpoints don't block cloud IPs, only web pages do).
+ * Spotify blocks cloud IPs (Railway, AWS, etc.) but not Vercel's edge.
+ * All three API calls go through Vercel rewrites:
+ *   /api/spotify-embed/:id  → open.spotify.com/embed/track/:id  (get token)
+ *   /api/spotify-api/:path  → api.spotify.com/:path              (get album ID)
+ *   /api/spotify-partner/*  → api-partner.spotify.com/*           (get play count)
  */
 export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycountResult> {
   const trackId = extractSpotifyTrackId(url)
   if (!trackId) throw new Error('Invalid Spotify track URL')
 
-  // Step 1: Fetch embed page via Vercel proxy to get anonymous token
+  // Step 1: Get anonymous token from embed page via Vercel proxy
   const embedRes = await fetch(`/api/spotify-embed/${trackId}`)
-  if (!embedRes.ok) throw new Error(`Failed to load Spotify embed page (${embedRes.status})`)
+  if (!embedRes.ok) throw new Error(`Embed page failed (${embedRes.status})`)
   const embedHtml = await embedRes.text()
   const tokenMatch = embedHtml.match(SPOTIFY_TOKEN_PATTERN)
-  if (!tokenMatch) throw new Error('Could not extract Spotify token from embed page')
+  if (!tokenMatch) throw new Error('Could not extract Spotify token')
   const token = tokenMatch[1]
 
-  // Step 2: Send token + URL to scraper — it does the Partner API call
-  const res = await fetch(`${SCRAPER_URL}/spotify/playcount`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, token }),
+  // Step 2: Get track metadata + album ID via Vercel proxy
+  const trackRes = await fetch(`/api/spotify-api/v1/tracks/${trackId}`, {
+    headers: { Authorization: `Bearer ${token}` },
   })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }))
-    throw new Error(body.detail ?? `HTTP ${res.status}`)
+  if (!trackRes.ok) throw new Error(`Spotify API failed (${trackRes.status})`)
+  const trackInfo = await trackRes.json()
+  const albumId = trackInfo.album?.id as string | undefined
+  const trackName = (trackInfo.name as string) ?? 'Unknown'
+  const artistName = (trackInfo.artists?.[0]?.name as string) ?? 'Unknown'
+  const albumName = (trackInfo.album?.name as string) ?? 'Unknown'
+
+  if (!albumId) throw new Error('Could not determine album for track')
+
+  // Step 3: Get play count from Partner API via Vercel proxy
+  const variables = JSON.stringify({ uri: `spotify:album:${albumId}`, offset: 0, limit: 300 })
+  const extensions = JSON.stringify({
+    persistedQuery: { version: 1, sha256Hash: ALBUM_TRACKS_HASH },
+  })
+  const partnerRes = await fetch(
+    `/api/spotify-partner/pathfinder/v1/query?operationName=queryAlbumTracks&variables=${encodeURIComponent(variables)}&extensions=${encodeURIComponent(extensions)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'app-platform': 'WebPlayer',
+      },
+    },
+  )
+  if (!partnerRes.ok) throw new Error(`Partner API failed (${partnerRes.status})`)
+  const partnerData = await partnerRes.json()
+
+  if (partnerData.errors) {
+    throw new Error(partnerData.errors[0]?.message ?? 'Partner API error')
   }
-  return res.json()
+
+  // Parse response — Spotify uses different response shapes
+  const albumData = partnerData.data ?? {}
+  const tracksContainer = albumData.albumUnion?.tracks ?? albumData.album?.tracks ?? {}
+  const items = (tracksContainer.items ?? []) as Array<{
+    track: { uri: string; playcount: string; name: string }
+  }>
+
+  for (const item of items) {
+    if (item.track?.uri === `spotify:track:${trackId}`) {
+      return {
+        trackId,
+        title: trackName,
+        artist: artistName,
+        album: albumName,
+        playCount: parseInt(item.track.playcount ?? '0', 10),
+        source: 'spotify_partner_api',
+      }
+    }
+  }
+
+  return {
+    trackId,
+    title: trackName,
+    artist: artistName,
+    album: albumName,
+    playCount: null,
+    source: 'spotify_standard_api',
+    note: 'Play count not found in album response',
+  }
 }
 
 export async function scrapeArtist(url: string): Promise<ScrapedData> {
