@@ -253,3 +253,53 @@ class SpotifyClient:
             "source": "spotify_standard_api",
             "note": "Play count not found in album response",
         }
+
+    async def get_playcount_with_token(self, spotify_url: str) -> dict:
+        """Get play count using a pre-set token (skips embed page fetch)."""
+        track_id = extract_track_id(spotify_url)
+        if not track_id:
+            raise ValueError(f"Invalid Spotify track URL: {spotify_url}")
+        if not self._token:
+            raise RuntimeError("No token set — call _get_token or set _token first")
+
+        # Get track metadata + album ID
+        track_info = await self._api_get(f"/tracks/{track_id}")
+        album_id = track_info.get("album", {}).get("id")
+        track_name = track_info.get("name", "Unknown")
+        artist_name = (track_info.get("artists") or [{}])[0].get("name", "Unknown")
+        album_name = track_info.get("album", {}).get("name", "Unknown")
+
+        if not album_id:
+            raise RuntimeError("Could not determine album for track")
+
+        # Query Partner API for album tracks with play counts
+        data = await self._partner_query(
+            {"uri": f"spotify:album:{album_id}", "offset": 0, "limit": 300}
+        )
+
+        album_data = data.get("data", {})
+        tracks_container = (
+            album_data.get("albumUnion", {}).get("tracks", {})
+            or album_data.get("album", {}).get("tracks", {})
+        )
+        for item in tracks_container.get("items", []):
+            track = item.get("track", {})
+            if track.get("uri") == f"spotify:track:{track_id}":
+                return {
+                    "trackId": track_id,
+                    "title": track_name,
+                    "artist": artist_name,
+                    "album": album_name,
+                    "playCount": int(track.get("playcount", "0")),
+                    "source": "spotify_partner_api",
+                }
+
+        return {
+            "trackId": track_id,
+            "title": track_name,
+            "artist": artist_name,
+            "album": album_name,
+            "playCount": None,
+            "source": "spotify_standard_api",
+            "note": "Play count not found in album response",
+        }

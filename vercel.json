@@ -21,6 +21,10 @@
       "source": "/api/scraper/:path*",
       "destination": "https://campaign-scraper-production.up.railway.app/:path*"
     },
+    {
+      "source": "/api/spotify-embed/:trackId",
+      "destination": "https://open.spotify.com/embed/track/:trackId"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -111,11 +111,38 @@ type SpotifyPlaycountResult = {
 
 export type { SpotifyPlaycountResult }
 
+const SPOTIFY_TOKEN_PATTERN = /"accessToken":"([^"]+)"/
+
+/** Extract track ID from a Spotify URL. */
+function extractSpotifyTrackId(url: string): string | null {
+  const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/)
+  return match?.[1] ?? null
+}
+
+/**
+ * Fetch Spotify play count for a track URL.
+ *
+ * Flow: browser fetches embed page via Vercel proxy (not blocked by Spotify)
+ * → extracts anonymous token → sends token to scraper → scraper calls
+ * Partner API (API endpoints don't block cloud IPs, only web pages do).
+ */
 export async function fetchSpotifyPlaycount(url: string): Promise<SpotifyPlaycountResult> {
+  const trackId = extractSpotifyTrackId(url)
+  if (!trackId) throw new Error('Invalid Spotify track URL')
+
+  // Step 1: Fetch embed page via Vercel proxy to get anonymous token
+  const embedRes = await fetch(`/api/spotify-embed/${trackId}`)
+  if (!embedRes.ok) throw new Error(`Failed to load Spotify embed page (${embedRes.status})`)
+  const embedHtml = await embedRes.text()
+  const tokenMatch = embedHtml.match(SPOTIFY_TOKEN_PATTERN)
+  if (!tokenMatch) throw new Error('Could not extract Spotify token from embed page')
+  const token = tokenMatch[1]
+
+  // Step 2: Send token + URL to scraper — it does the Partner API call
   const res = await fetch(`${SCRAPER_URL}/spotify/playcount`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, token }),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }))

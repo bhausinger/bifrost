@@ -77,6 +77,7 @@ class DeepScrapeRequest(BaseModel):
 
 class SpotifyPlaycountRequest(BaseModel):
     url: str
+    token: Optional[str] = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────
@@ -184,13 +185,21 @@ async def deep_scrape_endpoint(req: DeepScrapeRequest):
 
 @app.post("/spotify/playcount")
 async def spotify_playcount(req: SpotifyPlaycountRequest):
-    """Fetch play count for a Spotify track URL."""
+    """Fetch play count for a Spotify track URL.
+
+    If `token` is provided, skips the embed page fetch (which is blocked
+    from cloud IPs) and uses the provided token directly. The dashboard
+    fetches the token client-side via a Vercel proxy rewrite.
+    """
     track_id = extract_track_id(req.url)
     if not track_id:
         raise HTTPException(status_code=400, detail="Invalid Spotify track URL")
 
     try:
         async with SpotifyClient() as client:
+            if req.token:
+                client._token = req.token
+                return await client.get_playcount_with_token(req.url)
             return await client.get_playcount(req.url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
