@@ -12,12 +12,9 @@ for file in "$@"; do
     continue
   fi
 
-  # Skip generated files and known oversized files pending refactor
+  # Skip generated files
   case "$file" in
     */types/supabase.ts|*.generated.*) continue ;;
-    */pipeline/LeadGeneratorModal.tsx) continue ;; # TODO: split — 1192 lines
-    */pipeline/ScraperModal.tsx) continue ;;        # TODO: split — 602 lines
-    */pages/Campaigns.tsx) continue ;;              # TODO: split — 720 lines
   esac
 
   line_count=$(wc -l < "$file" | tr -d ' ')

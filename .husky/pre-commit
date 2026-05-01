@@ -1,2 +1,2 @@
 pnpm exec lint-staged
-cd apps/dashboard && pnpm exec tsc --noEmit
+cd apps/dashboard && pnpm exec tsc --noEmit && pnpm test -- --run
