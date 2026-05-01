@@ -97,15 +97,10 @@ Nothing actively in progress.
 
 ## Known Issues
 
-| Issue                                   | Severity | Notes                                                                                      |
-| --------------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| Edge function tests missing             | Medium   | gmail-send (474 lines), stripe-webhook, create-invoice, gmail-auth — need Deno test runner |
-| DB function tests missing               | Medium   | move_pipeline_stage, exclude_artist, is_excluded, get_dashboard_stats — need test DB       |
-| Python scraper tests missing            | Medium   | 5 service modules, 0 tests — needs pytest setup                                            |
-| 5 files between 300-366 lines           | Low      | Artists (366), Settings (329), Pipeline (302), LeadGeneratorModal (302), Campaigns (289)   |
-| `gmail-send` edge function is 473 lines | Medium   | Supabase function, not covered by dashboard lint                                           |
-| `useBulkEmailSend` still has raw fetch  | Low      | Uses NDJSON streaming — can't easily wrap in API client                                    |
-| Chunk size warning on build             | Low      | Vite suggests code-splitting for bundle > 500kB                                            |
+| Issue                                   | Severity | Notes                                                   |
+| --------------------------------------- | -------- | ------------------------------------------------------- |
+| `gmail-send` edge function is 473 lines | Low      | Supabase function, not covered by dashboard lint        |
+| `useBulkEmailSend` still has raw fetch  | Low      | Uses NDJSON streaming — can't easily wrap in API client |
 
 ---
 
