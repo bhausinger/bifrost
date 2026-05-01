@@ -36,10 +36,14 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 
 - `lib/env.ts` — Zod validation for environment variables
 - `lib/supabase.ts` — typed with `createClient<Database>()`
-- `types/supabase.ts` — generated from Supabase schema
+- `types/supabase.ts` — freshly generated from linked Supabase project
+- `lib/api/gmail.ts` — typed client for all Gmail edge function calls
+- `lib/api/scraper.ts` — typed client for discover + scrape calls
 - `.env.example` — template for environment setup
 - Pre-commit hooks (husky + lint-staged) — tsc check and file size enforcement
 - Barrel exports in all component + hook folders
+- Vitest configured — 26 tests covering dedup, Gmail API, scraper API
+- Supabase linked (project ref: nrkibvanlykqkiycpcrv)
 
 ---
 
@@ -63,6 +67,15 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - Deleted empty `packages/shared-types/` stub
 - Extracted magic numbers to named constants in Settings.tsx
 
+### API Clients, Tests & Infrastructure (2026-04-29 – 2026-04-30)
+
+- Regenerated Supabase types from linked project
+- Created `lib/api/gmail.ts` (6 Gmail edge function wrappers) and `lib/api/scraper.ts` (discover + scrape + health check)
+- Replaced all raw `fetch()` calls with centralized API clients (except NDJSON streaming in useBulkEmailSend)
+- 49 passing tests across 5 files: dedup, Gmail API, scraper API, pipeline transitions, exclude list
+- Scraper health check on Settings page with 30s polling
+- Code-split all page routes with `React.lazy` + `Suspense` (Login stays eager)
+
 ## In Progress
 
 Nothing actively in progress.
@@ -73,11 +86,10 @@ Nothing actively in progress.
 
 | Issue | Severity | Notes |
 |---|---|---|
-| Zero test files exist | High | Vitest installed, infrastructure ready |
+| Test coverage is partial (49 tests, logic only) | Low | Core business logic covered, no component/e2e tests |
 | 5 files between 300-366 lines | Low | Artists (366), Settings (329), Pipeline (302), LeadGeneratorModal (302), Campaigns (289) |
 | `gmail-send` edge function is 473 lines | Medium | Supabase function, not covered by dashboard lint |
-| Supabase types may need regeneration | Low | `status` column was manually added; re-run `supabase gen types` when linked |
-| Raw `fetch()` calls in hooks | Low | 10 fetch calls live in dedicated hooks — acceptable pattern, could centralize later |
+| `useBulkEmailSend` still has raw fetch | Low | Uses NDJSON streaming — can't easily wrap in API client |
 | Chunk size warning on build | Low | Vite suggests code-splitting for bundle > 500kB |
 
 ---
@@ -90,7 +102,6 @@ Nothing currently blocked.
 
 ## What's Next (not started)
 
-1. Write tests for pipeline transitions, dedup logic, exclude flow, auth, financial mutations
-2. Centralize fetch calls into `lib/api/` if adding retry/error handling logic
-3. Add scraper health check / connection status to dashboard
-4. Code-split large routes with React.lazy for smaller bundles
+1. Gmail integration — bulk email templates, follow-up automation
+2. Campaign placement tracking — curator assignments, stream snapshots
+3. Client-facing purchase site (Phase 5)
