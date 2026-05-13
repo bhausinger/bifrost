@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useExcludedArtists, useRestoreArtist } from '@/hooks/useExcludeList'
-import { Input, Button } from '@/components/ui'
+import { Plus } from 'lucide-react'
+import { useExcludedArtists, useManualExclude, useRestoreArtist } from '@/hooks/useExcludeList'
+import { Input, Button, Modal, Label, Select } from '@/components/ui'
 
 const REASON_LABELS: Record<string, string> = {
   opt_out: 'Opted out',
@@ -10,11 +11,23 @@ const REASON_LABELS: Record<string, string> = {
   manual: 'Manual',
 }
 
+const REASON_OPTIONS = [
+  { value: 'opt_out', label: 'Opted out' },
+  { value: 'bounced', label: 'Email bounced' },
+  { value: 'spam_report', label: 'Spam report' },
+  { value: 'unsubscribed', label: 'Unsubscribed' },
+  { value: 'manual', label: 'Manual' },
+]
+
 export function ExcludeList() {
   const { data: excluded, isLoading, error } = useExcludedArtists()
+  const manualExclude = useManualExclude()
   const restoreArtist = useRestoreArtist()
   const [search, setSearch] = useState('')
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [addReason, setAddReason] = useState('opt_out')
 
   const filtered = excluded?.filter(
     (e) =>
@@ -32,7 +45,99 @@ export function ExcludeList() {
             {excluded?.length ?? 0} artists excluded from outreach
           </p>
         </div>
+        <Button
+          variant="primary"
+          onClick={() => setShowAdd(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add to Exclude List
+        </Button>
       </div>
+
+      <Modal
+        open={showAdd}
+        onClose={() => {
+          setShowAdd(false)
+          setAddError('')
+          setAddReason('opt_out')
+        }}
+        title="Add to Exclude List"
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setAddError('')
+            const form = new FormData(e.currentTarget)
+            const email = (form.get('email') as string).trim()
+            if (!email) return
+            try {
+              await manualExclude.mutateAsync({
+                email,
+                artistName: (form.get('artist_name') as string).trim() || undefined,
+                reason: addReason,
+                notes: (form.get('notes') as string).trim() || undefined,
+              })
+              setShowAdd(false)
+              setAddReason('opt_out')
+            } catch (err) {
+              setAddError(err instanceof Error ? err.message : 'Failed to add')
+            }
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <Label htmlFor="exc-email">
+              Email <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="exc-email"
+              name="email"
+              type="email"
+              required
+              placeholder="artist@example.com"
+            />
+          </div>
+          <div>
+            <Label htmlFor="exc-name" optional>
+              Artist Name
+            </Label>
+            <Input id="exc-name" name="artist_name" placeholder="e.g. Tame Impala" />
+          </div>
+          <div>
+            <Label htmlFor="exc-reason">Reason</Label>
+            <Select value={addReason} onChange={setAddReason} options={REASON_OPTIONS} fullWidth />
+          </div>
+          <div>
+            <Label htmlFor="exc-notes" optional>
+              Notes
+            </Label>
+            <Input id="exc-notes" name="notes" placeholder="Optional context..." />
+          </div>
+          {addError && <p className="text-sm text-red-500">{addError}</p>}
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowAdd(false)
+                setAddError('')
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={manualExclude.isPending}
+              className="flex-1"
+            >
+              {manualExclude.isPending ? 'Adding...' : 'Add to Exclude List'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="px-6 py-3">
         <Input

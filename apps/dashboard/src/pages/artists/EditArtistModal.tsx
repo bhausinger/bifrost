@@ -1,40 +1,33 @@
 import { useState } from 'react'
 import { Modal, Button, Input, Label, Select, MultiSelect } from '@/components/ui'
-import type { Agency } from '@/types'
-import type { useCreateArtist } from '@/hooks/useArtists'
-import type { useCreateAgency } from '@/hooks/useAgencies'
 import { GENRE_OPTIONS } from './genreOptions'
+import type { Artist, Agency } from '@/types'
+import type { useUpdateArtist } from '@/hooks/useArtists'
+import type { useCreateAgency } from '@/hooks/useAgencies'
 
 const CREATE_NEW_VALUE = '__create_new__'
 
-type AddArtistModalProps = {
-  open: boolean
-  onClose: () => void
-  createArtist: ReturnType<typeof useCreateArtist>
+type EditArtistModalProps = {
+  artist: Artist
   agencies: Agency[]
+  onClose: () => void
+  updateArtist: ReturnType<typeof useUpdateArtist>
   createAgency: ReturnType<typeof useCreateAgency>
 }
 
-export function AddArtistModal({
-  open,
-  onClose,
-  createArtist,
+export function EditArtistModal({
+  artist,
   agencies,
+  onClose,
+  updateArtist,
   createAgency,
-}: AddArtistModalProps): JSX.Element | null {
-  const [selectedAgencyId, setSelectedAgencyId] = useState('')
+}: EditArtistModalProps): JSX.Element {
+  const [selectedAgencyId, setSelectedAgencyId] = useState(artist.agency?.id ?? '')
   const [newAgencyName, setNewAgencyName] = useState('')
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(artist.genres ?? [])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const isCreatingNew = selectedAgencyId === CREATE_NEW_VALUE
-
-  function handleClose(): void {
-    setSelectedAgencyId('')
-    setNewAgencyName('')
-    setSelectedGenres([])
-    onClose()
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
@@ -51,55 +44,54 @@ export function AddArtistModal({
       }
 
       const form = new FormData(e.currentTarget)
-      await createArtist.mutateAsync({
-        name: form.get('name') as string,
-        email: (form.get('email') as string) || null,
-        spotify_url: (form.get('spotify_url') as string) || null,
+      await updateArtist.mutateAsync({
+        id: artist.id,
+        name: (form.get('name') as string).trim(),
+        email: (form.get('email') as string).trim() || null,
+        spotify_url: (form.get('spotify_url') as string).trim() || null,
         genres: selectedGenres,
-        source: 'manual',
-        status: 'client',
         agency_id: agencyId,
       })
-      handleClose()
+      onClose()
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add Artist">
+    <Modal open onClose={onClose} title="Edit Artist">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <Label htmlFor="add-name">
+          <Label htmlFor="edit-name">
             Artist Name <span className="text-red-500 normal-case">*</span>
           </Label>
-          <Input id="add-name" name="name" placeholder="e.g. Tame Impala" required />
+          <Input id="edit-name" name="name" defaultValue={artist.name} required />
         </div>
         <div>
-          <Label htmlFor="add-email" optional>
+          <Label htmlFor="edit-email" optional>
             Email
           </Label>
-          <Input id="add-email" name="email" type="email" placeholder="artist@example.com" />
+          <Input id="edit-email" name="email" type="email" defaultValue={artist.email ?? ''} />
         </div>
         <div>
-          <Label htmlFor="add-spotify" optional>
+          <Label htmlFor="edit-spotify" optional>
             Spotify URL
           </Label>
           <Input
-            id="add-spotify"
+            id="edit-spotify"
             name="spotify_url"
             type="url"
             pattern="https://open\.spotify\.com/artist/.*"
-            title="Must be a Spotify artist URL (https://open.spotify.com/artist/...)"
-            placeholder="https://open.spotify.com/artist/..."
+            title="Must be a Spotify artist URL"
+            defaultValue={artist.spotify_url ?? ''}
           />
         </div>
         <div>
-          <Label htmlFor="add-genres" optional>
+          <Label htmlFor="edit-genres" optional>
             Genres
           </Label>
           <MultiSelect
-            id="add-genres"
+            id="edit-genres"
             values={selectedGenres}
             onChange={setSelectedGenres}
             options={[...GENRE_OPTIONS]}
@@ -107,9 +99,8 @@ export function AddArtistModal({
             fullWidth
           />
         </div>
-
         <div>
-          <Label htmlFor="add-agency" optional>
+          <Label htmlFor="edit-agency" optional>
             Agency
           </Label>
           <Select
@@ -136,13 +127,12 @@ export function AddArtistModal({
             />
           )}
         </div>
-
         <div className="flex gap-3 pt-3">
-          <Button type="button" variant="secondary" onClick={handleClose} className="flex-1">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={isSubmitting} className="flex-1">
-            {isSubmitting ? 'Adding...' : 'Add Artist'}
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </form>

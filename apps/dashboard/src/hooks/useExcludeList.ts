@@ -86,6 +86,44 @@ export function useExcludeArtist() {
   })
 }
 
+export function useManualExclude() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      email,
+      artistName,
+      reason = 'manual',
+      notes,
+    }: {
+      email: string
+      artistName?: string
+      reason?: string
+      notes?: string
+    }) => {
+      const { data: existing } = await supabase
+        .from('excluded_artists')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (existing) {
+        throw new Error('This email is already on the exclude list')
+      }
+
+      const { error } = await supabase.from('excluded_artists').insert({
+        email,
+        artist_name: artistName || null,
+        reason,
+        notes: notes ?? null,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['excluded'] })
+    },
+  })
+}
+
 export function useRestoreArtist() {
   const queryClient = useQueryClient()
   return useMutation({

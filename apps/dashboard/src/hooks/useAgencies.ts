@@ -22,10 +22,19 @@ export function useCreateAgency() {
       contact_name?: string
       notes?: string
     }) => {
+      // Check for existing agency with same name (case-insensitive)
+      const { data: existing } = await supabase
+        .from('agencies')
+        .select('*')
+        .ilike('name', agency.name.trim())
+        .maybeSingle()
+
+      if (existing) return existing as Agency
+
       const { data, error } = await supabase
         .from('agencies')
         .insert({
-          name: agency.name,
+          name: agency.name.trim(),
           email: agency.email ?? null,
           contact_name: agency.contact_name ?? null,
           notes: agency.notes ?? null,
@@ -50,6 +59,22 @@ export function useUpdateAgency() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencies'] })
+    },
+  })
+}
+
+export function useDeleteAgency() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Unlink artists first, then delete
+      await supabase.from('artists').update({ agency_id: null }).eq('agency_id', id)
+      const { error } = await supabase.from('agencies').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencies'] })
+      queryClient.invalidateQueries({ queryKey: ['artists'] })
     },
   })
 }

@@ -1,4 +1,4 @@
-import { X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink, Pencil } from 'lucide-react'
 import type { Artist } from '@/types'
 
 const AVATAR_GRADIENTS = [
@@ -27,11 +27,13 @@ export function ArtistTable({
   artists,
   isExcluded,
   onExclude,
+  onEdit,
   onAgencyClick,
 }: {
   artists: Artist[]
   isExcluded: (a: Artist) => boolean
   onExclude: (a: Artist) => void
+  onEdit: (a: Artist) => void
   onAgencyClick: (id: string) => void
 }): JSX.Element {
   return (
@@ -70,6 +72,7 @@ export function ArtistTable({
               artist={artist}
               excluded={isExcluded(artist)}
               onExclude={() => onExclude(artist)}
+              onEdit={() => onEdit(artist)}
               onAgencyClick={onAgencyClick}
             />
           ))}
@@ -83,11 +86,13 @@ function ArtistRow({
   artist,
   excluded,
   onExclude,
+  onEdit,
   onAgencyClick,
 }: {
   artist: Artist
   excluded: boolean
   onExclude: () => void
+  onEdit: () => void
   onAgencyClick: (id: string) => void
 }): JSX.Element {
   const gradient = getGradient(artist.name)
@@ -175,6 +180,13 @@ function ArtistRow({
       </td>
       <td className="px-5 py-3 text-right">
         <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={onEdit}
+            className="rounded p-1 text-gray-400 opacity-0 transition-all hover:bg-gray-100 hover:text-teal-600 group-hover:opacity-100"
+            title="Edit artist"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
           {artist.soundcloud_url && (
             <a
               href={artist.soundcloud_url}
