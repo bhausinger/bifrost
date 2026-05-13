@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Input, Select, Label, Modal, Button } from '@/components/ui'
+import { GENRE_OPTIONS } from '@/pages/artists/genreOptions'
 import type { Database } from '@/types/supabase'
 
 type OutreachInsert = Database['public']['Tables']['curator_outreach']['Insert']
@@ -84,11 +85,15 @@ export function AddOutreachModal({ open, onClose, onSubmit, isSubmitting }: AddO
           </div>
           <div>
             <Label optional>Genre</Label>
-            <Input
-              type="text"
+            <Select
               value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              placeholder="e.g., EDM, Bass, Rap"
+              onChange={setGenre}
+              fullWidth
+              placeholder="Select genre..."
+              options={[
+                { value: '', label: 'None' },
+                ...GENRE_OPTIONS.map((g) => ({ value: g.value, label: g.label })),
+              ]}
             />
           </div>
         </div>

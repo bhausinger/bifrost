@@ -1,6 +1,6 @@
 # Context — Campaign Manager
 
-**Last updated:** 2026-04-29
+**Last updated:** 2026-05-12
 **Status:** Functional, in production use
 
 ---
@@ -25,12 +25,16 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - **Pipeline kanban** — drag-and-drop, stage transitions, activity logging
 - **Lead discovery** — SoundCloud scraper with genre filtering, dedup
 - **Email scraping** — extracts from SoundCloud bios, linktree, subpages
-- **Campaigns** — CRUD, placements, stream tracking
+- **Campaigns** — CRUD, placements, stream tracking, Spotify auto-fill
 - **Financials** — income/expense tracking, charts
 - **Outreach** — curator outreach tracking
 - **Settings** — blocked terms management, Gmail OAuth
-- **Exclude list** — opt-out management
-- **Auth** — Supabase auth (dev bypass removed)
+- **Exclude list** — view, restore, and manually add entries
+- **Auth** — Supabase auth
+- **Artists page** — tabbed (Artists + Agencies), edit artist modal, genre multi-select, source/agency filter dropdowns
+- **Agency management** — tab in Artists page with edit/delete, dedup on create
+- **Spotify integration** — play count via Vercel proxy, auto-fill track data from URL
+- **Placement stream attribution** — snapshots at placement and removal
 
 ### Infrastructure
 
@@ -39,76 +43,47 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - `types/supabase.ts` — freshly generated from linked Supabase project
 - `lib/api/gmail.ts` — typed client for all Gmail edge function calls
 - `lib/api/scraper.ts` — typed client for discover + scrape calls
-- `.env.example` — template for environment setup
-- Pre-commit hooks (husky + lint-staged) — prettier, tsc, file size, vitest
-- ESLint flat config — no-any, eqeqeq, no-console, no-duplicate-imports
-- Prettier — semi: false, singleQuote, printWidth: 100
+- Pre-commit hooks (husky + lint-staged)
+- ESLint flat config, Prettier
 - GitHub Actions CI — typecheck + test + build on every push/PR
-- Security headers on Vercel (X-Frame-Options, CSP, Referrer-Policy)
-- CORS locked to `https://bifrost-eta.vercel.app` on all edge functions
-- Barrel exports in all component + hook folders
-- Vitest — 97 unit tests across 11 files (all hooks, API clients, dedup, pure functions)
-- Playwright — 11 E2E tests (smoke, auth, navigation)
-- Deno tests — 36 edge function tests across 4 files
-- SQL tests — 19 DB function assertions across 4 files
-- pytest — 39 scraper tests across 3 files
+- Security headers on Vercel, CORS locked to production domain
+- 108 Vitest unit tests, 11 Playwright E2E, 36 Deno, 19 SQL, 39 pytest
 - Supabase linked (project ref: nrkibvanlykqkiycpcrv)
-- .nvmrc pinning Node 22
 
 ---
 
-## Recently Completed
+## Recently Completed (2026-05-12)
 
-### Codebase Audit & Cleanup (2026-04-29)
+### Bug Fixes
 
-**Phase 1 — Split oversized files:**
+- **Campaign status: removed stale 'placing' references** — migration 00009 renamed `placing` → `pitching` but code still referenced old value. Fixed in: useCampaigns hook, CampaignDrawer, campaignConstants, tests.
+- **Agency duplicate creation** — "Create New" in Add Artist modal created duplicates. Added case-insensitive name dedup to `useCreateAgency`.
 
-- `LeadGeneratorModal.tsx` (1,189 lines) → 7 files: types, actions, hook, config step, results step, review step, modal shell
-- `Campaigns.tsx` (677 lines) → 4 files: constants, drawer, new campaign modal, main page
-- `ScraperModal.tsx` (604 lines) → 4 files: types, hook, results table, modal shell
+### UX Improvements
 
-**Phase 3 — Type safety:**
+- **Genre multi-select** — replaced free text input with searchable multi-select (`MultiSelect` component) with 45 predefined genre options covering the playlist placement space.
+- **Artist editing** — added Edit button on artist table rows + `EditArtistModal` with genre multi-select, agency picker.
+- **Source/agency filters** — replaced filter pill buttons with Select dropdowns (cleaner UI).
+- **Artists/Agencies tabs** — Artists page now has tabs for Artists and Agencies views.
+- **Agency management tab** — table view with name, contact, email, artist count, edit/delete actions.
+- **Exclude list manual add** — "Add to Exclude List" button + modal on the Exclude List page.
 
-- Wired `createClient<Database>()` for type-safe Supabase operations
-- Removed all `as any` casts (3 instances eliminated)
-- Fixed type mismatches in Curators, Outreach, Artists, Pipeline, Financials, EmailTemplates
-- Aligned manual `Artist` interface with actual DB nullability
+### New Components
 
-**Phase 4 — Organization:**
-
-- Added barrel exports to: pipeline/, curators/, layout/, exclude/, hooks/
-- Deleted empty `packages/shared-types/` stub
-- Extracted magic numbers to named constants in Settings.tsx
-
-### API Clients, Tests & Infrastructure (2026-04-29 – 2026-04-30)
-
-- Regenerated Supabase types from linked project
-- Created `lib/api/gmail.ts` (6 Gmail edge function wrappers) and `lib/api/scraper.ts` (discover + scrape + health check)
-- Replaced all raw `fetch()` calls with centralized API clients (except NDJSON streaming in useBulkEmailSend)
-- 49 passing tests across 5 files: dedup, Gmail API, scraper API, pipeline transitions, exclude list
-- Scraper health check on Settings page with 30s polling
-- Code-split all page routes with `React.lazy` + `Suspense` (Login stays eager)
-
-### Agency UI on Artists Page (2026-04-29)
-
-- Extracted Add Artist modal into `pages/artists/AddArtistModal.tsx` with optional agency field (searchable dropdown of existing agencies + "Create New..." option)
-- Extracted artist table into `pages/artists/ArtistTable.tsx` with new Agency column (clickable to open drawer)
-- Created `pages/artists/AgencyDrawer.tsx` — detail panel showing agency info + all artists under that agency with their campaign statuses
-- Artists.tsx reduced from 427 to 268 lines; search now matches agency name; agency filter pills appear when agencies exist
-- `useArtists` hook updated to join `agency:agencies(id, name)`
-
-## In Progress
-
-Nothing actively in progress.
+- `components/ui/MultiSelect.tsx` — searchable multi-select with pill display
+- `pages/artists/EditArtistModal.tsx` — edit form matching Add Artist fields
+- `pages/artists/AgencyTab.tsx` — agency management table + edit/delete modals
+- `pages/artists/genreOptions.ts` — 45 predefined genre options
 
 ---
 
 ## Known Issues
 
-| Issue                                   | Severity | Notes                                                   |
-| --------------------------------------- | -------- | ------------------------------------------------------- |
-| `gmail-send` edge function is 473 lines | Low      | Supabase function, not covered by dashboard lint        |
-| `useBulkEmailSend` still has raw fetch  | Low      | Uses NDJSON streaming — can't easily wrap in API client |
+| Issue                                   | Severity | Notes                                                                          |
+| --------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| Add Artist RLS error (401)              | Medium   | Likely session expiry — user's JWT expired mid-session. Not a code bug.        |
+| `gmail-send` edge function is 473 lines | Low      | Supabase function, not covered by dashboard lint                               |
+| Duplicate agencies in DB                | Medium   | Need manual cleanup in Supabase SQL editor (dedup logic now prevents new ones) |
 
 ---
 
@@ -120,6 +95,8 @@ Nothing currently blocked.
 
 ## What's Next (not started)
 
-1. Gmail integration — bulk email templates, follow-up automation
-2. Campaign placement tracking — curator assignments, stream snapshots
-3. Client-facing purchase site (Phase 5)
+1. Clean up duplicate agencies in Supabase DB (manual SQL)
+2. E2E testing of full workflow (current Playwright tests are smoke-only)
+3. Email template review and improvements
+4. Gmail integration — bulk email templates, follow-up automation
+5. Client-facing purchase site (Phase 5)

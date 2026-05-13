@@ -26,7 +26,7 @@ export function ProgressDots({
               onToggle(field)
             }}
             title={`${PROGRESS_LABELS[i]}: ${entry[field] ? new Date(entry[field]!).toLocaleDateString() : 'Click to mark'}`}
-            className={`h-3 w-3 rounded-full transition-all duration-200 ${
+            className={`h-3 w-3 cursor-pointer rounded-full transition-all duration-200 hover:scale-125 ${
               entry[field]
                 ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30 hover:bg-emerald-400'
                 : 'bg-gray-200 hover:bg-gray-300'

@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { to: '/campaigns', label: 'Campaigns', icon: BarChart3 },
   { to: '/artists', label: 'Artists', icon: Users },
   { to: '/curators', label: 'Curators', icon: Music },
-  { to: '/outreach', label: 'Outreach', icon: Mail },
+  { to: '/outreach', label: 'Email Hub', icon: Mail },
   { to: '/financials', label: 'Financials', icon: DollarSign },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

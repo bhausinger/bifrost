@@ -34,11 +34,27 @@ export function Curators(): JSX.Element {
   const updateOutreach = useUpdateOutreach()
   const deleteOutreach = useDeleteOutreach()
 
-  function toggleOutreachField(entry: CuratorOutreach, field: ProgressField): void {
+  async function toggleOutreachField(entry: CuratorOutreach, field: ProgressField): Promise<void> {
+    const isSettingValue = !entry[field]
     updateOutreach.mutate({
       id: entry.id,
-      [field]: entry[field] ? null : new Date().toISOString(),
+      [field]: isSettingValue ? new Date().toISOString() : null,
     })
+
+    // Auto-create curator + playlist when marking as confirmed
+    if (field === 'confirmed_at' && isSettingValue && entry.email) {
+      const existingCurator = curators?.find(
+        (c) => c.email?.toLowerCase() === entry.email?.toLowerCase(),
+      )
+      if (!existingCurator) {
+        addCurator.mutate({
+          name: entry.playlist_name,
+          email: entry.email,
+          genres: entry.genre ? [entry.genre] : [],
+          price_per_10k: entry.price_per_10k ?? undefined,
+        })
+      }
+    }
   }
 
   if (selectedCurator) {

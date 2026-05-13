@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Input, Textarea, Select, Label, Modal, Button } from '@/components/ui'
+import { GENRE_OPTIONS } from '@/pages/artists/genreOptions'
 import type { CuratorOutreach } from '@/types'
 
 type EditOutreachModalProps = {
@@ -69,7 +70,16 @@ export function EditOutreachModal({ entry, onClose, onSave }: EditOutreachModalP
           </div>
           <div>
             <Label>Genre</Label>
-            <Input type="text" value={genre} onChange={(e) => setGenre(e.target.value)} />
+            <Select
+              value={genre}
+              onChange={setGenre}
+              fullWidth
+              placeholder="Select genre..."
+              options={[
+                { value: '', label: 'None' },
+                ...GENRE_OPTIONS.map((g) => ({ value: g.value, label: g.label })),
+              ]}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
