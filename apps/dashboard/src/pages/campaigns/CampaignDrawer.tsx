@@ -73,9 +73,8 @@ function CampaignCardContent({
           value={selected.status}
           onChange={(value) => updateCampaign.mutate({ id: selected.id, status: value })}
           options={[
-            { value: 'active', label: 'Active' },
-            { value: 'placing', label: 'Placing' },
             { value: 'pitching', label: 'Pitching' },
+            { value: 'active', label: 'Active' },
             { value: 'paused', label: 'Paused' },
             { value: 'completed', label: 'Completed' },
             { value: 'cancelled', label: 'Cancelled' },

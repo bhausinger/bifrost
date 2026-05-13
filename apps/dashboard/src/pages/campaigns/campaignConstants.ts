@@ -3,9 +3,8 @@ import type { Campaign, Artist } from '@/types'
 
 export const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All statuses' },
-  { value: 'active', label: 'Active' },
-  { value: 'placing', label: 'Placing' },
   { value: 'pitching', label: 'Pitching' },
+  { value: 'active', label: 'Active' },
   { value: 'paused', label: 'Paused' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -42,13 +41,6 @@ export const STATUS_CONFIG: Record<
     text: 'text-emerald-600',
     dot: 'bg-emerald-500',
     ring: 'ring-emerald-600/20',
-  },
-  placing: {
-    label: 'Placing',
-    bg: 'bg-indigo-50',
-    text: 'text-indigo-600',
-    dot: 'bg-indigo-500',
-    ring: 'ring-indigo-600/20',
   },
   pitching: {
     label: 'Pitching',

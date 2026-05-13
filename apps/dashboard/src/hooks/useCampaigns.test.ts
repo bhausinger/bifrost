@@ -32,7 +32,7 @@ async function simulateCreateCampaign(campaign: {
     .insert({
       ...rest,
       pipeline_entry_id,
-      status: 'placing',
+      status: 'pitching',
       actual_streams: 0,
     })
     .select()
@@ -73,8 +73,8 @@ describe('createCampaign', () => {
     mockFrom.mockReset()
   })
 
-  it('inserts with status=placing and actual_streams=0', async () => {
-    const created = { id: 'camp-1', name: 'Test Campaign', status: 'placing' }
+  it('inserts with status=pitching and actual_streams=0', async () => {
+    const created = { id: 'camp-1', name: 'Test Campaign', status: 'pitching' }
     const mockSingle = vi.fn().mockResolvedValue({ data: created, error: null })
     const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
     const mockInsert = vi.fn().mockReturnValue({ select: mockSelect })
@@ -93,7 +93,7 @@ describe('createCampaign', () => {
 
     expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'placing',
+        status: 'pitching',
         actual_streams: 0,
         name: 'Test Campaign',
         artist_id: 'artist-1',
