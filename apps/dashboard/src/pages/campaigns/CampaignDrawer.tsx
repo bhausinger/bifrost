@@ -206,7 +206,7 @@ function CampaignCardContent({
             <Button
               variant="secondary"
               onClick={async () => {
-                const result = await spotify.fetchTrack(selected.track_spotify_url!)
+                const result = await spotify.fetchTrack(selected.track_spotify_url!, true)
                 if (result?.playCount != null) {
                   updateCampaign.mutate({ id: selected.id, actual_streams: result.playCount })
                 }

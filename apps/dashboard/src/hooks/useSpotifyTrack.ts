@@ -9,7 +9,7 @@ type UseSpotifyTrackResult = {
   data: SpotifyTrackData | null
   isLoading: boolean
   error: string | null
-  fetchTrack: (url: string) => Promise<SpotifyTrackData | null>
+  fetchTrack: (url: string, force?: boolean) => Promise<SpotifyTrackData | null>
 }
 
 /**
@@ -24,9 +24,9 @@ export function useSpotifyTrack(url: string): UseSpotifyTrackResult {
   const lastFetchedUrl = useRef<string>('')
 
   const fetchTrack = useCallback(
-    async (trackUrl: string): Promise<SpotifyTrackData | null> => {
+    async (trackUrl: string, force = false): Promise<SpotifyTrackData | null> => {
       if (!trackUrl || !SPOTIFY_TRACK_PATTERN.test(trackUrl)) return null
-      if (trackUrl === lastFetchedUrl.current) return data
+      if (!force && trackUrl === lastFetchedUrl.current) return data
 
       setIsLoading(true)
       setError(null)
