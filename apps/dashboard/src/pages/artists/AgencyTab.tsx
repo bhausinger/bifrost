@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Building2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Building2, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useAgencies, useCreateAgency, useUpdateAgency, useDeleteAgency } from '@/hooks/useAgencies'
 import { useArtists } from '@/hooks/useArtists'
 import { Button, Input, Label, Modal } from '@/components/ui'
-import type { Agency } from '@/types'
+import type { Agency, Artist } from '@/types'
 
-export function AgencyTab({ onAgencyClick }: { onAgencyClick: (id: string) => void }): JSX.Element {
+export function AgencyTab(): JSX.Element {
   const { data: agencies, isLoading } = useAgencies()
   const { data: artists } = useArtists()
   const createAgency = useCreateAgency()
@@ -14,12 +14,15 @@ export function AgencyTab({ onAgencyClick }: { onAgencyClick: (id: string) => vo
   const [editing, setEditing] = useState<Agency | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Agency | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  // Count artists per agency
-  const artistCounts = new Map<string, number>()
+  // Group artists by agency
+  const artistsByAgency = new Map<string, typeof artists>()
   for (const a of artists ?? []) {
     if (a.agency?.id) {
-      artistCounts.set(a.agency.id, (artistCounts.get(a.agency.id) ?? 0) + 1)
+      const list = artistsByAgency.get(a.agency.id) ?? []
+      list.push(a)
+      artistsByAgency.set(a.agency.id, list)
     }
   }
 
@@ -85,51 +88,21 @@ export function AgencyTab({ onAgencyClick }: { onAgencyClick: (id: string) => vo
             </tr>
           </thead>
           <tbody>
-            {agencies.map((agency) => (
-              <tr key={agency.id} className="table-row">
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => onAgencyClick(agency.id)}
-                    className="font-medium text-gray-900 hover:text-teal-600 hover:underline"
-                  >
-                    {agency.name}
-                  </button>
-                </td>
-                <td className="px-4 py-3 text-gray-500">{agency.contact_name ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-500">
-                  {agency.email ? (
-                    <a href={`mailto:${agency.email}`} className="text-teal-600 hover:underline">
-                      {agency.email}
-                    </a>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gray-100 px-2 text-xs font-medium text-gray-600">
-                    {artistCounts.get(agency.id) ?? 0}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setEditing(agency)}
-                      className="p-1.5 text-gray-400 hover:text-gray-600"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setConfirmDelete(agency)}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {agencies.map((agency) => {
+              const isExpanded = expandedId === agency.id
+              const agencyArtists = artistsByAgency.get(agency.id) ?? []
+              return (
+                <AgencyRow
+                  key={agency.id}
+                  agency={agency}
+                  artists={agencyArtists}
+                  isExpanded={isExpanded}
+                  onToggle={() => setExpandedId(isExpanded ? null : agency.id)}
+                  onEdit={() => setEditing(agency)}
+                  onDelete={() => setConfirmDelete(agency)}
+                />
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -155,8 +128,8 @@ export function AgencyTab({ onAgencyClick }: { onAgencyClick: (id: string) => vo
           title={`Delete "${confirmDelete.name}"?`}
         >
           <p className="text-sm text-gray-600">
-            This will unlink {artistCounts.get(confirmDelete.id) ?? 0} artists from this agency. The
-            artists themselves will not be deleted.
+            This will unlink {artistsByAgency.get(confirmDelete.id)?.length ?? 0} artists from this
+            agency. The artists themselves will not be deleted.
           </p>
           <div className="mt-4 flex gap-3">
             <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1">
@@ -176,6 +149,107 @@ export function AgencyTab({ onAgencyClick }: { onAgencyClick: (id: string) => vo
           </div>
         </Modal>
       )}
+    </>
+  )
+}
+
+function AgencyRow({
+  agency,
+  artists,
+  isExpanded,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  agency: Agency
+  artists: Artist[]
+  isExpanded: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
+}): JSX.Element {
+  return (
+    <>
+      <tr
+        className="table-row cursor-pointer transition-colors hover:bg-gray-50"
+        onClick={onToggle}
+      >
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <ChevronRight
+              className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            />
+            <span className="font-medium text-gray-900">{agency.name}</span>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-gray-500">{agency.contact_name ?? '-'}</td>
+        <td className="px-4 py-3 text-gray-500">
+          {agency.email ? (
+            <a
+              href={`mailto:${agency.email}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-teal-600 hover:underline"
+            >
+              {agency.email}
+            </a>
+          ) : (
+            '-'
+          )}
+        </td>
+        <td className="px-4 py-3 text-center">
+          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gray-100 px-2 text-xs font-medium text-gray-600">
+            {artists.length}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-right">
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              onClick={onEdit}
+              className="p-1.5 text-gray-400 hover:text-gray-600"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={onDelete}
+              className="p-1.5 text-gray-400 hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </td>
+      </tr>
+      {isExpanded &&
+        (artists.length === 0 ? (
+          <tr>
+            <td colSpan={5} className="bg-gray-50/50 px-4 py-3 pl-12 text-xs text-gray-400">
+              No artists under this agency
+            </td>
+          </tr>
+        ) : (
+          artists.map((artist) => (
+            <tr key={artist.id} className="bg-gray-50/50">
+              <td colSpan={2} className="py-2 pl-12 pr-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
+                  <span className="text-sm text-gray-700">{artist.name}</span>
+                </div>
+              </td>
+              <td className="px-4 py-2 text-xs text-gray-400">{artist.email ?? '-'}</td>
+              <td className="px-4 py-2 text-center">
+                {(artist.genres ?? []).length > 0 ? (
+                  <span className="text-xs text-gray-400">
+                    {(artist.genres ?? []).slice(0, 2).join(', ')}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-300">-</span>
+                )}
+              </td>
+              <td />
+            </tr>
+          ))
+        ))}
     </>
   )
 }

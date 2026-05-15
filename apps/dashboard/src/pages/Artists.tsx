@@ -126,7 +126,7 @@ export function Artists() {
 
       <div className="flex-1 overflow-y-auto bg-gray-50 p-8">
         {activeTab === 'agencies' ? (
-          <AgencyTab onAgencyClick={setSelectedAgency} />
+          <AgencyTab />
         ) : (
           <>
             <div className="mb-6 grid grid-cols-3 gap-4">
