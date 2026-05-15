@@ -49,7 +49,7 @@ export function NewCampaignModal({
           const artist = artists?.find((a) => a.id === artistId)
           await createCampaign.mutateAsync({
             artist_id: artistId,
-            name: (form.get('name') as string) || `${artist?.name ?? 'Unknown'} Campaign`,
+            name: trackName || `${artist?.name ?? 'Unknown'} Campaign`,
             track_name: trackName || undefined,
             track_spotify_url: trackUrl || undefined,
             total_budget: form.get('total_budget') ? Number(form.get('total_budget')) : undefined,
@@ -73,12 +73,6 @@ export function NewCampaignModal({
             options={(artists ?? []).map((a) => ({ value: a.id, label: a.name }))}
             placeholder="Search artists..."
           />
-        </div>
-        <div>
-          <Label htmlFor="nc-name" optional>
-            Campaign Name
-          </Label>
-          <Input id="nc-name" name="name" placeholder="Auto-generated if left blank" />
         </div>
         <div>
           <Label htmlFor="nc-url" optional>

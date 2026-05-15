@@ -324,7 +324,7 @@ export function CampaignDrawer({
       onClose={onClose}
       header={
         <DetailCardHeader
-          title={selected.name}
+          title={selected.track_name || selected.name}
           subtitle={selected.artist?.name}
           avatar={selected.artist?.image_url}
           avatarGradient={getAvatarGradient(selected.artist?.name ?? selected.name)}
