@@ -1,5 +1,13 @@
 import { assertEquals } from 'https://deno.land/std@0.177.0/testing/asserts.ts'
-import { htmlToText, cleanArtistName, personalizeTemplate, buildDeckLink } from './helpers.ts'
+import {
+  htmlToText,
+  cleanArtistName,
+  personalizeTemplate,
+  buildDeckLink,
+  buildUnsubscribeUrl,
+  buildUnsubscribeFooter,
+  buildUnsubscribeFooterText,
+} from './helpers.ts'
 
 // htmlToText
 
@@ -119,4 +127,37 @@ Deno.test('buildDeckLink — returns empty string when neither provided', () => 
 
 Deno.test('buildDeckLink — returns empty string when url but no text', () => {
   assertEquals(buildDeckLink('https://deck.com', undefined), '')
+})
+
+// buildUnsubscribeUrl
+
+Deno.test('buildUnsubscribeUrl — encodes email as base64 token', () => {
+  const url = buildUnsubscribeUrl('test@example.com', 'https://supabase.co')
+  assertEquals(url.startsWith('https://supabase.co/functions/v1/email-unsubscribe?token='), true)
+  // Decode the token to verify
+  const token = new URL(url).searchParams.get('token')!
+  assertEquals(atob(token), 'test@example.com')
+})
+
+Deno.test('buildUnsubscribeUrl — lowercases email', () => {
+  const url = buildUnsubscribeUrl('Test@Example.COM', 'https://supabase.co')
+  const token = new URL(url).searchParams.get('token')!
+  assertEquals(atob(token), 'test@example.com')
+})
+
+// buildUnsubscribeFooter
+
+Deno.test('buildUnsubscribeFooter — contains unsubscribe link', () => {
+  const footer = buildUnsubscribeFooter('https://example.com/unsub')
+  assertEquals(footer.includes('href="https://example.com/unsub"'), true)
+  assertEquals(footer.includes('Unsubscribe'), true)
+  assertEquals(footer.includes('Phuture Collective'), true)
+})
+
+// buildUnsubscribeFooterText
+
+Deno.test('buildUnsubscribeFooterText — contains URL and company name', () => {
+  const footer = buildUnsubscribeFooterText('https://example.com/unsub')
+  assertEquals(footer.includes('https://example.com/unsub'), true)
+  assertEquals(footer.includes('Phuture Collective'), true)
 })

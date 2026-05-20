@@ -52,3 +52,23 @@ export function buildDeckLink(url: string | undefined, text: string | undefined)
   if (url && text) return `<a href="${url}">${text}</a>`
   return text || ''
 }
+
+/** Build the unsubscribe URL for a recipient email */
+export function buildUnsubscribeUrl(recipientEmail: string, supabaseUrl: string): string {
+  const token = btoa(recipientEmail.toLowerCase().trim())
+  return `${supabaseUrl}/functions/v1/email-unsubscribe?token=${encodeURIComponent(token)}`
+}
+
+/** Build the HTML unsubscribe footer appended to every outgoing email */
+export function buildUnsubscribeFooter(unsubscribeUrl: string): string {
+  return [
+    '<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center;">',
+    `Phuture Collective &middot; <a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline;">Unsubscribe</a>`,
+    '</div>',
+  ].join('')
+}
+
+/** Build the plain text unsubscribe footer */
+export function buildUnsubscribeFooterText(unsubscribeUrl: string): string {
+  return `\n\n---\nPhuture Collective · Unsubscribe: ${unsubscribeUrl}`
+}

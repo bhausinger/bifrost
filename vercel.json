@@ -29,6 +29,7 @@
       "source": "/api/spotify-partner/:path*",
       "destination": "https://api-partner.spotify.com/:path*"
     },
+    { "source": "/unsubscribed.html", "destination": "/unsubscribed.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,8 +1,17 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
-import { buildDeckLink, cleanArtistName, htmlToText, personalizeTemplate } from './helpers.ts'
+import {
+  buildDeckLink,
+  buildUnsubscribeFooter,
+  buildUnsubscribeFooterText,
+  buildUnsubscribeUrl,
+  cleanArtistName,
+  htmlToText,
+  personalizeTemplate,
+} from './helpers.ts'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const RATE_LIMIT_MS = 500
 
 const supabase = createClient(
@@ -30,6 +39,7 @@ async function sendViaResend(opts: {
   subject: string
   html: string
   text: string
+  headers?: Record<string, string>
 }): Promise<{ id: string }> {
   const apiKey = Deno.env.get('RESEND_API_KEY')
   if (!apiKey) throw new Error('RESEND_API_KEY not configured')
@@ -46,6 +56,7 @@ async function sendViaResend(opts: {
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
+      ...(opts.headers ? { headers: opts.headers } : {}),
     }),
   })
 
@@ -127,14 +138,17 @@ async function handleSingleSend(req: Request): Promise<Response> {
   }
 
   const fromAddr = senderName ? `${senderName} <${senderEmail}>` : senderEmail
-  const textBody = htmlToText(htmlBody)
+  const unsubscribeUrl = buildUnsubscribeUrl(to, SUPABASE_URL)
+  const htmlWithFooter = htmlBody + buildUnsubscribeFooter(unsubscribeUrl)
+  const textBody = htmlToText(htmlBody) + buildUnsubscribeFooterText(unsubscribeUrl)
 
   const result = await sendViaResend({
     to,
     from: fromAddr,
     subject,
-    html: htmlBody,
+    html: htmlWithFooter,
     text: textBody,
+    headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>` },
   })
 
   return jsonResponse({ success: true, messageId: result.id })
@@ -288,8 +302,11 @@ async function handleBulkSend(req: Request): Promise<Response> {
             spotifyUrl: '',
           })
 
-          const htmlBody = `<div dir="ltr">${personalizedBody.replace(/\n/g, '<br>')}</div>`
-          const textBody = htmlToText(personalizedBody)
+          const unsubscribeUrl = buildUnsubscribeUrl(artist.email, SUPABASE_URL)
+          const htmlBody =
+            `<div dir="ltr">${personalizedBody.replace(/\n/g, '<br>')}</div>` +
+            buildUnsubscribeFooter(unsubscribeUrl)
+          const textBody = htmlToText(personalizedBody) + buildUnsubscribeFooterText(unsubscribeUrl)
 
           const result = await sendViaResend({
             to: artist.email,
@@ -297,6 +314,7 @@ async function handleBulkSend(req: Request): Promise<Response> {
             subject: personalizedSubject,
             html: htmlBody,
             text: textBody,
+            headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>` },
           })
 
           await supabase.from('email_records').insert({
