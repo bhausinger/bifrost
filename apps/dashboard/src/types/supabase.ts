@@ -358,8 +358,8 @@ export type Database = {
           artist_id: string
           body: string
           created_at: string | null
-          gmail_message_id: string | null
-          gmail_thread_id: string | null
+          external_message_id: string | null
+          external_thread_id: string | null
           id: string
           opened_at: string | null
           pipeline_entry_id: string | null
@@ -377,8 +377,8 @@ export type Database = {
           artist_id: string
           body: string
           created_at?: string | null
-          gmail_message_id?: string | null
-          gmail_thread_id?: string | null
+          external_message_id?: string | null
+          external_thread_id?: string | null
           id?: string
           opened_at?: string | null
           pipeline_entry_id?: string | null
@@ -396,8 +396,8 @@ export type Database = {
           artist_id?: string
           body?: string
           created_at?: string | null
-          gmail_message_id?: string | null
-          gmail_thread_id?: string | null
+          external_message_id?: string | null
+          external_thread_id?: string | null
           id?: string
           opened_at?: string | null
           pipeline_entry_id?: string | null
@@ -850,42 +850,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_google_tokens: {
-        Row: {
-          access_token: string
-          created_at: string | null
-          gmail_email: string | null
-          id: string
-          refresh_token: string | null
-          scopes: string
-          token_expiry: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          access_token: string
-          created_at?: string | null
-          gmail_email?: string | null
-          id?: string
-          refresh_token?: string | null
-          scopes?: string
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          access_token?: string
-          created_at?: string | null
-          gmail_email?: string | null
-          id?: string
-          refresh_token?: string | null
-          scopes?: string
-          token_expiry?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
     }
     Views: {

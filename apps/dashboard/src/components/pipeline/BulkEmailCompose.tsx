@@ -14,6 +14,8 @@ type BulkEmailComposeProps = {
   setBody: (s: string) => void
   senderName: string
   setSenderName: (s: string) => void
+  senderEmail: string
+  setSenderEmail: (s: string) => void
   deckLinkUrl: string
   setDeckLinkUrl: (s: string) => void
   deckLinkText: string
@@ -51,6 +53,8 @@ export function BulkEmailCompose({
   setBody,
   senderName,
   setSenderName,
+  senderEmail,
+  setSenderEmail,
   deckLinkUrl,
   setDeckLinkUrl,
   deckLinkText,
@@ -138,6 +142,26 @@ export function BulkEmailCompose({
         </div>
       )}
 
+      {/* Sender email */}
+      <div className="mb-4">
+        <label className="mb-1 block text-sm font-medium text-gray-700">Send From</label>
+        <Select
+          fullWidth
+          value={senderEmail}
+          options={[
+            {
+              value: 'benjamin@phuturecollective.com',
+              label: 'Benjamin (benjamin@phuturecollective.com)',
+            },
+            {
+              value: 'michael@phuturecollective.com',
+              label: 'Michael (michael@phuturecollective.com)',
+            },
+          ]}
+          onChange={setSenderEmail}
+        />
+      </div>
+
       {/* Sender name */}
       <div className="mb-4">
         <label className="mb-1 block text-sm font-medium text-gray-700">Sender Name</label>
@@ -200,7 +224,6 @@ export function BulkEmailCompose({
         />
         <p className="mt-1 text-xs text-gray-400">
           Variables: {'{{artistName}}'}, {'{{deckLink}}'}, {'{{senderName}}'}, {'{{spotifyUrl}}'}.
-          Gmail signature will be auto-appended.
         </p>
       </div>
 

@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { Settings as SettingsIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { useGmail } from '@/hooks/useGmail'
 import { useScraperHealth } from '@/hooks/useScraperHealth'
 import {
   AccountSection,
-  GmailSection,
   ScraperSection,
   StripeSection,
   BlockedTermsSection,
@@ -14,7 +12,6 @@ import {
 
 export function Settings(): JSX.Element {
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
-  const gmail = useGmail()
   const scraperHealth = useScraperHealth()
 
   useEffect(() => {
@@ -37,12 +34,6 @@ export function Settings(): JSX.Element {
             <h2 className="text-sm font-display font-semibold text-gray-900 mb-4">Integrations</h2>
             <div className="space-y-4">
               <StripeSection />
-              <GmailSection
-                status={gmail.status}
-                isLoading={gmail.isLoading}
-                onConnect={gmail.connect}
-                onDisconnect={gmail.disconnect}
-              />
               <ScraperSection
                 isLoading={scraperHealth.isLoading}
                 isOnline={scraperHealth.data?.ok ?? false}

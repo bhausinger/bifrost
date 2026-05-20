@@ -1,6 +1,6 @@
 # Context — Campaign Manager
 
-**Last updated:** 2026-05-12
+**Last updated:** 2026-05-19
 **Status:** Functional, in production use
 
 ---
@@ -25,12 +25,13 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - **Pipeline kanban** — drag-and-drop, stage transitions, activity logging
 - **Lead discovery** — SoundCloud scraper with genre filtering, dedup
 - **Email scraping** — extracts from SoundCloud bios, linktree, subpages
+- **Email sending** — Resend API (replaced Gmail OAuth), single + bulk with NDJSON streaming
 - **Campaigns** — CRUD, placements, stream tracking, Spotify auto-fill
 - **Financials** — income/expense tracking, charts
 - **Outreach** — curator outreach tracking
-- **Settings** — blocked terms management, Gmail OAuth
+- **Settings** — blocked terms management, Stripe, scraper health
 - **Exclude list** — view, restore, and manually add entries
-- **Auth** — Supabase auth
+- **Auth** — Google OAuth via Supabase (login only, no Gmail permissions)
 - **Artists page** — tabbed (Artists + Agencies), edit artist modal, genre multi-select, source/agency filter dropdowns
 - **Agency management** — tab in Artists page with edit/delete, dedup on create
 - **Spotify integration** — play count via Vercel proxy, auto-fill track data from URL
@@ -41,62 +42,74 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 - `lib/env.ts` — Zod validation for environment variables
 - `lib/supabase.ts` — typed with `createClient<Database>()`
 - `types/supabase.ts` — freshly generated from linked Supabase project
-- `lib/api/gmail.ts` — typed client for all Gmail edge function calls
+- `lib/api/email.ts` — typed client for Resend email edge function calls
 - `lib/api/scraper.ts` — typed client for discover + scrape calls
 - Pre-commit hooks (husky + lint-staged)
 - ESLint flat config, Prettier
 - GitHub Actions CI — typecheck + test + build on every push/PR
 - Security headers on Vercel, CORS locked to production domain
-- 108 Vitest unit tests, 11 Playwright E2E, 36 Deno, 19 SQL, 39 pytest
+- 99 Vitest unit tests, 11 Playwright E2E, 20 Deno (resend-send), 19 SQL, 39 pytest
 - Supabase linked (project ref: nrkibvanlykqkiycpcrv)
 
 ---
 
-## Recently Completed (2026-05-12)
+## Recently Completed (2026-05-19)
 
-### Bug Fixes
+### Gmail → Resend Migration
 
-- **Campaign status: removed stale 'placing' references** — migration 00009 renamed `placing` → `pitching` but code still referenced old value. Fixed in: useCampaigns hook, CampaignDrawer, campaignConstants, tests.
-- **Agency duplicate creation** — "Create New" in Add Artist modal created duplicates. Added case-insensitive name dedup to `useCreateAgency`.
+Replaced entire Gmail OAuth + Gmail API email infrastructure with Resend for CAN-SPAM compliance. Domain: phuturecollective.com. Two senders: benjamin@ and michael@.
 
-### UX Improvements
+**Created:**
 
-- **Genre multi-select** — replaced free text input with searchable multi-select (`MultiSelect` component) with 45 predefined genre options covering the playlist placement space.
-- **Artist editing** — added Edit button on artist table rows + `EditArtistModal` with genre multi-select, agency picker.
-- **Source/agency filters** — replaced filter pill buttons with Select dropdowns (cleaner UI).
-- **Artists/Agencies tabs** — Artists page now has tabs for Artists and Agencies views.
-- **Agency management tab** — table view with name, contact, email, artist count, edit/delete actions.
-- **Exclude list manual add** — "Add to Exclude List" button + modal on the Exclude List page.
+- `supabase/functions/resend-send/` — new edge function (single + bulk endpoints)
+- `apps/dashboard/src/lib/api/email.ts` — new typed API client
+- `supabase/migrations/00013_resend_migration.sql` — renames gmail columns, drops `user_google_tokens`
 
-### New Components
+**Deleted:**
 
-- `components/ui/MultiSelect.tsx` — searchable multi-select with pill display
-- `pages/artists/EditArtistModal.tsx` — edit form matching Add Artist fields
-- `pages/artists/AgencyTab.tsx` — agency management table + edit/delete modals
-- `pages/artists/genreOptions.ts` — 45 predefined genre options
+- `supabase/functions/gmail-auth/` — Gmail OAuth edge function
+- `supabase/functions/gmail-send/` — Gmail send edge function
+- `apps/dashboard/src/hooks/useGmail.ts` — Gmail connection hook
+- `apps/dashboard/src/components/settings/GmailSection.tsx` — Gmail UI
+- `apps/dashboard/src/lib/api/gmail.ts` — Gmail API client
+
+**Modified:**
+
+- `App.tsx` — removed Gmail token sync
+- `Login.tsx` — removed Gmail scopes (Google login still works)
+- `Settings.tsx` — removed Gmail section
+- `PipelineDetailEmails.tsx` — sender email dropdown (Benjamin/Michael)
+- `BulkEmailCompose.tsx` — sender email dropdown
+- `useBulkEmailSend.ts` — points to resend-send/bulk
+- `types/supabase.ts` — renamed gmail columns, removed user_google_tokens
+
+**Migration NOT yet pushed.** Run `supabase db push` after review.
 
 ---
 
 ## Known Issues
 
-| Issue                                   | Severity | Notes                                                                          |
-| --------------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| Add Artist RLS error (401)              | Medium   | Likely session expiry — user's JWT expired mid-session. Not a code bug.        |
-| `gmail-send` edge function is 473 lines | Low      | Supabase function, not covered by dashboard lint                               |
-| Duplicate agencies in DB                | Medium   | Need manual cleanup in Supabase SQL editor (dedup logic now prevents new ones) |
+| Issue                          | Severity | Notes                                                                          |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------ |
+| Add Artist RLS error (401)     | Medium   | Likely session expiry — user's JWT expired mid-session. Not a code bug.        |
+| Duplicate agencies in DB       | Medium   | Need manual cleanup in Supabase SQL editor (dedup logic now prevents new ones) |
+| Resend domain not yet verified | High     | phuturecollective.com needs DNS records added in Resend dashboard              |
+| Migration 00013 not pushed     | High     | DB column renames pending — push after domain verification                     |
 
 ---
 
 ## Blocked
 
-Nothing currently blocked.
+- Email sending blocked on Resend domain verification (DNS records for phuturecollective.com)
 
 ---
 
 ## What's Next (not started)
 
-1. Clean up duplicate agencies in Supabase DB (manual SQL)
-2. E2E testing of full workflow (current Playwright tests are smoke-only)
-3. Email template review and improvements
-4. Gmail integration — bulk email templates, follow-up automation
-5. Client-facing purchase site (Phase 5)
+1. Verify phuturecollective.com domain in Resend (add DNS records)
+2. Set `RESEND_API_KEY` in Supabase project secrets
+3. Push migration 00013 (`supabase db push`)
+4. Clean up duplicate agencies in Supabase DB (manual SQL)
+5. E2E testing of full workflow
+6. Email template review and improvements
+7. Client-facing purchase site (Phase 5)

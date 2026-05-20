@@ -9,6 +9,7 @@ type BulkEmailPayload = {
   subject: string
   body: string
   senderName: string
+  senderEmail: string
   deckLinkUrl: string
   deckLinkText: string
 }
@@ -45,7 +46,8 @@ export function useBulkEmailSend(payload: BulkEmailPayload): BulkEmailSendResult
 
       const entryIds = withEmail.map((e) => e.id)
 
-      const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/gmail-send/bulk`, {
+      // NDJSON streaming response from Resend bulk send edge function
+      const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/resend-send/bulk`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -57,6 +59,7 @@ export function useBulkEmailSend(payload: BulkEmailPayload): BulkEmailSendResult
           subject: payload.subject,
           bodyTemplate: payload.body,
           senderName: payload.senderName || 'The Team',
+          senderEmail: payload.senderEmail,
           deckLinkUrl: payload.deckLinkUrl || undefined,
           deckLinkText: payload.deckLinkText || undefined,
         }),
@@ -64,15 +67,6 @@ export function useBulkEmailSend(payload: BulkEmailPayload): BulkEmailSendResult
 
       if (!response.ok) {
         const err = await response.json()
-        if (err.requiresAuth) {
-          newProgress.errors.push({
-            artist: '',
-            error: 'Gmail not connected. Go to Settings to connect your Gmail account.',
-          })
-          setProgress({ ...newProgress })
-          setSendStatus('done')
-          return
-        }
         throw new Error(err.error || 'Send failed')
       }
 

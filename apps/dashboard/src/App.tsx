@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { gmailSyncTokens } from '@/lib/api/gmail'
 import { Layout } from '@/components/layout/Layout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Login } from '@/pages/Login'
@@ -35,23 +34,10 @@ function PageLoader() {
 export function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  // Auto-sync Google OAuth tokens to user_google_tokens for Gmail sending
-  const syncGmailTokens = useCallback(async (session: Session) => {
-    if (!session.provider_token) return
-    try {
-      await gmailSyncTokens({
-        provider_token: session.provider_token,
-        provider_refresh_token: session.provider_refresh_token ?? null,
-      })
-    } catch {
-      // Non-critical — Gmail features just won't work until manually connected
-    }
-  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session?.provider_token) syncGmailTokens(session)
       setLoading(false)
     })
 
@@ -59,13 +45,10 @@ export function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (_event === 'SIGNED_IN' && session?.provider_token) {
-        syncGmailTokens(session)
-      }
     })
 
     return () => subscription.unsubscribe()
-  }, [syncGmailTokens])
+  }, [])
 
   if (loading) {
     return (

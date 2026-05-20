@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { gmailSendSingle } from '@/lib/api/gmail'
+import { emailSendSingle } from '@/lib/api/email'
 import { useEmailTemplates, renderTemplate, stripEmojis } from '@/hooks/useEmailTemplates'
 import { Select } from '@/components/ui'
 import type { PipelineEntry, Artist } from '@/types'
@@ -18,12 +18,18 @@ type PipelineDetailEmailsProps = {
   sentEmails: Activity[]
 }
 
+const SENDER_OPTIONS = [
+  { value: 'benjamin@phuturecollective.com', label: 'Benjamin' },
+  { value: 'michael@phuturecollective.com', label: 'Michael' },
+]
+
 export function PipelineDetailEmails({
   entry,
   sentEmails,
 }: PipelineDetailEmailsProps): JSX.Element {
   const { data: templates } = useEmailTemplates()
 
+  const [senderEmail, setSenderEmail] = useState(SENDER_OPTIONS[0]!.value)
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
   const [emailSending, setEmailSending] = useState(false)
@@ -54,10 +60,11 @@ export function PipelineDetailEmails({
     setEmailSending(true)
     setEmailResult(null)
     try {
-      const data = await gmailSendSingle({
+      const data = await emailSendSingle({
         to: entry.artist.email,
         subject: emailSubject,
         htmlBody: stripEmojis(emailBody).replace(/\n/g, '<br>'),
+        senderEmail,
       })
 
       await supabase.from('email_records').insert({
@@ -69,15 +76,14 @@ export function PipelineDetailEmails({
         body: emailBody,
         status: 'sent',
         sent_at: new Date().toISOString(),
-        gmail_message_id: data.messageId,
-        gmail_thread_id: data.threadId,
+        external_message_id: data.messageId,
       })
 
       if (entry.stage === 'discovered') {
         await supabase.rpc('move_pipeline_stage', {
           entry_id: entry.id,
           new_stage: 'contacted',
-          note: 'Email sent via Gmail',
+          note: 'Email sent via Resend',
         })
       }
 
@@ -104,6 +110,16 @@ export function PipelineDetailEmails({
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
             <div className="text-xs text-gray-500">
               To: <span className="text-gray-900">{entry.artist.email}</span>
+            </div>
+
+            <div className="mb-1">
+              <label className="text-xs text-gray-500">From</label>
+              <Select
+                fullWidth
+                value={senderEmail}
+                options={SENDER_OPTIONS}
+                onChange={setSenderEmail}
+              />
             </div>
 
             {templates && templates.length > 0 && (

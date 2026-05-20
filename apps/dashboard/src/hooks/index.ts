@@ -31,7 +31,6 @@ export {
   useDeleteOutreach,
 } from './useCurators'
 export { useEmailRecords } from './useEmailRecords'
-export { useGmail } from './useGmail'
 export { useCampaignPlacements, useUpdatePlacement } from './usePlacements'
 export { useScraperHealth } from './useScraperHealth'
 export { useSpotifyTrack } from './useSpotifyTrack'

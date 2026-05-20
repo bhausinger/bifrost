@@ -16,6 +16,7 @@ export function BulkEmailModal({ entries, onClose }: BulkEmailModalProps): React
   const [deckLinkUrl, setDeckLinkUrl] = useState('')
   const [deckLinkText, setDeckLinkText] = useState('1,000-10,000+ streams')
   const [senderName, setSenderName] = useState('')
+  const [senderEmail, setSenderEmail] = useState('benjamin@phuturecollective.com')
   const [showPreview, setShowPreview] = useState(false)
 
   const filteredEntries = useMemo(() => {
@@ -31,6 +32,7 @@ export function BulkEmailModal({ entries, onClose }: BulkEmailModalProps): React
     subject,
     body,
     senderName,
+    senderEmail,
     deckLinkUrl,
     deckLinkText,
   })
@@ -62,6 +64,8 @@ export function BulkEmailModal({ entries, onClose }: BulkEmailModalProps): React
               setBody={setBody}
               senderName={senderName}
               setSenderName={setSenderName}
+              senderEmail={senderEmail}
+              setSenderEmail={setSenderEmail}
               deckLinkUrl={deckLinkUrl}
               setDeckLinkUrl={setDeckLinkUrl}
               deckLinkText={deckLinkText}
