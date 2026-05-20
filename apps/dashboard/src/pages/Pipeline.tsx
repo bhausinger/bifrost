@@ -9,13 +9,24 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import { PipelineCard } from '@/components/pipeline/PipelineCard'
-import { Users, TrendingUp, Mail, BarChart3, Download, Send, Search, Wrench } from 'lucide-react'
+import {
+  Users,
+  TrendingUp,
+  Mail,
+  BarChart3,
+  Download,
+  Send,
+  Search,
+  Wrench,
+  TextSearch,
+} from 'lucide-react'
 import { usePipelineEntries, useMoveStage } from '@/hooks/usePipeline'
 import { PipelineColumn } from '@/components/pipeline/PipelineColumn'
 import { PipelineDetail } from '@/components/pipeline/PipelineDetail'
 import { BulkEmailModal } from '@/components/pipeline/BulkEmailModal'
 import { ScraperModal } from '@/components/pipeline/ScraperModal'
 import { LeadGeneratorModal } from '@/components/pipeline/LeadGeneratorModal'
+import { ScSearchModal } from '@/components/pipeline/scSearch/ScSearchModal'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PIPELINE_BOARD_STAGES, type PipelineEntry, type Artist, type PipelineStage } from '@/types'
 import { useTeamUsers, getOwnerName } from '@/hooks/useTeamUsers'
@@ -32,6 +43,7 @@ export function Pipeline() {
   const [showBulkEmail, setShowBulkEmail] = useState(false)
   const [showScraper, setShowScraper] = useState(false)
   const [showLeadGen, setShowLeadGen] = useState(false)
+  const [showScSearch, setShowScSearch] = useState(false)
   const [search, setSearch] = useState('')
   const [genreFilter, setGenreFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')
@@ -237,6 +249,13 @@ export function Pipeline() {
 
             {/* Action Buttons */}
             <button
+              onClick={() => setShowScSearch(true)}
+              className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-100 transition-all"
+            >
+              <TextSearch className="h-4 w-4" />
+              Name Search
+            </button>
+            <button
               onClick={() => setShowLeadGen(true)}
               className="flex items-center gap-2 rounded-lg bg-violet-50 px-4 py-2.5 text-sm font-medium text-violet-600 hover:bg-violet-100 transition-all"
             >
@@ -303,6 +322,9 @@ export function Pipeline() {
 
       {/* Lead Generator Modal */}
       {showLeadGen && <LeadGeneratorModal onClose={() => setShowLeadGen(false)} />}
+
+      {/* SC Name Search Modal */}
+      {showScSearch && <ScSearchModal onClose={() => setShowScSearch(false)} />}
     </div>
   )
 }

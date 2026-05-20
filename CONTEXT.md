@@ -55,6 +55,36 @@ Internal tool for a Spotify playlist placement agency. 2 users. Artists pay us, 
 
 ## Recently Completed (2026-05-19)
 
+### SoundCloud Name Search
+
+Batch search ~400 artist names against SoundCloud to find their profile URLs. Full multi-step modal in the Pipeline toolbar.
+
+**Backend (scraper on Railway):**
+
+- `apps/scraper/src/services/soundcloud_search.py` — search service with fuzzy name matching, confidence scoring, batch support
+- `apps/scraper/src/main.py` — added `/search/soundcloud` and `/search/soundcloud/batch` endpoints
+
+**Dashboard API client:**
+
+- `apps/dashboard/src/lib/api/scraper.ts` — added `searchSoundCloud()` and `batchSearchSoundCloud()` client functions
+
+**Dashboard UI (8 files in `components/pipeline/scSearch/`):**
+
+- `scSearchTypes.ts` — types + constants
+- `scSearchActions.ts` — batch search, scrape, import, CSV download
+- `useScSearch.ts` — hook managing state + step transitions
+- `ScSearchModal.tsx` — modal container
+- `ScSearchInput.tsx` — paste names textarea
+- `ScSearchResults.tsx` — results table with confidence, alternatives, select/copy
+- `ScSearchReview.tsx` — post-scrape review with emails, import/CSV
+- `ScSearchStates.tsx` — searching/scraping/importing/done progress screens
+
+**Flow:** Paste names → batch search SC → view matches (with confidence + alternatives) → scrape selected for emails → import to pipeline or download CSV
+
+**Needs deploy:** Scraper changes need Railway deploy. Dashboard changes need Vercel deploy.
+
+---
+
 ### Gmail → Resend Migration
 
 Replaced entire Gmail OAuth + Gmail API email infrastructure with Resend for CAN-SPAM compliance. Domain: phuturecollective.com. Two senders: benjamin@ and michael@.

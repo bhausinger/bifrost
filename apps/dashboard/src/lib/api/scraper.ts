@@ -175,6 +175,45 @@ export async function fetchSpotifyTrackData(url: string): Promise<SpotifyTrackDa
   }
 }
 
+type SearchMatchResult = {
+  query: string
+  match: DiscoverResultItem | null
+  confidence: number
+  alternatives: (DiscoverResultItem & { confidence: number })[]
+}
+
+type BatchSearchResponse = {
+  results: SearchMatchResult[]
+  total: number
+  matched: number
+  unmatched: number
+}
+
+export type { SearchMatchResult, BatchSearchResponse }
+
+export async function searchSoundCloud(name: string): Promise<SearchMatchResult> {
+  const res = await fetch(`${SCRAPER_URL}/search/soundcloud`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function batchSearchSoundCloud(
+  names: string[],
+  concurrency = 5,
+): Promise<BatchSearchResponse> {
+  const res = await fetch(`${SCRAPER_URL}/search/soundcloud/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ names, concurrency }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
 export async function scrapeArtist(url: string): Promise<ScrapedData> {
   const res = await fetch(`${SCRAPER_URL}/scrape/soundcloud`, {
     method: 'POST',

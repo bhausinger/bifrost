@@ -16,6 +16,7 @@ from services.soundcloud_scraper import SoundCloudScraper
 from services.multi_tap import multi_tap_discover
 from services.deep_scrape import deep_scrape_batch
 from services.spotify_scraper import SpotifyClient, extract_track_id
+from services.soundcloud_search import search_artist, batch_search
 
 # ── Shared scraper instance ───────────────────────────────────────────
 
@@ -73,6 +74,15 @@ class MultiTapDiscoverRequest(BaseModel):
 
 class DeepScrapeRequest(BaseModel):
     candidates: list[dict[str, Any]]
+
+
+class SearchRequest(BaseModel):
+    name: str
+
+
+class BatchSearchRequest(BaseModel):
+    names: list[str]
+    concurrency: int = 5
 
 
 class SpotifyPlaycountRequest(BaseModel):
@@ -167,6 +177,31 @@ async def multi_tap_discover_stream(req: MultiTapDiscoverRequest):
         yield f"event: complete\ndata: {json.dumps(result)}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/search/soundcloud")
+async def search_soundcloud(req: SearchRequest):
+    """Search SoundCloud for a single artist by name."""
+    result = await search_artist(scraper, req.name)
+    return result.to_api_response()
+
+
+@app.post("/search/soundcloud/batch")
+async def search_soundcloud_batch(req: BatchSearchRequest):
+    """Batch search SoundCloud for multiple artist names."""
+    if not req.names:
+        raise HTTPException(status_code=400, detail="No names provided")
+    if len(req.names) > 500:
+        raise HTTPException(status_code=400, detail="Max 500 names per batch")
+
+    results = await batch_search(scraper, req.names, concurrency=req.concurrency)
+    matched = sum(1 for r in results if r["match"] is not None)
+    return {
+        "results": results,
+        "total": len(results),
+        "matched": matched,
+        "unmatched": len(results) - matched,
+    }
 
 
 @app.post("/deep-scrape")
