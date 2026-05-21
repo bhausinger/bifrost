@@ -68,23 +68,15 @@ export function AgencyTab(): JSX.Element {
           Add Agency
         </Button>
       </div>
-      <div className="card overflow-hidden">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
+        <table className="spreadsheet">
           <thead>
-            <tr className="border-b border-gray-200 bg-white">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Agency
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Contact
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Email
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400 text-center">
-                Artists
-              </th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400" />
+            <tr>
+              <th>Agency</th>
+              <th>Contact</th>
+              <th>Email</th>
+              <th className="text-center">Artists</th>
+              <th className="" />
             </tr>
           </thead>
           <tbody>
@@ -170,11 +162,8 @@ function AgencyRow({
 }): JSX.Element {
   return (
     <>
-      <tr
-        className="table-row cursor-pointer transition-colors hover:bg-gray-50"
-        onClick={onToggle}
-      >
-        <td className="px-4 py-3">
+      <tr className="cursor-pointer group" onClick={onToggle}>
+        <td>
           <div className="flex items-center gap-2">
             <ChevronRight
               className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -182,8 +171,8 @@ function AgencyRow({
             <span className="font-medium text-gray-900">{agency.name}</span>
           </div>
         </td>
-        <td className="px-4 py-3 text-gray-500">{agency.contact_name ?? '-'}</td>
-        <td className="px-4 py-3 text-gray-500">
+        <td className="text-gray-500">{agency.contact_name ?? '-'}</td>
+        <td className="text-gray-500">
           {agency.email ? (
             <a
               href={`mailto:${agency.email}`}
@@ -196,48 +185,38 @@ function AgencyRow({
             '-'
           )}
         </td>
-        <td className="px-4 py-3 text-center">
-          <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-gray-100 px-2 text-xs font-medium text-gray-600">
-            {artists.length}
-          </span>
+        <td className="text-center">
+          <span className="text-gray-700">{artists.length}</span>
         </td>
-        <td className="px-4 py-3 text-right">
+        <td className="text-right">
           <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              onClick={onEdit}
-              className="p-1.5 text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onEdit} className="p-1 rounded text-gray-400 hover:text-gray-600">
               <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={onDelete}
-              className="p-1.5 text-gray-400 hover:text-red-500"
-            >
+            </button>
+            <button onClick={onDelete} className="p-1 rounded text-gray-400 hover:text-red-500">
               <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            </button>
           </div>
         </td>
       </tr>
       {isExpanded &&
         (artists.length === 0 ? (
           <tr>
-            <td colSpan={5} className="bg-gray-50/50 px-4 py-3 pl-12 text-xs text-gray-400">
+            <td colSpan={5} className="bg-gray-50/50 py-2 pl-10 text-xs text-gray-400">
               No artists under this agency
             </td>
           </tr>
         ) : (
           artists.map((artist) => (
             <tr key={artist.id} className="bg-gray-50/50">
-              <td colSpan={2} className="py-2 pl-12 pr-4">
+              <td colSpan={2} style={{ paddingLeft: '2.5rem' }}>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
                   <span className="text-sm text-gray-700">{artist.name}</span>
                 </div>
               </td>
-              <td className="px-4 py-2 text-xs text-gray-400">{artist.email ?? '-'}</td>
-              <td className="px-4 py-2 text-center">
+              <td className="text-xs text-gray-400">{artist.email ?? '-'}</td>
+              <td className="text-center">
                 {(artist.genres ?? []).length > 0 ? (
                   <span className="text-xs text-gray-400">
                     {(artist.genres ?? []).slice(0, 2).join(', ')}

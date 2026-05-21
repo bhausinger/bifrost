@@ -162,78 +162,68 @@ export function ExcludeList() {
             {search ? 'No matches found' : 'No excluded artists'}
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-white">
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Artist
-                </th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Email
-                </th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Reason
-                </th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Notes
-                </th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Date
-                </th>
-                <th className="py-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered?.map((entry) => (
-                <tr key={entry.id} className="table-row">
-                  <td className="py-2 px-2 text-gray-900">{entry.artist_name ?? '-'}</td>
-                  <td className="py-2 px-2 text-gray-500">{entry.email ?? '-'}</td>
-                  <td className="py-2 px-2">
-                    <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 ring-1 ring-inset ring-red-600/20">
-                      {REASON_LABELS[entry.reason] ?? entry.reason}
-                    </span>
-                  </td>
-                  <td className="max-w-xs truncate py-2 px-2 text-gray-400">
-                    {entry.notes ?? '-'}
-                  </td>
-                  <td className="py-2 px-2 text-gray-400">
-                    {new Date(entry.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    {confirmRestore === entry.id ? (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="primary"
-                          onClick={async () => {
-                            await restoreArtist.mutateAsync(entry.id)
-                            setConfirmRestore(null)
-                          }}
-                          className="px-2 py-1 text-xs"
-                        >
-                          Confirm
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => setConfirmRestore(null)}
-                          className="px-2 py-1 text-xs"
-                        >
-                          No
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setConfirmRestore(entry.id)}
-                        className="text-xs text-emerald-600 hover:text-emerald-700"
-                      >
-                        Restore
-                      </Button>
-                    )}
-                  </td>
+          <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
+            <table className="spreadsheet">
+              <thead>
+                <tr>
+                  <th>Artist</th>
+                  <th>Email</th>
+                  <th>Reason</th>
+                  <th>Notes</th>
+                  <th>Date</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered?.map((entry) => (
+                  <tr key={entry.id}>
+                    <td className="text-gray-900">{entry.artist_name ?? '-'}</td>
+                    <td className="text-gray-500">{entry.email ?? '-'}</td>
+                    <td>
+                      <span className="text-[13px] text-red-600">
+                        {REASON_LABELS[entry.reason] ?? entry.reason}
+                      </span>
+                    </td>
+                    <td className="max-w-xs truncate text-gray-400">{entry.notes ?? '-'}</td>
+                    <td className="text-gray-400">
+                      {new Date(entry.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="text-right">
+                      {confirmRestore === entry.id ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="primary"
+                            onClick={async () => {
+                              await restoreArtist.mutateAsync(entry.id)
+                              setConfirmRestore(null)
+                            }}
+                            className="text-xs"
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => setConfirmRestore(null)}
+                            className="text-xs"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          onClick={() => setConfirmRestore(entry.id)}
+                          className="text-xs text-emerald-600 hover:text-emerald-700"
+                        >
+                          Restore
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

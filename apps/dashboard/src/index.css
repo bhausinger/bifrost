@@ -70,10 +70,44 @@
   }
 
   .table-row {
-    @apply border-b border-gray-100 transition-colors duration-150;
+    @apply border-b border-gray-100 transition-colors duration-100;
   }
   .table-row:hover {
-    @apply bg-gray-50;
+    @apply bg-gray-50/60;
+  }
+
+  .spreadsheet {
+    @apply w-full text-left text-[13px];
+  }
+  .spreadsheet thead {
+    @apply sticky top-0 z-10;
+  }
+  .spreadsheet th {
+    @apply border-b border-gray-200 bg-gray-50 px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-gray-500;
+  }
+  .spreadsheet th:last-child {
+    @apply text-right;
+  }
+  .spreadsheet td {
+    @apply border-b border-gray-100 px-3 py-2 text-gray-700;
+  }
+  .spreadsheet tbody tr {
+    @apply transition-colors duration-100;
+  }
+  .spreadsheet tbody tr:hover {
+    @apply bg-gray-50/60;
+  }
+  .spreadsheet tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .spreadsheet .cell-mono {
+    @apply font-mono tabular-nums text-right;
+  }
+  .spreadsheet .cell-muted {
+    @apply text-gray-400;
+  }
+  .spreadsheet .cell-actions {
+    @apply text-right;
   }
 
   .input-field {
@@ -98,12 +132,22 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(8px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   .badge {

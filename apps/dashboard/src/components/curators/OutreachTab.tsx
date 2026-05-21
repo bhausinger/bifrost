@@ -66,48 +66,46 @@ export function OutreachTab({
     <>
       <OutreachStats stats={stats} />
 
-      <div className="card mb-4 p-4">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search playlists, emails, genres..."
-              className="input-field w-full py-2.5 pl-10 pr-4"
-            />
-          </div>
-          <Select
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: 'all', label: 'All statuses' },
-              { value: 'not_emailed', label: 'Not emailed' },
-              { value: 'emailed', label: 'Emailed' },
-              { value: 'replied', label: 'Replied' },
-              { value: 'confirmed', label: 'Confirmed' },
-            ]}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search playlists, emails, genres..."
+            className="input-field w-full py-2.5 pl-10 pr-4"
           />
-          {(search || filter !== 'all') && (
-            <button
-              onClick={() => {
-                setSearch('')
-                setFilter('all')
-              }}
-              className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors"
-            >
-              Clear
-            </button>
-          )}
-          <div className="flex-1" />
-          <span className="text-sm text-gray-400">
-            {filtered.length} playlist{filtered.length !== 1 ? 's' : ''}
-          </span>
         </div>
+        <Select
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: 'All statuses' },
+            { value: 'not_emailed', label: 'Not emailed' },
+            { value: 'emailed', label: 'Emailed' },
+            { value: 'replied', label: 'Replied' },
+            { value: 'confirmed', label: 'Confirmed' },
+          ]}
+        />
+        {(search || filter !== 'all') && (
+          <button
+            onClick={() => {
+              setSearch('')
+              setFilter('all')
+            }}
+            className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors"
+          >
+            Clear
+          </button>
+        )}
+        <div className="flex-1" />
+        <span className="text-sm text-gray-400">
+          {filtered.length} playlist{filtered.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
         {isLoading && (
           <div className="flex items-center justify-center p-12">
             <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-gray-300 border-t-teal-600" />
@@ -124,31 +122,21 @@ export function OutreachTab({
           </div>
         )}
         {!isLoading && filtered.length > 0 && (
-          <table className="w-full">
+          <table className="spreadsheet">
             <thead>
-              <tr className="border-b border-gray-100 bg-white">
-                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Playlist
-                </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Genre
-                </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Organic
-                </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Progress
-                </th>
-                <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Price/10K
-                </th>
-                <th className="w-20 px-3 py-3.5" />
+              <tr>
+                <th>Playlist</th>
+                <th>Genre</th>
+                <th>Organic</th>
+                <th>Progress</th>
+                <th className="text-right">Price/10K</th>
+                <th />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map((entry) => (
-                <tr key={entry.id} className="group table-row transition-colors hover:bg-gray-50">
-                  <td className="px-5 py-3.5">
+                <tr key={entry.id} className="group">
+                  <td>
                     <div className="flex items-center gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -172,48 +160,42 @@ export function OutreachTab({
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td>
                     {entry.genre ? (
-                      <span className="inline-flex items-center rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-600 ring-1 ring-inset ring-violet-200/60">
-                        {entry.genre}
-                      </span>
+                      <span className="text-gray-700">{entry.genre}</span>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
-                    {entry.is_organic === true && (
-                      <span className="text-sm font-medium text-emerald-600">Yes</span>
-                    )}
-                    {entry.is_organic === false && (
-                      <span className="text-sm font-medium text-red-500">No</span>
-                    )}
-                    {entry.is_organic === null && <span className="text-sm text-gray-400">—</span>}
+                  <td>
+                    {entry.is_organic === true && <span className="text-emerald-600">Yes</span>}
+                    {entry.is_organic === false && <span className="text-gray-400">No</span>}
+                    {entry.is_organic === null && <span className="text-gray-400">—</span>}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td>
                     <ProgressDots entry={entry} onToggle={(field) => onToggleField(entry, field)} />
                   </td>
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="text-right">
                     {entry.price_per_10k !== null ? (
-                      <span className="font-mono text-sm font-medium text-gray-900">
+                      <span className="font-mono font-medium text-gray-900">
                         ${entry.price_per_10k}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3.5">
+                  <td>
                     <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={() => onEdit(entry)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                        className="p-1 rounded text-gray-400 hover:text-gray-600 transition-colors"
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => onDelete(entry)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                        className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

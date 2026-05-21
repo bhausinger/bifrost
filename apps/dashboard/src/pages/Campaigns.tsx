@@ -159,7 +159,7 @@ export function Campaigns() {
         </div>
 
         {/* Data Table */}
-        <div className="card overflow-hidden">
+        <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
           {isLoading && (
             <div className="flex items-center justify-center p-12">
               <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-amber-500/20 border-t-amber-500" />
@@ -178,33 +178,19 @@ export function Campaigns() {
           )}
 
           {!isLoading && filtered.length > 0 && (
-            <table className="w-full">
+            <table className="spreadsheet">
               <thead>
-                <tr className="border-b border-gray-200 bg-white">
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Artist
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Track
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Paid
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Streams
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Status
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Start Date
-                  </th>
-                  <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Actions
-                  </th>
+                <tr>
+                  <th>Artist</th>
+                  <th>Track</th>
+                  <th>Paid</th>
+                  <th>Streams</th>
+                  <th>Status</th>
+                  <th>Start Date</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {filtered.map((campaign) => {
                   const config = STATUS_CONFIG[campaign.status] ?? STATUS_CONFIG.active!
                   const gradient = getAvatarGradient(campaign.artist?.name ?? campaign.name)
@@ -213,35 +199,32 @@ export function Campaigns() {
                     <tr
                       key={campaign.id}
                       onClick={() => setSelected(campaign)}
-                      className="table-row cursor-pointer"
+                      className="cursor-pointer group"
                     >
-                      <td className="px-5 py-3.5">
+                      <td>
                         <div className="flex items-center gap-3">
                           {campaign.artist?.image_url ? (
                             <img
                               src={campaign.artist.image_url}
                               alt=""
-                              className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-200 shadow-sm"
+                              className="h-7 w-7 rounded-full object-cover ring-1 ring-gray-200"
                             />
                           ) : (
                             <div
-                              className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${gradient} shadow-sm ring-2 ring-gray-200`}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${gradient} ring-1 ring-gray-200`}
                             >
-                              <span className="text-xs font-bold text-white">
+                              <span className="text-[10px] font-bold text-white">
                                 {(campaign.artist?.name ?? campaign.name).charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-900">
-                              {campaign.artist?.name ?? campaign.name}
-                            </p>
-                            <p className="truncate text-xs text-gray-400">{campaign.name}</p>
-                          </div>
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {campaign.artist?.name ?? campaign.name}
+                          </p>
                         </div>
                       </td>
 
-                      <td className="px-5 py-3.5">
+                      <td>
                         <div className="flex items-center gap-1.5">
                           <span className="truncate text-sm text-gray-700 max-w-[180px]">
                             {campaign.track_name || '-'}
@@ -260,13 +243,13 @@ export function Campaigns() {
                         </div>
                       </td>
 
-                      <td className="px-5 py-3.5">
+                      <td>
                         <span className="font-mono text-sm font-medium text-gray-900">
                           ${(campaign.total_budget ?? 0).toLocaleString()}
                         </span>
                       </td>
 
-                      <td className="px-5 py-3.5">
+                      <td>
                         <div>
                           <span className="font-mono text-sm font-medium text-gray-900">
                             {formatNumber(campaign.actual_streams)}
@@ -280,16 +263,14 @@ export function Campaigns() {
                         </div>
                       </td>
 
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.bg} ${config.text} ring-1 ring-inset ${config.ring}`}
-                        >
+                      <td>
+                        <span className="flex items-center gap-1.5 text-[13px]">
                           <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
                           {config.label}
                         </span>
                       </td>
 
-                      <td className="px-5 py-3.5 text-sm text-gray-400">
+                      <td className="text-sm text-gray-400">
                         {campaign.start_date
                           ? new Date(campaign.start_date).toLocaleDateString('en-US', {
                               month: 'short',
@@ -299,13 +280,13 @@ export function Campaigns() {
                           : '-'}
                       </td>
 
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="text-right">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             setSelected(campaign)
                           }}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                          className="rounded p-1 text-gray-400 hover:text-gray-600 transition-colors"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>

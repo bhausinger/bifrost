@@ -93,7 +93,7 @@ export function Financials(): JSX.Element {
           ))}
         </div>
 
-        <div className="card overflow-hidden">
+        <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
           {isLoading && <div className="p-6 text-sm text-gray-400">Loading...</div>}
           {filtered?.length === 0 && !isLoading && (
             <div className="p-8 text-center text-sm text-gray-400">
@@ -101,43 +101,31 @@ export function Financials(): JSX.Element {
             </div>
           )}
           {filtered && filtered.length > 0 && (
-            <table className="w-full">
+            <table className="spreadsheet">
               <thead>
-                <tr className="border-b border-gray-200 bg-white">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Description
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Category
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Method
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Amount
-                  </th>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Method</th>
+                  <th className="text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {filtered.map((tx) => (
-                  <tr key={tx.id} className="table-row">
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                  <tr key={tx.id}>
+                    <td className="text-gray-500">
                       {new Date(tx.transaction_date).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{tx.description || '-'}</td>
-                    <td className="px-4 py-3">
-                      {tx.category && (
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-300/50">
-                          {tx.category.replace('_', ' ')}
-                        </span>
-                      )}
+                    <td className="text-gray-900">{tx.description || '\u2014'}</td>
+                    <td>
+                      <span className="text-gray-600">
+                        {tx.category ? tx.category.replace('_', ' ') : '\u2014'}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-400">{tx.payment_method || '-'}</td>
+                    <td className="text-gray-400">{tx.payment_method || '\u2014'}</td>
                     <td
-                      className={`px-4 py-3 text-right font-mono text-sm font-semibold ${
+                      className={`text-right font-mono font-semibold ${
                         tx.type === 'income' ? 'text-emerald-600' : 'text-red-600'
                       }`}
                     >
