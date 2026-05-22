@@ -128,6 +128,10 @@ export function useCreatePipelineEntry() {
       packageType?: string
       notes?: string
     }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       const { data, error } = await supabase
         .from('pipeline_entries')
         .insert({
@@ -136,6 +140,8 @@ export function useCreatePipelineEntry() {
           deal_value: dealValue ?? null,
           package_type: packageType ?? null,
           notes: notes ?? null,
+          assigned_to: user?.id ?? null,
+          created_by: user?.id ?? null,
         })
         .select()
         .single()

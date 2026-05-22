@@ -18,9 +18,9 @@ describe('getOwnerName', () => {
     expect(result).toBe('ben')
   })
 
-  it('returns truncated userId when user not found', () => {
+  it('returns empty string when user not found', () => {
     const result = getOwnerName('user-unknown-99', TEAM_USERS)
-    expect(result).toBe('user-u')
+    expect(result).toBe('')
   })
 
   it('returns empty string for null userId', () => {

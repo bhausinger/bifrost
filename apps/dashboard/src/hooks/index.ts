@@ -5,6 +5,8 @@ export { useCampaigns, useCreateCampaign, useUpdateCampaign } from './useCampaig
 export {
   useEmailTemplates,
   useCreateEmailTemplate,
+  useUpdateEmailTemplate,
+  useDeleteEmailTemplate,
   renderTemplate,
   stripEmojis,
 } from './useEmailTemplates'

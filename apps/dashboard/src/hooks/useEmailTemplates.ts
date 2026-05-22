@@ -46,6 +46,47 @@ export function useCreateEmailTemplate() {
   })
 }
 
+export function useUpdateEmailTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...updates
+    }: {
+      id: string
+      name?: string
+      subject?: string
+      body?: string
+      template_type?: string
+    }) => {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] })
+    },
+  })
+}
+
+export function useDeleteEmailTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('email_templates').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] })
+    },
+  })
+}
+
 /**
  * Renders template variables into a string.
  * Supported: {{artistName}}, {{mostRecentTrack}}, {{deckLink}}, {{senderName}}

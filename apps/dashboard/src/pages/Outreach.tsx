@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { Mail, Plus } from 'lucide-react'
-import { useEmailTemplates, useCreateEmailTemplate } from '@/hooks/useEmailTemplates'
+import { Mail, Plus, Pencil, Trash2 } from 'lucide-react'
+import {
+  useEmailTemplates,
+  useCreateEmailTemplate,
+  useUpdateEmailTemplate,
+  useDeleteEmailTemplate,
+  type EmailTemplate,
+} from '@/hooks/useEmailTemplates'
 import { useEmailRecords } from '@/hooks/useEmailRecords'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Select, Modal, Button, Input, Textarea, Label } from '@/components/ui'
@@ -19,7 +25,11 @@ export function Outreach() {
     error: templatesError,
   } = useEmailTemplates()
   const createTemplate = useCreateEmailTemplate()
+  const updateTemplate = useUpdateEmailTemplate()
+  const deleteTemplate = useDeleteEmailTemplate()
   const [showNewTemplate, setShowNewTemplate] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<EmailTemplate | null>(null)
   const [newName, setNewName] = useState('')
   const [newSubject, setNewSubject] = useState('')
   const [newBody, setNewBody] = useState('')
@@ -112,12 +122,30 @@ export function Outreach() {
                 </div>
               )}
               {templates?.map((t) => (
-                <div key={t.id} className="px-6 py-4">
+                <div key={t.id} className="group px-6 py-4">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-900">{t.name}</div>
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-300/50">
-                      {t.template_type}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          onClick={() => setEditingTemplate(t)}
+                          className="rounded p-1 text-gray-400 hover:text-gray-600"
+                          title="Edit template"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(t)}
+                          className="rounded p-1 text-gray-400 hover:text-red-500"
+                          title="Delete template"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {t.template_type?.replace('_', ' ')}
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-1 text-sm text-gray-500">{t.subject}</div>
                   <div className="mt-1 text-xs text-gray-400 line-clamp-2">{t.body}</div>
@@ -224,7 +252,116 @@ export function Outreach() {
             </div>
           </div>
         </Modal>
+
+        {editingTemplate && (
+          <EditTemplateModal
+            template={editingTemplate}
+            onClose={() => setEditingTemplate(null)}
+            onSave={async (updates) => {
+              await updateTemplate.mutateAsync({ id: editingTemplate.id, ...updates })
+              setEditingTemplate(null)
+            }}
+            isPending={updateTemplate.isPending}
+          />
+        )}
+
+        {confirmDelete && (
+          <Modal
+            open
+            onClose={() => setConfirmDelete(null)}
+            title={`Delete "${confirmDelete.name}"?`}
+          >
+            <p className="text-sm text-gray-600">
+              This template will be permanently deleted. This action cannot be undone.
+            </p>
+            <div className="mt-4 flex gap-3">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  await deleteTemplate.mutateAsync(confirmDelete.id)
+                  setConfirmDelete(null)
+                }}
+                disabled={deleteTemplate.isPending}
+                className="flex-1 !bg-red-600 hover:!bg-red-700"
+              >
+                {deleteTemplate.isPending ? 'Deleting...' : 'Delete Template'}
+              </Button>
+            </div>
+          </Modal>
+        )}
       </div>
     </div>
+  )
+}
+
+function EditTemplateModal({
+  template,
+  onClose,
+  onSave,
+  isPending,
+}: {
+  template: EmailTemplate
+  onClose: () => void
+  onSave: (updates: {
+    name: string
+    subject: string
+    body: string
+    template_type: string
+  }) => Promise<void>
+  isPending: boolean
+}): JSX.Element {
+  const [name, setName] = useState(template.name)
+  const [subject, setSubject] = useState(template.subject)
+  const [body, setBody] = useState(template.body)
+  const [category, setCategory] = useState(template.template_type ?? 'initial_outreach')
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Edit Template"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => onSave({ name, subject, body, template_type: category })}
+            disabled={!name || !subject || !body || isPending}
+          >
+            {isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <Label>Name</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select fullWidth value={category} onChange={setCategory} options={TEMPLATE_CATEGORIES} />
+        </div>
+        <div>
+          <Label>Subject</Label>
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+        </div>
+        <div>
+          <Label>Body</Label>
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={8}
+            className="font-mono"
+            placeholder="Use {{artistName}}, {{deckLink}}, {{senderName}} as variables"
+          />
+        </div>
+      </div>
+    </Modal>
   )
 }
